@@ -1,0 +1,719 @@
+<!-- Sidebar -->
+<?php
+
+ $idprocurado =filter_var($_SERVER['REQUEST_URI'], FILTER_SANITIZE_NUMBER_INT);
+$dadourl=explode('/',$_SERVER['REQUEST_URI']);
+if(count($dadourl)<15){
+
+for($x=count($dadourl);$x<15;$x++){
+    $dadourl[$x]=null;
+}
+//   dd($dadourl);
+}
+
+
+ ?>
+
+
+
+
+    <!-- Sidebar user panel (optional) -->
+    <div class="user-panel mt-3 pb-3 mb-3 d-flex  ">
+
+        <div class="info">
+
+            <a href="{{ ROute('Usuarios.Atualizarsenha', Auth()->user()->id) }}"> <i class="fa fa-pencil-square"
+                    aria-hidden="true"> Alterar Senha </i></a>
+        </div>
+    </div>
+
+    <!-- Sidebar Menu -->
+    <nav class="mt-2">
+        <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+            <!-- Add icons to the links using the .nav-icon class
+               with font-awesome or any other icon font library -->
+            <li class="nav-item has-treeview ">
+                <a href="/home" class="nav-link  @if ($_SERVER['REQUEST_URI'] == '/home'||
+                 $_SERVER['REQUEST_URI'] ==  '/home/MostrarEsperado/'. (int) $dadourl[3] .
+                                '/' .
+                                 $dadourl[4] .
+                                '/' .
+                                $dadourl[5]
+                                .'/' .
+                                (int) $dadourl[6].''||
+                                $_SERVER['REQUEST_URI'] ==  '/home/mostrarMensal/'. (int) $dadourl[3] .
+                                '/' .
+                                 $dadourl[4] .
+                                '/' .
+                                $dadourl[5]
+                                .'/' .
+                                (int) $dadourl[6].'' ||
+                                (int) $dadourl[6].''||
+                                $_SERVER['REQUEST_URI'] ==  '/home/mostrarDiaria/'. (int) $dadourl[3] .
+                                '/' .
+                                 $dadourl[4] .
+                                '/' .
+                                $dadourl[5]
+                                .'/' .
+                                (int) $dadourl[6].''  ) active @endif">
+                    <i class="nav-icon fa fa-tachometer-alt"></i>
+                    <p>
+                        Pagina Inicial
+
+                    </p>
+                </a>
+            </li>
+
+
+
+            @php
+            $tipospagamentos= DB::table('tipos_pagamentos')->where("tipo_janela",1)->get();
+
+        @endphp
+
+
+
+            @if (Gate::check('Registar-Mensalidades') ||
+                    Gate::check('Visualizar-Mensalidades') ||
+                    Gate::check('Relatoriopagamentos-Matricula') ||
+                    Gate::check('Efetuar-matricula') ||
+                    Gate::check('Editar-Aluno') ||
+                    Gate::check('Apagar-Aluno') ||
+                    Gate::check('Ver-Aluno') ||
+                    Gate::check('Atualizar-Matriculas') ||
+                    Gate::check('Visualizar-Mensalidades-Generico') ||
+                    Gate::check('Efetuar-matricula') ||
+                    Gate::check('Visualizar-Mensalidades-Pagamento') ||
+                    Gate::check('Visualizar-lista') ||
+                    Gate::check('Visualizar-Mensalidades') ||
+                    Gate::check('Registar-Mensalidades') ||
+                    Gate::check('Relatoriopagamentos-outrospagamentos') ||
+                    Gate::check('efetuar-outrospagamentos') ||
+                    Gate::check('configurar-outrospagamentos') ||
+                    Gate::check('relatoriopagamentos-outrospagamentos'))
+                <li class="nav-item has-treeview
+                @foreach ( $tipospagamentos as $tipospagamentosItem)
+
+
+ @if ( $_SERVER['REQUEST_URI']=='/aluno/pagament/'.$tipospagamentosItem->Descricao.'/efetuar' ||
+ $_SERVER['REQUEST_URI']=='/aluno/pagament/'.$tipospagamentosItem->Descricao.'/relatoriogenerico'||
+ $_SERVER['REQUEST_URI']=='/aluno/pagament/'.$tipospagamentosItem->Descricao.'/relatorio' )
+    menu-open
+@endif
+@endforeach
+                @if (
+
+                    $_SERVER['REQUEST_URI'] == '/aluno/matricula/atualizar/dados/' . (int) $dadourl[5] . '/' . (int) $dadourl[6] . '' ||
+
+                        $_SERVER['REQUEST_URI'] ==
+                            '/RegistoAcademico/outrosPagamento/Relatorio/detalhado/' .
+                                (int) $dadourl[5] .
+                                '/' .
+                                (int) $dadourl[6] .
+                                '/' .
+                                (int) $dadourl[7] .
+                                '/' .
+                                (int) $dadourl[8] .
+                                '/' .
+                                (int) $dadourl[9] .
+                                '' ||
+                        $_SERVER['REQUEST_URI'] ==
+                            '/aluno/mensalidade/Relatorio/detalhado/' .
+                                (int) $dadourl[5] .
+                                '/' .
+                                (int) $dadourl[6] .
+                                '/' .
+                                (int) $dadourl[7] .
+                                '' ||
+                        $_SERVER['REQUEST_URI'] == '/RegistoAcademico/outrosPagamento/index' ||
+                        $_SERVER['REQUEST_URI'] == '/RegistoAcademico/notas/disciplinas/notasTrimestrais/show/dados' ||
+                        $_SERVER['REQUEST_URI'] == '/RegistoAcademico/outrosPagamento/mostrar' ||
+                        $_SERVER['REQUEST_URI'] == '/aluno/matricula' ||
+                        $_SERVER['REQUEST_URI'] == '/RegistoAcademico/notas' ||
+                        $_SERVER['REQUEST_URI'] == '/aluno/mostrar' ||
+                        $_SERVER['REQUEST_URI'] == '/aluno/mensalida' ||
+                        $_SERVER['REQUEST_URI'] == '/aluno/mensalidade/mes' ||
+                        $_SERVER['REQUEST_URI'] == '/aluno/mensalida/' . $idprocurado . '/edit' ||
+                        $_SERVER['REQUEST_URI'] == '/aluno/aluno/' . $idprocurado . '' ||
+                        $_SERVER['REQUEST_URI'] == '/aluno/mensalida/todas/todos' ||
+                        $_SERVER['REQUEST_URI'] == '/aluno/mensalidade/Relatorio' ||
+                        $_SERVER['REQUEST_URI'] == '/aluno/matricula/atualizacaoIndex' ||
+                        $_SERVER['REQUEST_URI'] == '/aluno/mensalidade/Relatorio/pagamentos' ||
+                        $_SERVER['REQUEST_URI'] == '/aluno/aluno' ||
+                        $_SERVER['REQUEST_URI'] == '/aluno/mensalidade/Relatorio/pagamentos' ||
+                        $_SERVER['REQUEST_URI'] == '/aluno/visualizar/' . $idprocurado . '' ||
+                        $_SERVER['REQUEST_URI'] == '/RegistoAcademico/outrosPagamento/Relatorio/pagamentos' ||
+                        $_SERVER['REQUEST_URI'] == '/RegistoAcademico/outrosPagamento/Relatorio' ||
+                        $_SERVER['REQUEST_URI'] == '/RegistoAcademico/outrosPagamento/pagamentos' ||
+                        $_SERVER['REQUEST_URI'] == '/aluno/matricula/Relatorio_matriculas' ||
+                        $_SERVER['REQUEST_URI'] == '/aluno/matricula/atualizar/dados/' . $idprocurado . '') menu-open @endif">
+                    <a href="#" class="nav-link @if (
+                        $_SERVER['REQUEST_URI'] == '/aluno/aluno/' . $idprocurado . '' ||
+                            $_SERVER['REQUEST_URI'] ==
+                                '/aluno/matricula/atualizar/dados/' . (int) $dadourl[5] . '/' . (int) $dadourl[6] . '' ||
+                            $_SERVER['REQUEST_URI'] ==
+                                '/RegistoAcademico/outrosPagamento/Relatorio/detalhado/' .
+                                    (int) $dadourl[5] .
+                                    '/' .
+                                    (int) $dadourl[6] .
+                                    '/' .
+                                    (int) $dadourl[7] .
+                                    '/' .
+                                    (int) $dadourl[8] .
+                                    '/' .
+                                    (int) $dadourl[9] .
+                                    '' ||
+                            $_SERVER['REQUEST_URI'] ==
+                                '/aluno/mensalidade/Relatorio/detalhado/' .
+                                    (int) $dadourl[5] .
+                                    '/' .
+                                    (int) $dadourl[6] .
+                                    '/' .
+                                    (int) $dadourl[7] .
+                                    '' ||
+                            $_SERVER['REQUEST_URI'] == '/aluno/matricula' ||
+                            $_SERVER['REQUEST_URI'] == '/RegistoAcademico/outrosPagamento/Relatorio' ||
+                            $_SERVER['REQUEST_URI'] == '/RegistoAcademico/notas/disciplinas/notasTrimestrais/show/dados' ||
+                            $_SERVER['REQUEST_URI'] == '/RegistoAcademico/outrosPagamento/pagamentos' ||
+                            $_SERVER['REQUEST_URI'] == '/RegistoAcademico/notas' ||
+                            $_SERVER['REQUEST_URI'] == '/aluno/mensalida/todas/todos' ||
+                            $_SERVER['REQUEST_URI'] == '/aluno/mensalidade/Relatorio' ||
+                            $_SERVER['REQUEST_URI'] == '/aluno/mensalida' ||
+                            $_SERVER['REQUEST_URI'] == '/aluno/mensalidade/Relatorio/pagamentos' ||
+                            $_SERVER['REQUEST_URI'] == '/aluno/mostrar' ||
+                            $_SERVER['REQUEST_URI'] == '/aluno/mensalidade/mes' ||
+                            $_SERVER['REQUEST_URI'] == '/aluno/matricula/atualizacaoIndex' ||
+                            $_SERVER['REQUEST_URI'] == '/aluno/aluno' ||
+                            $_SERVER['REQUEST_URI'] == '/RegistoAcademico/outrosPagamento/Relatorio/pagamentos' ||
+                            $_SERVER['REQUEST_URI'] == '/aluno/matricula/Relatorio_matriculas' ||
+                            $_SERVER['REQUEST_URI'] == '/aluno/visualizar/' . $idprocurado . '' ||
+                            $_SERVER['REQUEST_URI'] == '/aluno/mensalida/' . $idprocurado . '/edit' ||
+                            $_SERVER['REQUEST_URI'] == '/aluno/matricula/atualizar/dados/' . $idprocurado . '') active @endif
+                             @foreach ( $tipospagamentos as $tipospagamentosItem)
+
+
+                             @if ( $_SERVER['REQUEST_URI']=='/aluno/pagament/'.$tipospagamentosItem->Descricao.'/efetuar' ||
+                             $_SERVER['REQUEST_URI']=='/aluno/pagament/'.$tipospagamentosItem->Descricao.'/relatorio' ||
+                             $_SERVER['REQUEST_URI']=='/aluno/pagament/'.$tipospagamentosItem->Descricao.'/relatoriogenerico' )
+                            active
+                            @endif
+                            @endforeach
+
+                            ">
+                        <i class="fa fa-users fa fa-tachometer-alt"></i>
+                        <p>
+                            Registo Académico
+                            <i class="right fa fa-angle-left"></i>
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview  ">
+
+
+                        @if (Gate::check('Efetuar-matricula') ||
+                                Gate::check('Visualizar-lista') ||
+                                Gate::check('Relatoriopagamentos-Matricula') ||
+                                Gate::check('Editar-Aluno') ||
+                                Gate::check('Apagar-Aluno') ||
+                                Gate::check('Ver-Aluno') ||
+                                Gate::check('Atualizar-Matriculas'))
+                            <li class="nav-item has-treeview @if (
+                                $_SERVER['REQUEST_URI'] == '/aluno/matricula' ||
+                                    $_SERVER['REQUEST_URI'] == '/aluno/matricula/atualizacaoIndex' ||
+                                    $_SERVER['REQUEST_URI'] == '/aluno/mostrar' ||
+                                    $_SERVER['REQUEST_URI'] == '/aluno/aluno' ||
+                                    $_SERVER['REQUEST_URI'] ==
+                                        '/aluno/matricula/atualizar/dados/' . (int) $dadourl[5] . '/' . (int) $dadourl[6] . '' ||
+                                    $_SERVER['REQUEST_URI'] == '/aluno/matricula/atualizar/dados/' . $idprocurado . '' ||
+                                    $_SERVER['REQUEST_URI'] == '/aluno/matricula' ||
+                                    $_SERVER['REQUEST_URI'] == '/aluno/matricula/Relatorio_matriculas' ||
+                                    $_SERVER['REQUEST_URI'] == '/aluno/aluno/' . $idprocurado . '') menu-open @endif">
+
+                                <a href="#" class="nav-link  @if (
+                                    $_SERVER['REQUEST_URI'] == '/aluno/matricula' ||
+                                        $_SERVER['REQUEST_URI'] == '/aluno/matricula/atualizacaoIndex' ||
+                                        $_SERVER['REQUEST_URI'] == '/aluno/mostrar' ||
+                                        $_SERVER['REQUEST_URI'] == '/aluno/aluno' ||
+                                        $_SERVER['REQUEST_URI'] ==
+                                            '/aluno/matricula/atualizar/dados/' . (int) $dadourl[5] . '/' . (int) $dadourl[6] . '' ||
+                                        $_SERVER['REQUEST_URI'] == '/aluno/matricula/atualizar/dados/' . $idprocurado . '' ||
+                                        $_SERVER['REQUEST_URI'] == '/aluno/matricula' ||
+                                        $_SERVER['REQUEST_URI'] == '/aluno/matricula/Relatorio_matriculas' ||
+                                        $_SERVER['REQUEST_URI'] == '/aluno/aluno/' . $idprocurado . '') active @endif">
+                                    <i class="fa fa-users fa fa-tachometer-alt"></i>
+                                    <p>
+                                        Matricula
+                                        <i class="right fa fa-angle-left"></i>
+                                    </p>
+                                </a>
+                                <ul class="nav nav-treeview ">
+
+                                    @can('Efetuar-matricula')
+                                        <li class="nav-item">
+                                            <a href="{{ Route('aluno.matricula') }}"
+                                                class="nav-link  @if (
+                                                    $_SERVER['REQUEST_URI'] == '/aluno/matricula/atualizar/dados/' . $idprocurado . '' ||
+                                                        $_SERVER['REQUEST_URI'] == '/aluno/matricula') active @endif">
+                                                <i class="fa  fa-pencil-square nav-icon" aria-hidden="true"></i>
+                                                <p> Efetuar</p>
+                                            </a>
+                                        </li>
+                                    @endcan
+                                    @can('Atualizar-Matriculas')
+                                        <li class="nav-item">
+                                            <a href="{{ Route('aluno.atualizacaoIndex') }}"
+                                                class="nav-link
+                 @if ($_SERVER['REQUEST_URI'] == '/aluno/matricula/atualizacaoIndex') active @endif">
+                                                <i class="fa  fa-pencil-square nav-icon" aria-hidden="true"></i>
+                                                <p> Atualizar </p>
+                                            </a>
+                                        </li>
+                                    @endcan
+
+
+
+
+
+                                    @if (Gate::check('Visualizar-lista') ||
+                                            Gate::check('Editar-Aluno') ||
+                                            Gate::check('Apagar-Aluno') ||
+                                            Gate::check('Ver-Aluno'))
+                                        <li class="nav-item">
+                                            <a href="{{ Route('aluno.mostrar') }}"
+                                                class="nav-link @if (
+                                                    $_SERVER['REQUEST_URI'] == '/aluno/aluno/' . $idprocurado . '' ||
+                                                        $_SERVER['REQUEST_URI'] ==
+                                                            '/aluno/matricula/atualizar/dados/' . (int) $dadourl[5] . '/' . (int) $dadourl[6] . '' ||
+                                                        $_SERVER['REQUEST_URI'] == '/aluno/mostrar' ||
+                                                        $_SERVER['REQUEST_URI'] == '/aluno/aluno') active @endif">
+                                                <i class="fa fa-eye-slash nav-icon"></i>
+                                                <p> Alunos Inscritos </p>
+                                            </a>
+                                        </li>
+                                    @endif
+
+                                    @can('Relatoriopagamentos-Matricula')
+                                        <li class="nav-item ">
+                                            <a href="{{ Route('aluno.Relatorio_matriculas') }}"
+                                                class="nav-link @if ($_SERVER['REQUEST_URI'] == '/aluno/matricula/Relatorio_matriculas') active @endif">
+                                                Relatorio de Matriculas
+                                            </a>
+                                        </li>
+                                    @endcan
+                                </ul>
+                            </li>
+                        @endif
+                        @can('gestao-notas')
+                            <li class="nav-item has-treeview  @if (
+                                $_SERVER['REQUEST_URI'] == '/RegistoAcademico/notas' ||
+                                    $_SERVER['REQUEST_URI'] == '/RegistoAcademico/notas/disciplinas/notasTrimestrais/show/dados') menu-open @endif">
+                                <a href="#" class="nav-link @if (
+                                    $_SERVER['REQUEST_URI'] == '/RegistoAcademico/notas' ||
+                                        $_SERVER['REQUEST_URI'] == '/RegistoAcademico/notas/disciplinas/notasTrimestrais/show/dados') active @endif">
+                                    <i class="fa fa-users fa fa-tachometer-alt"></i>
+                                    <p>
+                                        Gest&atilde;o de Notas
+                                        <i class="right fa fa-angle-left"></i>
+                                    </p>
+
+
+
+
+                                </a>
+
+                                <ul class="nav nav-treeview">
+
+                                    <li class="nav-item">
+                                        <a href="{{ Route('notas.index') }}"
+                                            class="nav-link
+    @if ($_SERVER['REQUEST_URI'] == '/RegistoAcademico/notas') active @endif
+    ">
+                                            <i class="fa fa-edit nav-icon"></i>
+                                            <p>Lan&ccedil;amento </p>
+                                        </a>
+                                    </li>
+
+                                    <li class="nav-item">
+                                        <a href="{{ Route('notas.notasTrimestraisshow') }}"
+                                            class="nav-link
+    @if ($_SERVER['REQUEST_URI'] == '/RegistoAcademico/notas/disciplinas/notasTrimestrais/show/dados') active @endif
+    ">
+                                            <i class="fa fa-edit nav-icon"></i>
+                                            <p>Pauta Trimestral </p>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                        @endcan
+
+
+                        @include("Componetes.menum-componente")
+                        @include("Componetes.menum-compo-outrop")
+
+
+
+
+{{--
+                        @if (Gate::check('Registar-Mensalidades') ||
+                                Gate::check('Visualizar-Mensalidades') ||
+                                Gate::check('Registar-Mensalidades') ||
+                                Gate::check('Visualizar-Mensalidades-Generico') ||
+                                Gate::check('Visualizar-Mensalidades-Pagamento')) --}}
+
+                     {{--       <li class="nav-item has-treeview  @if (
+                                $_SERVER['REQUEST_URI'] ==
+                                    '/aluno/mensalidade/Relatorio/detalhado/' .
+                                        (int) $dadourl[5] .
+                                        '/' .
+                                        (int) $dadourl[6] .
+                                        '/' .
+                                        (int) $dadourl[7] .
+                                        '' ||
+                                    $_SERVER['REQUEST_URI'] == '/aluno/mensalida' ||
+                                    $_SERVER['REQUEST_URI'] == '/aluno/mensalidade/mes' ||
+                                    $_SERVER['REQUEST_URI'] == '/aluno/mensalida/todas/todos' ||
+                                    $_SERVER['REQUEST_URI'] == '/RegistoAcademico/outrosPagamento/pagamentos' ||
+                                    $_SERVER['REQUEST_URI'] == '/aluno/mensalidade/Relatorio' ||
+                                    $_SERVER['REQUEST_URI'] == '/aluno/mensalidade/Relatorio/pagamentos' ||
+                                    $_SERVER['REQUEST_URI'] == '/aluno/mensalida/' . $idprocurado . '/edit') menu-open @endif">
+                                <a href="#" class="nav-link @if (
+                                    $_SERVER['REQUEST_URI'] ==
+                                        '/aluno/mensalidade/Relatorio/detalhado/' .
+                                            (int) $dadourl[5] .
+                                            '/' .
+                                            (int) $dadourl[6] .
+                                            '/' .
+                                            (int) $dadourl[7] .
+                                            '' ||
+                                        $_SERVER['REQUEST_URI'] == '/aluno/mensalida' ||
+                                        $_SERVER['REQUEST_URI'] == '/aluno/mensalidade/mes' ||
+                                        $_SERVER['REQUEST_URI'] == '/RegistoAcademico/outrosPagamento/pagamentos' ||
+                                        $_SERVER['REQUEST_URI'] == '/aluno/mensalidade/Relatorio/pagamentos' ||
+                                        $_SERVER['REQUEST_URI'] == '/aluno/mensalida/todas/todos' ||
+                                        $_SERVER['REQUEST_URI'] == '/aluno/mensalidade/Relatorio' ||
+                                        $_SERVER['REQUEST_URI'] == '/aluno/mensalida/' . $idprocurado . '/edit') active @endif">
+                                    <i class="fa fa-users fa fa-tachometer-alt"></i>
+                                    <p>
+                                        {{ session()->get('formadepagamentos') }}
+                                        <i class="right fa fa-angle-left"></i>
+                                    </p>
+                                </a>
+                                <ul class="nav nav-treeview  ">
+                                    @if (Gate::check('Visualizar-Mensalidades') || Gate::check('Registar-Mensalidades'))
+                                         //mensalidadesselecionar
+                                        <li class="nav-item">
+                                            <a href="{{ Route('mensalidade.meses') }}"
+                                                class="nav-link
+                @if (
+                    $_SERVER['REQUEST_URI'] == '/aluno/mensalidade/mes' ||
+                        $_SERVER['REQUEST_URI'] == '/aluno/mensalida/' . $idprocurado . '/edit') active @endif">
+                                                <i class="fa fa-money nav-icon"></i>
+                                                <p>Pagamento </p>
+                                            </a>
+                                        </li>
+                                    @endif
+                                @can('Visualizar-Mensalidades')
+    <li class="nav-item">
+                                                                                                                <a href="{{ Route('mensalida.todasMensalidadestodos') }}"
+                                                                                                                    class="nav-link  @if ($_SERVER['REQUEST_URI'] == '/aluno/mensalida/todas/todos') active @endif">
+                                                                                                                    <i class="fa fa-money nav-icon"></i>
+                                                                                                                    <p>Listas </p>
+                                                                                                                </a>
+                                                                                                            </li> -->
+                                    @endcan
+                                    @can('Visualizar-Mensalidades-Generico')
+                                        <li class="nav-item">
+                                            <a href="{{ Route('mensalidade.Relatorio') }}"
+                                                class="nav-link  @if (
+                                                    $_SERVER['REQUEST_URI'] ==
+                                                        '/aluno/mensalidade/Relatorio/detalhado/' .
+                                                            (int) $dadourl[5] .
+                                                            '/' .
+                                                            (int) $dadourl[6] .
+                                                            '/' .
+                                                            (int) $dadourl[7] .
+                                                            '' || $_SERVER['REQUEST_URI'] == '/aluno/mensalidade/Relatorio') active @endif">
+                                                <i class="fa fa-money nav-icon"></i>
+                                                <p>Rel&aacute;torio Generico </p>
+                                            </a>
+                                        </li>
+                                    @endcan
+                                    @can('Visualizar-Mensalidades-Pagamento')
+                                        <li class="nav-item">
+                                            <a href="{{ Route('mensalidade.pagamentosIndex') }}"
+                                                class="nav-link  @if ($_SERVER['REQUEST_URI'] == '/aluno/mensalidade/Relatorio/pagamentos') active @endif">
+                                                <i class="fa fa-money nav-icon"></i>
+                                                <p>Relatorios Pagamentos</p>
+                                            </a>
+                                        </li>
+                                    @endcan
+
+                                </ul>
+
+                        @endif
+						</li>
+--}}
+
+
+
+
+        </ul>
+
+        </li>
+        @endif
+
+
+
+
+
+        <!-- area adimin -->
+
+        @if (Gate::check('Criar-papel') ||
+                Gate::check('visualizar-usuarios') ||
+                Gate::check('Registo-Usuario') ||
+                Gate::check('criar-anoLectivo') ||
+                Gate::check('criar-Turma') ||
+                Gate::check('Apagar-usuario') ||
+                Gate::check('ver-operacoes') ||
+                Gate::check('visualizar-usuarios') ||
+                Gate::check('Atualizar-Usuario') ||
+                Gate::check('criar-Tabela-valores'))
+
+
+
+            <li class="nav-item has-treeview @if (
+                $_SERVER['REQUEST_URI'] == '/admin/Usuarios' ||
+                    $_SERVER['REQUEST_URI'] == '/admin/Usuarios/edit/' . $idprocurado . '' ||
+                    $_SERVER['REQUEST_URI'] == '/admin/Usuarios/create' ||
+                    $_SERVER['REQUEST_URI'] == '/admin/Usuarios/funcionarios' ||
+					  $_SERVER['REQUEST_URI'] == '/RegistoAcademico/notas/create' |
+                    $_SERVER['REQUEST_URI'] == '/RegistoAcademico/turma/atriburi/professor' ||
+                    $_SERVER['REQUEST_URI'] == '/RegistoAcademico/turma/create' ||
+                    $_SERVER['REQUEST_URI'] == '/RegistoAcademico/TabelaValores' ||
+                    $_SERVER['REQUEST_URI'] == '/RegistoAcademico/TabelaValores/show' ||
+                    $_SERVER['REQUEST_URI'] == '/RegistoAcademico/TabelaValores/create' ||
+                    $_SERVER['REQUEST_URI'] == '/RegistoAcademico/metodosdepagamentos/NovoPagamento' ||
+                    $_SERVER['REQUEST_URI'] == '/RegistoAcademico/ano/create' ||
+                    $_SERVER['REQUEST_URI']=="/RegistoAcademico/TabelaValores/".(int) $dadourl[3]."/edit"||
+                    $_SERVER['REQUEST_URI'] == '/RegistoAcademico/ano/' . $idprocurado . '/edit' ||
+                    $_SERVER['REQUEST_URI'] == '/admin/permissons/lista' ||
+                    $_SERVER['REQUEST_URI'] == '/admin/RegistoOperacoes/index' ||
+                    $_SERVER['REQUEST_URI'] == '/admin/permissons/papel/' . $idprocurado . '' ||
+                    $_SERVER['REQUEST_URI'] == '/admin/permissons/edit/' . $idprocurado . '') menu-open @endif">
+                <a href="#" class="nav-link  @if (
+                    $_SERVER['REQUEST_URI'] == '/admin/permissons/papel/' . $idprocurado . '' ||
+                        $_SERVER['REQUEST_URI'] == '/admin/permissons/edit/' . $idprocurado . '' ||
+                        $_SERVER['REQUEST_URI'] == '/admin/Usuarios' ||
+                        $_SERVER['REQUEST_URI']=="/RegistoAcademico/TabelaValores/".(int) $dadourl[3]."/edit"||
+                        $_SERVER['REQUEST_URI'] == '/admin/Usuarios/funcionarios' ||
+                        $_SERVER['REQUEST_URI'] == '/admin/Usuarios/create' ||
+                        $_SERVER['REQUEST_URI'] == '/RegistoAcademico/ano/create' ||
+                        $_SERVER['REQUEST_URI'] == '/RegistoAcademico/TabelaValores/show' ||
+                    $_SERVER['REQUEST_URI'] == '/RegistoAcademico/TabelaValores/create' ||
+                    $_SERVER['REQUEST_URI'] == '/RegistoAcademico/metodosdepagamentos/NovoPagamento' ||
+                        $_SERVER['REQUEST_URI'] == '/RegistoAcademico/turma/atriburi/professor' ||
+                        $_SERVER['REQUEST_URI'] == '/RegistoAcademico/turma/create' ||
+                        $_SERVER['REQUEST_URI'] == '/RegistoAcademico/TabelaValores' ||
+                        $_SERVER['REQUEST_URI'] == '/admin/Usuarios/funcionarios' ||
+                        $_SERVER['REQUEST_URI'] == '/admin/Usuarios/edit/' . $idprocurado . '' ||
+                        $_SERVER['REQUEST_URI'] == '/admin/RegistoOperacoes/index' ||
+                        $_SERVER['REQUEST_URI'] == '/RegistoAcademico/notas/create' ||
+						  $_SERVER['REQUEST_URI'] == '/RegistoAcademico/notas/create' |
+                        $_SERVER['REQUEST_URI'] == '/RegistoAcademico/ano/' . $idprocurado . '/edit' ||
+                        $_SERVER['REQUEST_URI'] == '/admin/permissons/lista') active @endif ">
+                    <i class="nav-icon fa fa-cogs"></i>
+                    <p>
+                        Gest&atilde;o administrativa
+                        <i class="right fa fa-angle-left"></i>
+                    </p>
+                </a>
+                <ul class="nav nav-treeview">
+
+
+                    @if (Gate::check('criar-anoLectivo') || Gate::check('criar-Turma') || Gate::check('criar-Tabela-valores'))
+                        <li class="nav-item has-treeview @if (
+                            $_SERVER['REQUEST_URI'] == '/RegistoAcademico/ano/' . $idprocurado . '/edit' ||
+                                $_SERVER['REQUEST_URI'] == '/RegistoAcademico/turma/create' ||
+                                $_SERVER['REQUEST_URI'] == '/RegistoAcademico/TabelaValores' ||
+                                $_SERVER['REQUEST_URI'] == '/RegistoAcademico/turma/atriburi/professor' ||
+                                $_SERVER['REQUEST_URI'] == '/RegistoAcademico/TabelaValores/show' ||
+                    $_SERVER['REQUEST_URI'] == '/RegistoAcademico/TabelaValores/create' ||
+                    $_SERVER['REQUEST_URI'] == '/RegistoAcademico/metodosdepagamentos/NovoPagamento' ||
+                    $_SERVER['REQUEST_URI']=="/RegistoAcademico/TabelaValores/".(int) $dadourl[3]."/edit"||
+								  $_SERVER['REQUEST_URI'] == '/RegistoAcademico/notas/create' |
+                                $_SERVER['REQUEST_URI'] == '/RegistoAcademico/ano/create') menu-open @endif">
+                            <a href="#" class="nav-link  @if (
+                                $_SERVER['REQUEST_URI'] == '/RegistoAcademico/ano/' . $idprocurado . '/edit' ||
+                                    $_SERVER['REQUEST_URI'] == '/RegistoAcademico/turma/create' ||
+                                    $_SERVER['REQUEST_URI'] == '/RegistoAcademico/TabelaValores' ||
+									  $_SERVER['REQUEST_URI'] == '/RegistoAcademico/notas/create' |
+                                      $_SERVER['REQUEST_URI'] == '/RegistoAcademico/TabelaValores/show' ||
+                    $_SERVER['REQUEST_URI'] == '/RegistoAcademico/TabelaValores/create' ||
+                    $_SERVER['REQUEST_URI'] == '/RegistoAcademico/metodosdepagamentos/NovoPagamento' ||
+                    $_SERVER['REQUEST_URI']=="/RegistoAcademico/TabelaValores/".(int) $dadourl[3]."/edit"||
+                                    $_SERVER['REQUEST_URI'] == '/RegistoAcademico/turma/atriburi/professor' ||
+                                    $_SERVER['REQUEST_URI'] == '/RegistoAcademico/ano/create') active @endif ">
+                                <i class="nav-icon fa fa-cogs"></i>
+                                <p>
+                                    Configura&ccedil;&atilde;o
+                                    <i class="right fa fa-angle-left"></i>
+
+                                </p>
+
+
+                            </a>
+                            <ul class="nav nav-treeview">
+
+                                @can('criar-anoLectivo')
+                                    <li class="nav-item">
+                                        <a href="{{ Route('ano.create') }}"
+                                            class="nav-link  @if (
+                                                $_SERVER['REQUEST_URI'] == '/RegistoAcademico/ano/' . $idprocurado . '/edit' ||
+                                                    $_SERVER['REQUEST_URI'] == '/RegistoAcademico/ano/create') active @endif">
+                                            <i class="fa fa-user-circle-o nav-icon"></i>
+                                            <p>Ano Lectivo </p>
+                                        </a>
+                                    </li>
+                                @endcan
+                                @can('criar-Turma')
+                                    <li class="nav-item">
+                                        <a href="{{ Route('turma.create') }}"
+                                            class="nav-link  @if ($_SERVER['REQUEST_URI'] == '/RegistoAcademico/turma/create') active @endif">
+                                            <i class="fa fa-user-circle-o nav-icon"></i>
+                                            <p>Criar Turma </p>
+                                        </a>
+                                    </li>
+                                @endcan
+                                @can('criar-Tabela-valores')
+                                    <li class="nav-item">
+                                        <a href="/RegistoAcademico/TabelaValores/show"
+                                            class="nav-link  @if (
+                                                $_SERVER['REQUEST_URI'] == '/RegistoAcademico/TabelaValores/show' ||
+                    $_SERVER['REQUEST_URI'] == '/RegistoAcademico/TabelaValores/create' ||
+                    $_SERVER['REQUEST_URI']=="/RegistoAcademico/TabelaValores/".(int) $dadourl[3]."/edit"||
+                    $_SERVER['REQUEST_URI'] == '/RegistoAcademico/metodosdepagamentos/NovoPagamento' ||
+                                                $_SERVER['REQUEST_URI'] == '/RegistoAcademico/TabelaValores/create' ||
+                                                    $_SERVER['REQUEST_URI'] == '/RegistoAcademico/TabelaValores') active @endif">
+                                            <i class="fa fa-user-circle-o nav-icon"></i>
+                                            <p>Tabela de Valores  </p>
+                                        </a>
+                                    </li>
+                                @endcan
+
+
+                                @can('criar-Tabela-valores')
+                                    <li class="nav-item">
+                                        <a href="{{ Route('notas.create') }}"
+                                            class="nav-link  @if ($_SERVER['REQUEST_URI'] == '/RegistoAcademico/notas/create') active @endif">
+                                            <i class="fa fa-user-circle-o nav-icon"></i>
+                                            <p>Classes </p>
+                                        </a>
+                                    </li>
+                                @endcan
+                            </ul>
+
+                        </li>
+                    @endif
+                    @if (Gate::check('visualizar-usuarios') || Gate::check('Apagar-usuario') || Gate::check('Atualizar-Usuario'))
+                        <li class="nav-item">
+                            <a href="{{ Route('Usuarios.index') }}"
+                                class="nav-link  @if (
+                                    $_SERVER['REQUEST_URI'] == '/admin/Usuarios' ||
+                                        $_SERVER['REQUEST_URI'] == '/admin/Usuarios/edit/' . $idprocurado . '' ||
+                                        $_SERVER['REQUEST_URI'] == '/admin/Usuarios/funcionarios') active @endif">
+                                <i class="fa fa-user-circle-o nav-icon"></i>
+                                <p>Lista de usuários </p>
+                            </a>
+                        </li>
+                    @endif
+
+                    @can('Registo-Usuario')
+                        <li class="nav-item">
+                            <a href="{{ Route('Usuarios.create') }}"
+                                class="nav-link
+                 @if ($_SERVER['REQUEST_URI'] == '/admin/Usuarios/create') active @endif
+                ">
+                                <i class="fa fa-edit"></i>
+                                <p>Registar usuários </p>
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a href="{{ Route('turma.atribuirturma') }}"
+                                class="nav-link
+                 @if ($_SERVER['REQUEST_URI'] == '/RegistoAcademico/turma/atriburi/professor') active @endif
+                ">
+                                <i class="fa fa-edit"></i>
+                                <p>atribuir turma </p>
+                            </a>
+                        </li>
+                        @can('ver-operacoes')
+                            <li class="nav-item  ">
+                                <a href="{{ Route('Usuarios.RegistoOperacoes') }}"
+                                    class="nav-link  @if ($_SERVER['REQUEST_URI'] == '/admin/RegistoOperacoes/index') active @endif">
+                                    <i class="fa fa-cog nav-icon"></i>
+                                    <p>Operacoes de Usuarios</p>
+                                </a>
+                            </li>
+                        @endcan
+                    @endcan
+                    @can('Criar-papel')
+                        <li class="nav-item    ">
+                            <a href="{{ Route('Admin.permissons.lista') }}"
+                                class="nav-link @if (
+                                    $_SERVER['REQUEST_URI'] == '/admin/permissons/papel/' . $idprocurado . '' ||
+                                        $_SERVER['REQUEST_URI'] == '/admin/permissons/edit/' . $idprocurado . '' ||
+                                        $_SERVER['REQUEST_URI'] == '/admin/permissons/lista') active @endif">
+                                <i class="fa fa-cog nav-icon"></i>
+                                <p>Permissões do sistema </p>
+                            </a>
+                        </li>
+                    @endcan
+
+
+                    @can('Configuracoes-Sisitema')
+                        <li class="nav-item ">
+                            <a href="{{ Route('Configuracoes.edit', 1) }}"
+                                class="nav-link   @if ($_SERVER['REQUEST_URI'] == '/admin/Configuracoes/' . $idprocurado . '/edit') active @endif ">
+                                <p> </i>
+                                    configura&ccedil;&atilde;oes
+
+                                </p>
+                            </a>
+                        </li>
+                    @endcan
+
+
+
+
+
+                </ul>
+            </li>
+
+
+            </ul>
+
+            {{-- <li class="nav-item ">
+                <a href=" {{ Route('Mpesa.tela1', 124) }}"
+                    class="nav-link  @if ($_SERVER['REQUEST_URI'] == '/Financas') active @endif">
+                    <i class="fa fa-cog nav-icon"></i>
+                    <p>Mpesa </p>
+                </a>
+            </li>
+
+            </li>
+            <li class="nav-item ">
+                <a href=" {{ Route('sms.dadosshow') }}"
+                    class="nav-link  @if ($_SERVER['REQUEST_URI'] == '/Financas') active @endif">
+                    <i class="fa fa-cog nav-icon"></i>
+                    <p>sms </p>
+                </a>
+            </li> --}}
+
+            </li>
+
+        @endif
+
+        </ul>
+    </nav>
+    <!-- /.sidebar-menu -->
+

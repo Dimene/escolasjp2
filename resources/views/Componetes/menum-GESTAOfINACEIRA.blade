@@ -1,0 +1,41 @@
+ <li class="nav-item has-treeview  nav-link  @if ($_SERVER['REQUEST_URI'] == '/Financas/Banco/configuracoes' || $_SERVER['REQUEST_URI'] == '/Financas') menu-open @endif ">
+                <a href="#" class="nav-link   @if ($_SERVER['REQUEST_URI'] == '/Financas/Banco/configuracoes' || $_SERVER['REQUEST_URI'] == '/Financas') active @endif">
+                    <i class="nav-icon fa fa-money"></i>
+                    <p>
+                        Gest&atilde;o de Finan&ccedil;as
+                        <i class="right fa fa-angle-left"></i>
+                    </p>
+                </a>
+
+                <ul class="nav nav-treeview">
+                    <li class="nav-item has-treeview @if ($_SERVER['REQUEST_URI'] == '/Financas/Banco/configuracoes' || $_SERVER['REQUEST_URI'] == '/Financas') menu-open @endif">
+
+                        <a href="#" class="nav-link @if ($_SERVER['REQUEST_URI'] == '/Financas/Banco/configuracoes' || $_SERVER['REQUEST_URI'] == '/Financas') active @endif">
+                            <i class="nav-icon fa fa-bank "></i>
+                            <p>
+                                Refenr&ecirc;ncias Bancarias
+                                <i class="right fa fa-angle-left"></i>
+                            </p>
+                        </a>
+                        <ul class="nav nav-treeview">
+                            <li class="nav-item    ">
+                                <a href=" {{ Route('Financas.create') }}"
+                                    class="nav-link  @if ($_SERVER['REQUEST_URI'] == '/Financas/Banco/configuracoes') active @endif">
+                                    <i class="fa fa-cog nav-icon"></i>
+                                    <p>Gerar </p>
+                                </a>
+                            </li>
+                            <li class="nav-item ">
+                                <a href=" {{ Route('Financas.index') }}"
+                                    class="nav-link  @if ($_SERVER['REQUEST_URI'] == '/Financas') active @endif">
+                                    <i class="fa fa-cog nav-icon"></i>
+                                    <p>Visualizar </p>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
+
+
+
+            </li>

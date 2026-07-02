@@ -1,0 +1,36 @@
+<!-- Sidebar Menu -->
+<nav class="mt-2">
+  <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu">
+
+    <!-- DASHBOARD -->
+    <li class="nav-item">
+      <a href="/dashboard" class="nav-link active">
+        <i class=" fa  fa-lg fa-tachometer-alt"></i>
+        <p>Painel Principal</p>
+      </a>
+    </li>
+
+    {{-- REGISTO ACADEMICO --}}
+@include("Componetes.menum-REGISTOACADEMICO")
+    <!-- GESTAO ADMINISTRATIVA -->
+@include("Componetes.menum-gESTAOaDMINSTEATIVA")
+
+    <!-- GESTAO FINANCEIRA -->
+   @include("Componetes.menum-GESTAOfINACEIRA2")
+    <!-- GESTAO PEDAGOGICA -->
+
+  @include("Componetes.menum-gESTAOpEDAGOGICA")
+    <!-- COMUNICACAO -->
+ @include("Componetes.menum-COMUNICACAO")
+
+    <!-- RELATORIOS -->
+
+
+    <!-- CONFIGURACOES -->
+
+
+    <!-- ADMINISTRACAO AVANCADA -->
+
+  </ul>
+</nav>
+<!-- /.sidebar-menu -->

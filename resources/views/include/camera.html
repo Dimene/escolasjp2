@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pt-pt">
+
+<head>
+    <meta charset="UTF-8">
+<meta>
+<title>webCam </title>
+</head>
+<body>
+    <video autoplay ></video>
+    <canvas></canvas>
+    <button id="butao">Tirar foto</button>
+    <script >
+
+        var video =document.querySelector('video');
+        navigator.mediaDevices.getUserMedia({video:true})
+        .then(stream=>{
+            video.srcObject=stream;
+            video.play();
+        })
+        .catch(error=>{
+            console.log(error);
+        });
+
+         document.getElementById('butao').addEventListener('click',()=>{
+            var canvas =document.querySelector("canvas");
+            canvas.height=video.videoHeight;
+            canvas.width=video.videoWidth;
+            var context=canvas.getContext('2d');
+            context.drawImage(video,0,0);
+            var link=document.createElement('a');
+            link.download='foto.png';
+            link.href=canvas.toDataURL();
+          video.pause();
+            link.textContent='clique para baixar a imagem';
+          document.body.appendChild(link);
+         });
+    </script>
+</body>
+</html>

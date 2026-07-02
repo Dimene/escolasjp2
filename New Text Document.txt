@@ -1,0 +1,5 @@
+banco de daddos incluir id na tabela mensalidades 
+banco de dados incluir id na visao mensalidadesview 
+incluir deleted at na tabela aluno-classe 
+INCLUIR DELETED AT NA TABELA MENSALIDADE 
+INCLUIR VISAO AALUNOSINSCRITOSAPAGADOS 

@@ -1,0 +1,7 @@
+[19-May-2026 16:59:46 UTC] PHP Fatal error:  Uncaught RuntimeException: Composer detected issues in your platform: Your Composer dependencies require a PHP version ">= 8.3.0". You are running 8.2.30. in /home/sgemozco/escolasaojoaopauloii.sgemoz.com/vendor/composer/platform_check.php:26
+Stack trace:
+#0 /home/sgemozco/escolasaojoaopauloii.sgemoz.com/vendor/composer/autoload_real.php(25): require()
+#1 /home/sgemozco/escolasaojoaopauloii.sgemoz.com/vendor/autoload.php(22): ComposerAutoloaderInit108e76ef25afb39f28a910c4aec8657e::getLoader()
+#2 /home/sgemozco/escolasaojoaopauloii.sgemoz.com/artisan(18): require('/home/sgemozco/...')
+#3 {main}
+  thrown in /home/sgemozco/escolasaojoaopauloii.sgemoz.com/vendor/composer/platform_check.php on line 26

@@ -1,0 +1,603 @@
+<!-- Main content -->
+<div class="content">
+    <div class="container-fluid">
+        <div class="card">
+            <div class="informacao"></div>
+            <div class="row">
+                <div class="col-md-12">
+                    <?php
+                    $multa = 0;
+                    $estadomensalidade = '';
+                    ?>
+
+                    <!-- Resumo de status dos meses -->
+
+                    {{-- {{ dd() }} --}}
+                    <div class="status-summary mb-4">
+                        <div class="row">
+                            @php
+                                $totalMeses = count($alunoMesalidade);
+                                $pagos = 0;
+                                $atrasados = 0;
+                                $pendentes = 0;
+
+                                foreach ($alunoMesalidade as $m) {
+                                    if($m['Estados'] == 'Pago') $pagos++;
+                                    elseif(Carbon\carbon::create($m['Data_limite']) < now()) $atrasados++;
+                                    else $pendentes++;
+                                }
+                            @endphp
+
+                            <div class="col-md-4">
+                                <div class="alert alert-success">
+                                    <h5 class="mb-0">Pagos: {{ $pagos }}/{{ $totalMeses }}</h5>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="alert alert-danger">
+                                    <h5 class="mb-0">Atrasados: {{ $atrasados }}</h5>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="alert alert-warning">
+                                    <h5 class="mb-0">Pendentes: {{ $pendentes }}</h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="profile-block">
+                        <ul>
+                            <li><span class="font-400"><b>Nome do Aluno:</b> </span><span class="profile-right">{{ $aluno->nome }}</span></li>
+                            <li><span class="font-400"><b>Sexo:</b> </span><span class="profile-right">{{ $aluno->sexo }}</span></li>
+                            <li><span class="font-400"><b>Idade:</b> </span>
+                                <span class="profile-right">{{ Carbon\Carbon::now()->format('y') - Carbon\Carbon::createFromDate($aluno->dataNascimento)->format('y') }}</span>
+                            </li>
+                            <li><span class="font-400"><b>Tipo:</b> </span><span class="profile-right">
+                                @if ($aluno->Tipo == 'B') Bolseiro @else Normal @endif
+                                </span>
+                            </li>
+                            <li><span class="font-400"><b>Classe:</b> </span><span class="profile-right">{{ $aluno->classe }}</span></li>
+                        </ul>
+						</div>
+
+                        <div class="card no-shadow my-4">
+                            <center>
+                                <h5><b>Pagamento de {{ $alunoMesalidade[0]['tipoPagamento'] }}:</b></h5>
+                            </center>
+
+
+                                                    <div class="row mb-3">
+                            <div class="col-md-12 text-right">
+                                <button type="button" class="btn btn-info toggle-all-months">
+                                    <i class="fas fa-calendar-alt"></i> Mostrar Todos os Meses
+                                </button>
+                            </div>
+                        </div>
+                            <form action="{{ Route('mensalida.update', $aluno->Aluno_classe_id) }}" method="POST" onsubmit="this.enviar.value='Enviando....'; this.enviar.disabled=true"
+                                id="formulario1pagamento" >
+                                @method('PUT')
+                                @csrf
+                                <div class="row">
+                                    <input value="{{ $alunoMesalidade[0]['tipoPagamento_id'] }}" type="hidden" name="tipopagamentoapagar">
+                                    <input value="{{ $flag }}" type="hidden" name="flag">
+
+                                    @if ($flag == 2)
+                                        <div class="col-12 container-fluid">
+                                            <center>
+                                                <h6>Prazo
+                                                    <input name="mesid" type="hidden" value="{{ $datalimite2[0] . 'd' . $datalimite2[1] }}">
+                                                    {{ Carbon\carbon::create($datalimite2[0])->format('d/m/Y') }} até
+                                                    {{ Carbon\carbon::create($datalimite2[1])->format('d/m/Y') }}
+                                                </h6>
+                                            </center>
+                                        </div>
+                                    @endif
+
+                                    <div class="form-group col" @if ($flag == 2) style="display:none" @endif>
+                                        <label>Mês:</label>
+                                        <select class="form-control select-mes" name="mesid">
+                                            <?php $mesCorente = $mesid; ?>
+                                            @foreach ($messes as $key => $messesvalue)
+                                                <option value="{{ $messesvalue['id'] }}"
+                                                    @if ($messesvalue['id'] == $mesid)
+                                                        <?php $mesCorente = $messesvalue['id']; ?> selected
+                                                    @endif
+                                                    data-status="{{ $alunoMesalidade[$key]['Estados'] ?? '' }}"
+                                                    data-limit="{{ Carbon\carbon::create($messesvalue['Data_limite'])->format('d/m/Y') }}">
+                                                    {{ $messesvalue['Descricao'] }}
+                                                    @if(isset($alunoMesalidade[$key]['Estados']))
+                                                        - ({{ $alunoMesalidade[$key]['Estados'] }})
+                                                    @endif
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group col">
+                                        <label>Via de pagamento</label>
+                                        <select class="form-control tipopagamento" name="tipopagamento">
+                                            @foreach ($tipoPagamento as $metodoPagamento)
+                                                <option value="{{ $metodoPagamento->Descricao }}">
+                                                    {{ $metodoPagamento->Descricao }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+
+                                @foreach ($alunoMesalidade as $key => $messesvalue)
+                                    <?php
+                                    $ano = $messesvalue['anolectivo'];
+                                    $datalimite = ($flag == 2) ? $datalimite2[1] : $messesvalue['Data_limite'];
+                                    $estadomensalidade = $messesvalue['Estados'];
+
+                                    $dataLimite = Carbon\carbon::create($datalimite);
+                                    $dataAtual = Carbon\carbon::now();
+                                    $diasAtraso = $dataAtual->diffInDays($dataLimite);
+
+                                    $multa = 0;
+                                    $showMulta = false;
+
+                                    if ($dataAtual > $dataLimite && $messesvalue['Estados'] != 'Pago' && $valorMensalidade->multaP > 0) {
+                                        $multa = ($valorMensalidade->valorDescricao * ($valorMensalidade->multaP/100));
+                                        $showMulta = true;
+                                    }
+                                    ?>
+
+
+                                    <div class="month-container  " id="month-{{ $messesvalue['mes_id'] }}"
+                                         @if($messesvalue['mes_id'] != $mesCorente) style="display:none" @endif  >
+
+                                        <!-- Cabeçalho com informações do mês -->
+                                        <div class="month-header">
+                                            <h4>{{ $messesvalue['mes'] }} - {{ $messesvalue['anolectivo'] }}</h4>
+                                            <div class="month-status-badge">
+                                                <span class="badge
+                                                    @if($messesvalue['Estados'] == 'Pago') badge-success
+                                                    @elseif($dataAtual > $dataLimite) badge-danger
+                                                    @else badge-warning
+                                                    @endif">
+                                                    {{ $messesvalue['Estados'] }}
+                                                </span>
+                                            </div>
+                                            <div class="month-details">
+                                                <small>Prazo: {{ $dataLimite->format('d/m/Y') }}</small>
+                                                @if($showMulta)
+                                                    <small class="text-danger">Multa: {{ number_format($multa, 2, ',', '.') }} MT</small>
+                                                @endif
+                                            </div>
+                                        </div>
+
+                                        {{-- {{ dd($alunoMesalidade) }} --}}
+                                        <!-- Aviso de multa -->
+                                        @if ($showMulta)
+                                            <div class="alert alert-warning">
+                                                <div class="form-check">
+                                                    <input type="checkbox" value="{{ $multa }}"
+                                                           name="multaactiva{{ $messesvalue['mes_id'] }}"
+                                                           class="informacaoMultachcked" value="{{ $multa }}"  checked>
+                                                    <label class="form-check-label informacaoMulta">
+                                                        Mensalidade com multa de {{ $valorMensalidade->multaP }}%
+                                                        por atraso de {{ $diasAtraso }} dias
+                                                        ({{ number_format($multa, 2, ',', '.') }} MT)
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        @endif
+
+                                        <!-- Opções de pagamento -->
+                                        <div class="payment-options">
+                                            <div class="btn-group btn-group-toggle w-100" data-toggle="buttons">
+                                                <label class="btn remover_elemento
+                                                    @if($messesvalue['Estados'] != 'Pago') btn-success active
+                                                    @else btn-outline-secondary @endif">
+                                                    <input type="radio" name="options{{ $messesvalue['mes_id'] }}"
+													class="remover_elemento" data-mes="{{ $messesvalue['mes_id'] }}"
+                                                           value="Não Pago" autocomplete="off"
+                                                           @if($messesvalue['Estados'] != 'Pago') checked @endif>
+                                                    Não Pago
+                                                </label>
+                                                <label class="btn
+                                                    @if($messesvalue['Estados'] == 'Pago') btn-success active
+                                                    @else btn-outline-secondary @endif">
+                                                    <input type="radio" name="options{{ $messesvalue['mes_id'] }}" class="adicionar_elemento" data-mes="{{ $messesvalue['mes_id'] }}"
+                                                           value="Pago" autocomplete="off"
+                                                           @if($messesvalue['Estados'] == 'Pago') checked @endif>
+                                                    Pagar
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <!-- Formulário MPesa -->
+                                        <div class="mpesa-form" style="display:none">
+                                            <div class="row">
+                                                <div class="col-md-12 text-center">
+                                                    <img src="{{ asset('imageproceaament/mpesalogo.png') }}"
+                                                         alt="MPesa" class="img-fluid" style="max-height: 80px;">
+                                                </div>
+                                                @if($messesvalue['Estados'] != 'Pago')
+                                                    <div class="col-md-12 form-group">
+                                                        <label>Número de Telefone</label>
+                                                        <input class="form-control" type="text"
+                                                               name="numero{{ $messesvalue['mes_id'] }}"
+                                                               placeholder="Digite o número do MPesa">
+                                                    </div>
+                                                @else
+                                                    <div class="col-md-12 text-center">
+                                                        <span class="badge badge-success p-2">
+                                                            <i class="fas fa-check-circle"></i> Pagamento confirmado
+                                                        </span>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+
+
+                                <input name="multa" value="{{ $multa }}" type="hidden" />
+                                <input name="class" value="{{ $aluno->classe_id }}" type="hidden" />
+                                <input name="idclass" value="{{ $aluno->Aluno_classe_id }}" type="hidden" />
+                                <input name="mesid" value="{{ $mesid }}" type="hidden" />
+
+                                <div class="inforeversao"></div>
+
+
+                                <div class="modal-footer col-12">
+                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>
+                                    <button type="button" class="btn btn-primary float-right Guardar-mensalida" name="enviar">
+                                        <span class="submit-text">Guardar</span>
+                                        <span class="spinner-border spinner-border-sm d-none" role="status"></span>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Estilos melhorados */
+    .status-summary .alert {
+        margin-bottom: 0;
+        padding: 10px;
+        text-align: center;
+    }
+
+    .month-container {
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        padding: 15px;
+        margin-bottom: 20px;
+        transition: all 0.3s ease;
+    }
+
+    .month-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+    }
+
+    .month-status-badge .badge {
+        font-size: 14px;
+        padding: 5px 10px;
+    }
+
+    .month-details {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        margin-top: 5px;
+        font-size: 13px;
+        color: #6c757d;
+    }
+
+    .payment-options .btn {
+        transition: all 0.3s;
+    }
+
+    .mpesa-form {
+        margin-top: 15px;
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+    }
+
+    /* Efeito para o mês selecionado */
+    .month-container.selected {
+        border-color: #007bff;
+        box-shadow: 0 0 10px rgba(0, 123, 255, 0.25);
+    }
+</style>
+
+<script>
+
+
+
+$(document).on("click", ".toggle-all-months", function () {
+
+   $(this).addClass("esconder");
+   $(this).removeClass("toggle-all-months");
+   $(".Guardar-mensalida").addClass("Guardar-mensalida-todos");
+   $(".Guardar-mensalida-todos").removeClass("Guardar-mensalida");
+$(".remover_elemento").prop("disabled", true);
+
+
+$(this).html("<i class='fa fa-calendar-alt'></i> Mostrar Único");
+ $(".month-container").each(function () {
+
+        $(this).css("display", "block");
+    });
+});
+$(document).on("click", ".esconder", function () {
+
+$(this).html("<i class='fa fa-calendar-alt'></i> Mostrar todos Meses");
+$(this).removeClass("esconder");
+$(this).addClass("toggle-all-months");
+$(".remover_elemento").prop("disabled", false);
+
+   $(".Guardar-mensalida-todos").addClass("Guardar-mensalida");
+      $(".Guardar-mensalida").removeClass("Guardar-mensalida-todos");
+
+
+            var currentMonth = $('.select-mes').val();
+
+
+                updateMonthDisplay(currentMonth);
+
+
+});
+
+
+    jQuery(document).ready(function($) {
+        // Inicialização
+        $reverterpermisao=@json($reverterpermisao);
+
+        if($reverterpermisao==false){
+$(".remover_elemento").prop("disabled", true);
+        }
+        updateMonthDisplay($('.select-mes').val());
+
+        // Atualiza a exibição quando o mês é alterado
+        $(".select-mes").change(function() {
+            var selectedMonth = $(this).val();
+            $("input[name='mesid']").val(selectedMonth);
+            updateMonthDisplay(selectedMonth);
+        });
+
+        // Alterna entre formulário normal e MPesa
+        $(".tipopagamento").change(function() {
+            var paymentMethod = $(this).val();
+            var currentMonth = $('.select-mes').val();
+
+            if(paymentMethod === "Mpesa-Online") {
+                $(".month-container").hide();
+                $("#month-" + currentMonth + " .mpesa-form").show();
+            } else {
+                updateMonthDisplay(currentMonth);
+            }
+        });
+
+
+        // Estilização dos botões de pagamento
+        $(document).on('click', '.payment-options .btn', function() {
+            var parent = $(this).closest('.btn-group');
+            parent.find('.btn').removeClass('btn-success active').addClass('btn-outline-secondary');
+            $(this).removeClass('btn-outline-secondary').addClass('btn-success active');
+
+            // Atualiza o status no badge
+            var status = $(this).find('input').val() === "Pago" ? "Pago" : "Pendente";
+            var monthContainer = $(this).closest('.month-container');
+            var badge = monthContainer.find('.month-status-badge .badge');
+
+            badge.removeClass('badge-success badge-warning badge-danger');
+
+            if(status === "Pago") {
+                badge.addClass('badge-success').text('Pago');
+            } else {
+                var dataLimite = new Date(monthContainer.find('.month-details small:first').text().replace('Prazo: ', ''));
+                var hoje = new Date();
+
+                if(hoje > dataLimite) {
+                    badge.addClass('badge-danger').text('Atrasado');
+                } else {
+                    badge.addClass('badge-warning').text('Pendente');
+                }
+            }
+        });
+
+        // Envio do formulário
+        $(document).on('click',".Guardar-mensalida", function(e) {
+            e.preventDefault();
+
+            var submitBtn = $(this).find('.Guardar-mensalida');
+            submitBtn.prop('disabled', true);
+            submitBtn.find('.submit-text').addClass('d-none');
+            submitBtn.find('.spinner-border').removeClass('d-none');
+
+
+           var estado = [];
+estado[0] = $("[name='options" + $("[name='mesid']").val() + "']:checked").val();
+
+var mes = [];
+mes[0] = $("[name='mesid']").val();
+
+
+var multaactiva = [];
+multaactiva[0] =0;
+if($("[name='multaactiva" + $("[name='mesid']").val() + "']").is(':checked')){
+multaactiva[0] = $("[name='multaactiva" + $("[name='mesid']").val() + "']").val();
+}
+
+
+            var formData = {
+                "idclass": $("[name='idclass']").val(),
+                "flag": 1,
+                "mesid":mes ,
+                "tipopagamento": $(".tipopagamento").val(),
+                "tipopagamentoapagar": $("[name='tipopagamentoapagar']").val(),
+                "multaactiva": multaactiva,
+                "numero": $("[name='numero" + $("[name='mesid']").val() + "']").val(),
+                "estado": estado
+            };
+
+            if(parseInt(formData.flag) === 2) {
+                formData.estado = $("[name='options1']:checked").val();
+            }
+
+            console.log("Dados do formulário:", formData);
+
+            $.ajax({
+                url: "/RegistoAcademico/outrosPagamento/atualizardados/" + formData.idclass,
+                type: 'GET',
+                data: formData,
+                success: function(data) {
+                    if (data == 0) {
+                        $(".inforeversao").html(
+                            '<div class="alert alert-success">Reversão efetuada com sucesso!</div>'
+                        );
+                        setTimeout(function() {
+                            $(".inforeversao").fadeOut();
+                        }, 3000);
+                    } else {
+                        var tela_impressao = window.open('about:blank');
+                        tela_impressao.document.write(data);
+                        tela_impressao.window.print();
+                        tela_impressao.window.close();
+                    }
+                },
+                error: function() {
+                    $(".inforeversao").html(
+                        '<div class="alert alert-danger">Erro ao processar a requisição!</div>'
+                    );
+                },
+                complete: function() {
+                    submitBtn.prop('disabled', false);
+                    submitBtn.find('.submit-text').removeClass('d-none');
+                    submitBtn.find('.spinner-border').addClass('d-none');
+                }
+            });
+        });
+    });
+
+
+
+
+
+
+
+	     // Atualiza a exibição do mês selecionado
+        function updateMonthDisplay(monthId) {
+            // Oculta todos os meses
+            $(".month-container").hide();
+
+            // Mostra apenas o mês selecionado
+            $("#month-" + monthId).show();
+
+            // Atualiza o formulário MPesa conforme necessário
+            if($(".tipopagamento").val() === "Mpesa-Online") {
+                $("#month-" + monthId + " .payment-options").hide();
+                $("#month-" + monthId + " .mpesa-form").show();
+            } else {
+                $("#month-" + monthId + " .payment-options").show();
+                $("#month-" + monthId + " .mpesa-form").hide();
+            }
+
+            // Atualiza o status no select
+            var status = $(".select-mes option:selected").data('status');
+            var limit = $(".select-mes option:selected").data('limit');
+            console.log("Mês selecionado: " + monthId + ", Status: " + status + ", Prazo: " + limit);
+        }
+
+
+
+
+</script>
+
+
+
+<script>
+    $(document).on("click", ".Guardar-mensalida-todos", function (e) {
+        const dados = @json($messes);
+        console.log("Dados recebidos:", dados);
+
+        var incompletos = [];
+        var inmulta = [];
+        var estado = [];
+
+        dados.forEach(function (e) {
+          // var  multaactiva= $("[name='multaactiva" + e.id + "']").is(':checked');
+            var valorSelecionado = $("[name='options" + e.id + "']:checked").val();
+
+            if (valorSelecionado==='Pago') {
+                incompletos.push(e.id);
+                estado.push('Pago');
+            }
+
+  if ($("[name='multaactiva" + e.id + "']").is(':checked')&& (valorSelecionado==='Pago') ) {
+                inmulta.push($("[name='multaactiva" + e.id + "']").val());
+
+            }
+			else if(!$("[name='multaactiva" + e.id + "']").is(':checked')&& (valorSelecionado==='Pago')){
+				 inmulta.push(0);
+			}
+
+
+
+
+        });
+
+
+
+		e.preventDefault();
+
+            var submitBtn2 = $(this).find('.Guardar-mensalida-todos');
+            submitBtn2.prop('disabled', true);
+            submitBtn2.find('.submit-text').addClass('d-none');
+            submitBtn2.find('.spinner-border').removeClass('d-none');
+var formData = {
+                "idclass": $("[name='idclass']").val(),
+                "flag": 1,
+                "mesid":incompletos ,
+                "tipopagamento": $(".tipopagamento").val(),
+                "tipopagamentoapagar": $("[name='tipopagamentoapagar']").val(),
+                "multaactiva":inmulta,
+                "numero": $("[name='numero" + $("[name='mesid']").val() + "']").val(),
+                "estado": estado
+            };
+
+
+       // console.log("Meses incompletos:", incompletos,inmulta,estado);
+ $.ajax({
+                url: "/RegistoAcademico/outrosPagamento/atualizardados/" + formData.idclass,
+                type: 'GET',
+                data: formData,
+                success: function(data) {
+
+                        var tela_impressao = window.open('about:blank');
+                        tela_impressao.document.write(data);
+                        tela_impressao.window.print();
+                        tela_impressao.window.close();
+
+                },
+                error: function() {
+                    $(".inforeversao").html(
+                        '<div class="alert alert-danger">Erro ao processar a requisição!</div>'
+                    );
+                },
+                complete: function() {
+                    submitBtn2.prop('disabled', false);
+                    submitBtn2.find('.submit-text').removeClass('d-none');
+                    submitBtn2.find('.spinner-border').addClass('d-none');
+                }
+            });
+    });
+</script>
+
+

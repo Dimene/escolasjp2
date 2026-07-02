@@ -1,0 +1,917 @@
+@extends('layouts.admin-Lti')
+@section('title', 'notas dos alunos')
+@section('content')
+
+<style>
+    :root {
+        --primary-color: #3498db;
+        --primary-dark: #2980b9;
+        --secondary-color: #2c3e50;
+        --accent-color: #e74c3c;
+        --success-color: #27ae60;
+        --light-gray: #f8f9fa;
+        --medium-gray: #e9ecef;
+        --dark-gray: #6c757d;
+        --border-radius: 8px;
+        --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        --transition: all 0.3s ease;
+    }
+
+    body {
+        background-color: #f5f7fa;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    /* Layout geral */
+    .content-wrapper {
+        background-color: #f5f7fa;
+        padding: 20px;
+        min-height: calc(100vh - 60px);
+    }
+
+    .card {
+        border-radius: var(--border-radius);
+        box-shadow: var(--box-shadow);
+        border: none;
+        margin-bottom: 20px;
+        transition: var(--transition);
+    }
+
+    .card:hover {
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+    }
+
+    .card-header {
+        background: linear-gradient(to right, var(--primary-color), var(--primary-dark));
+        color: white;
+        border-bottom: none;
+        border-radius: var(--border-radius) var(--border-radius) 0 0 !important;
+        padding: 12px 20px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        letter-spacing: 0.3px;
+    }
+
+    .card-header i {
+        margin-right: 8px;
+        font-size: 1rem;
+    }
+
+    .card-body {
+        padding: 20px;
+    }
+
+    /* Títulos */
+    h5, h6 {
+        color: var(--secondary-color);
+        font-weight: 600;
+    }
+
+    /* Lista de turmas - SCROLLABLE */
+    .turmas-container {
+        max-height: 350px;
+        overflow-y: auto;
+        padding-right: 5px;
+    }
+
+    .turmas-container::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .turmas-container::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+
+    .turmas-container::-webkit-scrollbar-thumb {
+        background: var(--primary-color);
+        border-radius: 10px;
+    }
+
+    .turmas-container::-webkit-scrollbar-thumb:hover {
+        background: var(--primary-dark);
+    }
+
+    .list-group-item {
+        border: none;
+        padding: 10px 12px;
+        margin-bottom: 6px;
+        border-radius: var(--border-radius) !important;
+        transition: var(--transition);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        background-color: white;
+        font-size: 0.9rem;
+        border-left: 3px solid transparent;
+    }
+
+    .list-group-item:hover {
+        background-color: rgba(52, 152, 219, 0.1);
+        transform: translateX(3px);
+        border-left-color: var(--primary-color);
+    }
+
+    .list-group-item.active {
+        background: linear-gradient(to right, var(--primary-color), var(--primary-dark));
+        color: white;
+        box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+        border-left-color: var(--secondary-color);
+    }
+
+    .list-group-item i {
+        margin-right: 10px;
+        font-size: 14px;
+        width: 20px;
+        text-align: center;
+    }
+
+    /* Formulários e selects - COMPACTOS */
+    .filtros-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+
+    .filtro-item {
+        flex: 1 1 200px;
+        min-width: 180px;
+    }
+
+    .form-group {
+        margin-bottom: 0;
+    }
+
+    .form-control, .form-select {
+        border-radius: var(--border-radius);
+        border: 1px solid #ddd;
+        padding: 8px 12px;
+        height: 38px;
+        font-size: 0.9rem;
+        transition: var(--transition);
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+    }
+
+    .form-label {
+        font-weight: 500;
+        color: var(--secondary-color);
+        margin-bottom: 4px;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    /* Área de conteúdo das notas - CARD SEPARADO */
+    .notas-section {
+        margin-top: 20px;
+    }
+
+    .conteudonotas {/*
+        background-color: white;
+        border-radius: var(--border-radius);
+        padding: 0;
+        min-height: 60px;
+        border: 1px solid #eee;
+        */
+    }
+
+    .Conteudotabela {/*
+        background-color: white;
+        border-radius: var(--border-radius);
+        padding: 15px;
+        margin-top: 15px;
+        border: 1px solid #eee;
+        overflow-x: auto;
+        */
+    }
+
+    /* Abas de disciplinas */
+    .nav-tabs {
+        border-bottom: 2px solid #dee2e6;
+        padding: 0 10px;
+        background-color: #f8f9fa;
+        border-radius: var(--border-radius) var(--border-radius) 0 0;
+    }
+
+    .nav-tabs .nav-link {
+        background-color: #f1f3f5;
+        color: #495057;
+        border: 1px solid #ced4da;
+        margin-right: 5px;
+        margin-bottom: -2px;
+        transition: all 0.2s ease;
+        border-radius: 4px 4px 0 0;
+        padding: 8px 16px;
+        font-size: 0.9rem;
+    }
+
+    .nav-tabs .nav-link:hover {
+        background-color: #e9ecef;
+        border-color: #adb5bd;
+    }
+
+    .nav-tabs .nav-link.active {
+        background-color: #ffffff !important;
+        color: #212529 !important;
+        border: 1px solid #ced4da;
+        border-bottom: 2px solid var(--primary-color) !important;
+        font-weight: 600;
+        transform: translateY(-2px);
+    }
+
+    /* Estatísticas rápidas */
+    .stats-mini-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 10px 15px;
+        border-radius: var(--border-radius);
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .stats-mini-card i {
+        font-size: 1.5rem;
+        opacity: 0.8;
+    }
+
+    .stats-mini-card .stats-info {
+        text-align: right;
+    }
+
+    .stats-mini-card .stats-label {
+        font-size: 0.8rem;
+        opacity: 0.9;
+    }
+
+    .stats-mini-card .stats-number {
+        font-size: 1.2rem;
+        font-weight: 700;
+    }
+
+    /* Loading */
+    .loading-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 150px;
+    }
+
+    .spinner-border {
+        width: 2.5rem;
+        height: 2.5rem;
+        color: var(--primary-color);
+    }
+
+    /* Breadcrumb */
+    .breadcrumb {
+        background-color: transparent;
+        padding: 0;
+        font-size: 0.85rem;
+        margin-bottom: 15px;
+    }
+
+    .breadcrumb-item a {
+        color: var(--primary-color);
+        text-decoration: none;
+        transition: var(--transition);
+    }
+
+    .breadcrumb-item a:hover {
+        color: var(--primary-dark);
+        text-decoration: underline;
+    }
+
+    /* Cards lado a lado */
+    .main-row {
+        display: flex;
+        flex-wrap: wrap;
+        margin: 0 -10px;
+    }
+
+    .main-row > [class*="col-"] {
+        padding: 0 10px;
+    }
+
+    /* Turmas card com altura fixa */
+    .turmas-card {
+        height: fit-content;
+        position: sticky;
+        top: 20px;
+    }
+
+    /* Container de filtros compacto */
+    .filtros-card {
+        margin-bottom: 15px;
+    }
+
+    /* Responsividade */
+    @media (max-width: 992px) {
+        .turmas-card {
+            position: relative;
+            top: 0;
+            margin-bottom: 20px;
+        }
+
+        .filtro-item {
+            flex: 1 1 100%;
+        }
+    }
+</style>
+    <style>
+        .mudarCor {
+            background-color: rgba(182, 173, 173, 0.504);
+
+        }
+    </style>
+    <!-- Content Wrapper. Contains page content -->
+    <div class="content-wrapper">
+        <!-- Content Header (Page header) -->
+        <div class="content-header">
+            <div class="container-fluid">
+                <div class="row ">
+                    <div class="col-sm-6">
+
+                    </div><!-- /.col -->
+                    <div class="col-sm-6">
+                        <ol class="breadcrumb float-sm-right">
+                            <li class="breadcrumb-item"><a href="#">Registo Académico</a></li>
+                            <li class="breadcrumb-item ">Tuma</li>
+                            <li class="breadcrumb-item active">notas</li>
+                        </ol>
+                    </div><!-- /.col -->
+                </div><!-- /.row -->
+            </div><!-- /.container-fluid -->
+        </div>
+
+        <input name="disciplina_id" value="1" type="hidden">
+        <input name="formulaTri" value="1" type="hidden">
+        <input name="formulaanual" value="1" type="hidden">
+
+
+
+<div class="card filtros-card">
+                <div class="card-header">
+                    <i class="fas fa-filter"></i> Filtros de Pesquisa
+                </div>
+
+
+<div class="card-body row">
+                    <div class="filtros-container col">
+                        <div class="filtro-item">
+                            <div class="form-group ">
+
+
+                    <select id="my-classe" class="form-control controler-classe-ano" name="">
+
+                        @foreach ($class as $classItem)
+                            @foreach ($classesprofessor as $item)
+                                @if ($classItem->id == $item->classe_id)
+                                    <option value="{{ $classItem->id }}">{{ $classItem->Descricao }}</option>
+                                @endif
+                            @endforeach
+                        @endforeach
+
+                    </select>
+                </div>
+                        </div>
+						</div>
+
+
+
+
+
+
+                        <div class="filtro-item col">
+                            <div class="form-group">
+
+                    <select id="my-anolectivo" class="form-control controler-classe-ano" name="">
+                        @foreach ($anolectivo as $anolectivoItem)
+                            @foreach ($anoslectivoprofessore as $anoslectivoprofessorItem)
+                                @if ($anoslectivoprofessorItem->ano_lectivo_id == $anolectivoItem->id)
+                                    <option value="{{ $anolectivoItem->id }}">{{ $anolectivoItem->anolectivo }}
+                                    </option>
+                                @endif
+                            @endforeach
+                        @endforeach
+                    </select>
+                </div>
+
+            </div>
+                        </div>
+
+                        </div>
+
+            <div class="card">
+<div class="card-header" ></div>
+                <div class=" cardeturmas pt-0 ">
+
+                    <div class="lista-Turmas col-12 listaturmasAdd ">
+                    </div>
+
+                    <div class="card-body bodynotas">
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+
+    </div>
+    </div>
+
+
+
+@push("scripts")
+
+
+
+
+<script src="{{ asset('Admin-LTE/plugins/jquery/jquery.min.js') }}"></script>
+
+
+
+    <script src="{{ asset('Admin-LTE/plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ asset('Admin-LTE/plugins/datatables/dataTables.bootstrap4.js') }}"></script>
+    <script src="{{ asset('Datatable/js/jquery.dataTables.min.js') }}"></script>
+<script src="https://cdn.datatables.net/fixedheader/3.4.0/js/dataTables.fixedHeader.min.js"></script>
+<script src="https://cdn.datatables.net/fixedcolumns/4.3.0/js/dataTables.fixedColumns.min.js"></script>
+
+
+
+
+
+
+
+        <script>
+
+
+
+            $(document).ready(function() {
+
+
+
+
+
+
+
+                $("#" + $("[name='turma_idController']").val() + "").addClass("active");
+                // buscarDivisano($("[name='turma_idController']").val());
+                // buscarnotas($("[name='turma_idController']").val(), $("[name='divisao_aolectivo']").val());
+
+
+
+                $dsip = $('#displina_iddados').attr('title');
+                $('[name="disciplina_id"]').val($('#displina_iddados')
+                    .val()
+                );;
+
+
+                classe = $("#my-classe").val();
+                ano = $("#my-anolectivo").val();
+                buscar_turmas(ano, classe);
+
+                $array = "<?php echo $preshow[0]->turma_id; ?>";
+               
+
+            });
+
+            $(document).on('change', "[name='divisao_aolectivo']", function() {
+                $(".Conteudotabela").empty("");
+                //$(".conteudonotas").empty();
+
+
+            });
+
+            $(document).on('click', ".turmaselecionada", function() {
+                $('.turmaselecionada').removeClass('active');
+                $(this).addClass('active');
+
+                buscar_turmaSelecionada($(this).attr('id'));
+
+
+            });
+
+
+
+            function buscar_turmas(ano, classe) {
+                $.ajax({
+                    url: '/RegistoAcademico/notas/turmasTrimestre/' + ano + '/' + classe + '',
+                    type: "GET",
+
+                    success: function(data, textStatus, jqXHR) {
+
+                        $(".lista-Turmas").html(data);
+
+                        // fim chamar turmas do ano
+
+                        $("[name='turma_idController']").val($("[key='0']").attr('id'));
+                        $("[key='0']").addClass('active');
+                        //  buscarDivisano($("[name='turma_idController']").val());
+
+                        //  buscarnotas($("[name='turma_idController']").val(),
+                        //$("[name='divisao_aolectivo']").val());
+
+                        $dsip = $('#displina_iddados').attr('title');
+                        //  buscarnotasportrimestreturma($dsip, $('#turmaid').val(), $("[name='divisao_aolectivo']")
+                        //      .val()  )
+
+                    }
+
+                });
+
+                $(document).on('change', ".controler-classe-ano", function() {
+
+                    $(".Conteudotabela").empty();
+                    $(".conteudonotas").empty();
+                    classe = $("#my-classe").val();
+                    ano = $("#my-anolectivo").val();
+                    buscar_turmas(ano, classe);
+                    $(".Conteudotabela").empty("");
+                    $("#" + $("[name='turma_idController']").val() + "").addClass("active");
+                    // buscarDivisano($("[name='turma_idController']").val());
+                    // buscarnotas($("[name='turma_idController']").val(), $("[name='divisao_aolectivo']").val());
+                    $(".Conteudotabela").empty("");
+                    $(".conteudonotas").empty();
+                    $(".bodynotas").empty();
+
+
+
+                });
+
+
+
+
+
+            }
+
+
+            $(document).on("click", ".btn-fecharTRimestre", function() {
+                jQuery.noConflict();
+                $("#FecharTrimestre").modal("show");
+            });
+
+
+            $(document).on("click", ".MediaDisciplina", function() {
+                jQuery.noConflict();
+                $("#criarFormula").modal("show");
+            });
+
+
+
+            $(document).on("click", ".MediaAnual", function() {
+                jQuery.noConflict();
+                $("#criarFormulaMedia").modal("show");
+            });
+
+
+            $(document).on('click', ".btn-avaliacaofeitas", function() {
+                $dados = ($(this).text().trim());
+                $variavel = $("[name='formmulacriada']").val().trim() + $dados;
+                $("[name='formmulacriada']").val($variavel.trim());
+
+
+            });
+
+            $(document).on('click', ".btn-avaliacaofeitasMedia", function() {
+    const $input = $("[name='formmulacriadaParamedia']");
+    const dados = $(this).text().trim();
+    let valorAtual = $input.val().trim();
+
+    // Evita duplicar a mesma sigla consecutivamente
+    if (!valorAtual.endsWith(dados)) {
+        valorAtual += dados;
+        $input.val(valorAtual.trim());
+    }
+
+    // Mantém o foco no campo de fórmula
+    $input.focus();
+});
+            // guardar formula e guardar notas
+            $(document).on("click", ".btn-guadarformulamedia ", function() {
+                jQuery.noConflict();
+                $("#criarFormula").modal("hide");
+                let valorformula = $("[name='formmulacriada']").val();
+                if (valorformula != "") {
+                    jQuery.noConflict();
+                    $("#criarFormula").modal("hide");
+                    guardaformulatriemstral(1);
+                } else {
+                    alert("o campo Formula Nao deve estar Fazio");
+                }
+            });
+
+
+            $(document).on("click", ".NotasPautaCaregar", function() {
+                jQuery.noConflict();
+                $("#criarFormula").modal("hide");
+                let valorformula = $("[name='formmulacriada']").val();
+
+
+               if (valorformula != "") {
+                    jQuery.noConflict();
+                    $("#criarFormula").modal("hide");
+                    guardaformulatriemstral(1);
+                } else {
+                    alert("o campo Formula Nao deve estar Fazio");
+                }
+
+
+
+
+            });
+
+
+   function guardardados($linhac){
+
+
+console.log($linha);
+
+   }
+
+
+
+            $(document).on("click", ".btn-guadarformulamediaAnual ", function() {
+                jQuery.noConflict();
+
+                $("#criarFormulaMedia").modal("hide");
+                let valorformula = $("[name='formmulacriadaParamedia']").val();
+                if (valorformula != "") {
+                    jQuery.noConflict();
+                    $("#criarFormula").modal("hide");
+                    guardaformulaAnual(2);
+                } else {
+                    alert("o campo Formula Nao deve estar Fazia");
+                }
+            });
+
+
+
+            function guardaformulatriemstral($flag) {
+  let disciplinaId=$(".disciplina_id.active").data("disciplina-id");
+         let trimestre=$("#my-divisao").val();
+          let liAtivo = document.querySelector(".turmaselecionada.active");
+				$formula=$("[name='formmulacriada']").val();
+			$("[name='formulaTri']").val($formula);
+
+                $.ajax({
+                    url: "/RegistoAcademico/notas/trimestre/guadarformulamedias/" + $flag + "",
+                    type: "post",
+                    dataType: "json",
+                    data: {
+                        "_token": $("[name='_token']").val(),
+                        "formula":$formula,
+                        "turma": liAtivo.id,
+                        "anolectivo": $("[name='anolectivo']").val(),
+                        "dados": "",
+                        "dadosid": ""
+
+
+                    },
+
+                    success: function(dados) {
+
+                        if (dados.alert === "success") {
+
+
+
+
+
+classe_disciplinas.forEach(function(e) {
+    console.log("Disciplina:", e.disciplina_id);
+
+    let divisao = trimestre[0].divisao;
+    let totalLinhas = $dadosparaEnvio.length; // `.count()` não existe em JS puro
+
+    for (let x = 0; x < totalLinhas; x++) {
+        let seletor = "table td[title='" + divisao + "NFDisp" + e.disciplina_id + "linha" + x + "']";
+        let celula = $(seletor);
+  celula.attr("formula",$("[name='formulaTri']").val());
+        if (celula.length) {
+            mediapordisciplina(celula);
+
+			var linha = celula.closest('tr');
+   var idAluno = linha.attr('dadosnota');
+
+
+			guardaLinhaBD(idAluno,organisarArraySava(linha));
+        } else {
+            console.warn("Célula não encontrada:", seletor);
+        }
+    }
+});
+
+
+
+                        //    buscar_turmaSelecionada(dados.turma);
+
+                            $(".informensage").fadeIn();
+                            $(".informensage").addClass("alert");
+                            $(".informensage").addClass("alert-success");
+                            $(".informensage").text(dados.Msg);
+                            $(".informensage").fadeOut(2500);
+
+
+                        }
+                    }
+                })
+            }
+function guardaformulaAnual($flag) {
+    const formula = $("[name='formmulacriadaParamedia']").val();
+    const formulaanual = formula; // atribui corretamente o valor
+
+    $("[name='formulaanual']").val(formulaanual);
+
+    $.ajax({
+        url: "/RegistoAcademico/notas/trimestre/guadarformulamedias/" + $flag,
+        type: "post",
+        dataType: "json",
+        data: {
+            "_token": $("[name='_token']").val(),
+            "formula": formula,
+            "turma": $("[name='turma']").val(),
+            "anolectivo": $("[name='anolectivo']").val()
+        },
+        success: function(dados) {
+            if (dados.alert === "success") {
+                $('#listadosalunos tbody tr').each(function() {
+                    const $linha = $(this);
+                    const $celula = $linha.children('td').eq(-2);
+
+                    $linha.children('td').eq(-2).attr("formulamediafinal", formulaanual);
+                    mediaAnual($celula); // aplica a função na célula correta
+                    guardarmediaAnual($celula); // aplica a função na célula correta
+                    Resultado($celula); // aplica a função na célula correta
+
+                });
+            }
+        }
+    });
+}
+
+
+
+
+function guardarmediaAnual($celula) {
+    const $linha = $celula.closest('tr');
+    const linhaIndex = parseInt($celula.attr("linha"));
+    const colunaMediaIndex = $linha.children('td').eq(-2).index();
+    const colunaResultadoIndex = $linha.children('td').last().index();
+
+    const id = $linha.attr('dadosNota');
+    const media = $dadosparaEnvio[linhaIndex]?.[colunaMediaIndex] || 0;
+    const resultado = $dadosparaEnvio[linhaIndex]?.[colunaResultadoIndex] || "";
+
+    console.log("ID:", id, "Média:", media, "Resultado:", resultado);
+
+    $.ajax({
+        url: "/RegistoAcademico/notas/trimestre/guadarMediaAnual/",
+        type: "post",
+        dataType: "json",
+        data: {
+            "_token": $("[name='_token']").val(),
+            "id": id,
+            "media": media,
+            "Resultado": resultado,
+            "anolectivo": $("[name='anolectivo']").val()
+        },
+        success: function(dados) {
+            console.log("✅ Média anual guardada com sucesso:", dados);
+        },
+        error: function(err) {
+            console.error("❌ Erro ao guardar média anual:", err);
+        }
+    });
+}
+
+
+function Resultado($celula) {
+
+    let resultado = "Aprovad";
+    let contar = 0;
+    let temNotaMuitoBaixa = false;
+
+    const $linha = $celula.closest("tr");
+
+    // pegar objeto da linha no DataTable
+    const row = $tabelatrimestral.row($linha);
+    const rowIndex = row.index();
+
+    // sexo do aluno
+    const sexo = $linha.find("td").eq(2).text().trim();
+
+    // percorrer médias das disciplinas
+    $linha.find("td[siglaDisp]").each(function () {
+
+        const sigla = $(this).attr("siglaDisp");
+        const nota = parseFloat($(this).text().trim());
+
+        if (!isNaN(nota)) {
+
+            // regra nota muito baixa
+          if ((nota >= 0 && nota <= 7)) {
+                temNotaMuitoBaixa = true;
+            }
+
+            if (nota <= 10) {
+
+                if (sigla === "P" || sigla === "M") {
+                    resultado = "Reprovad";
+                } else {
+                    contar++;
+                }
+
+            }
+
+        }
+        else{
+             resultado = "Reprovad";
+
+        }
+
+    });
+
+    // reprova direto
+    if (temNotaMuitoBaixa) {
+        resultado = "Reprovad";
+    }
+
+    // regra das 3 disciplinas
+    if (resultado === "Aprovad" && contar > 2) {
+        resultado = "Reprovad";
+    }
+
+    // genero
+    const sufixo = sexo === "F" ? "a" : "o";
+    const resultadoFinal = resultado + sufixo;
+
+    // última célula da linha
+    const $celulaResultado = $linha.find("td").last();
+    const colunaResultado = $celulaResultado.index();
+
+    // atualizar visual
+    $celulaResultado
+        .text(resultadoFinal)
+        .css("color", resultado === "Aprovad" ? "green" : "red")
+        .css("font-weight", "bold");
+
+    // atualizar node interno do DataTable
+    $tabelatrimestral.cell(rowIndex, colunaResultado).data(resultadoFinal);
+
+    return resultadoFinal;
+}
+
+
+
+
+
+            function buscar_turmaSelecionada($id) {
+
+
+
+                $.ajax({
+                    url: "/RegistoAcademico/notas/disciplinas/notasTrimestrais/" +
+                        $id + "",
+                    type: "GET",
+                    beforeSend: function() {
+                        $(".bodynotas").empty();
+                       $(".bodynotas").html(`
+    <div class="d-flex justify-content-center align-items-center" style="height: 250px;">
+        <img src="{{ asset('imageproceaament/loading.gif') }}"
+             alt="Carregando..."
+             style="width:120px; height:120px;">
+    </div>
+`);
+
+                    },
+
+                    success: function(data) {
+                        $(".bodynotas").html(data);
+                      //  inicializarDataTable();
+
+
+
+
+                    }
+                })
+
+            }
+
+
+
+
+
+
+        </script>
+
+@endpush
+
+@endsection

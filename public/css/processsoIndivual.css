@@ -1,0 +1,231 @@
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: DejaVu Sans;
+}
+
+body {
+    background: #fff;
+    color: #000;
+    font-size: 11pt;
+    line-height: 1.3;
+    margin: 0;
+    padding: 0;
+}
+
+/* Configuração para A3 landscape contendo 2 páginas A4 lado a lado */
+@page {
+    size: A3 landscape;
+    margin: 0;
+}
+
+.a3-page {
+    width: 420mm;
+    height: 297mm;
+    display: flex;
+    flex-direction: row;
+    position: relative;
+    background: white;
+    page-break-after: always;
+}
+
+/* Cada coluna representa uma página A4 vertical */
+.a4-column {
+    width: 210mm;
+    height: 297mm;
+    padding: 20mm;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    border-right: 1px dashed #ccc;
+}
+
+.a4-column:last-child {
+    border-right: none;
+}
+
+/* Cabeçalho estilo oficial */
+.header {
+    border: 2px solid #000;
+    padding: 8px 12px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.header h1 {
+    font-size: 14pt;
+    font-weight: bold;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.header .subtitle {
+    font-size: 10pt;
+    margin-top: 2px;
+}
+
+/* Informações da Escola */
+.school-info {
+    border: 1px solid #000;
+    padding: 8px;
+    margin-bottom: 12px;
+    font-size: 10pt;
+}
+
+.school-info .row {
+    display: flex;
+    margin-bottom: 4px;
+}
+
+.school-info .label {
+    font-weight: bold;
+    min-width: 80px;
+}
+
+/* Seções principais */
+.section {
+    margin-bottom: 12px;
+    page-break-inside: avoid;
+}
+
+.section-title {
+    font-size: 11pt;
+    font-weight: bold;
+    margin-bottom: 6px;
+    border-bottom: 1px solid #000;
+    padding-bottom: 2px;
+}
+
+/* Tabelas */
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9pt;
+    margin-top: 6px;
+}
+
+.table th {
+    border: 1px solid #000;
+    padding: 3px 4px;
+    background: #f0f0f0;
+    font-weight: bold;
+    text-align: center;
+}
+
+.table td {
+    border: 1px solid #000;
+    padding: 3px 4px;
+    text-align: left;
+    vertical-align: top;
+}
+
+/* Campos de dados */
+.data-field {
+    display: flex;
+    margin-bottom: 3px;
+    font-size: 10pt;
+}
+
+.field-label {
+    font-weight: bold;
+    min-width: 40mm;
+}
+
+.field-value {
+    flex: 1;
+    border-bottom: 1px dotted #000;
+    margin-left: 4px;
+    padding: 0 2px;
+    min-height: 5mm;
+}
+
+/* Foto do aluno */
+.photo-container {
+    position: absolute;
+    top: 26mm;
+    right: 10mm;
+    width: 40mm;
+    height: 50mm;
+    border: 1px solid #000;
+    background: #f9f9f9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8pt;
+    text-align: center;
+    padding: 1mm;
+}
+
+.photo-container img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: cover;
+}
+
+/* Assinaturas */
+.signatures {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 15mm;
+    padding-top: 5mm;
+}
+
+.signature-box {
+    text-align: center;
+    width: 45mm;
+}
+
+.signature-line {
+    border-top: 1px solid #000;
+    margin-top: 20mm;
+    padding-top: 2px;
+    font-size: 9pt;
+}
+
+/* Observações */
+.observations {
+    border: 1px solid #000;
+    min-height: 30mm;
+    padding: 4mm;
+    font-size: 10pt;
+    margin-top: 2mm;
+}
+
+/* Numeração de páginas */
+.page-number {
+    position: absolute;
+    bottom: 10mm;
+    right: 15mm;
+    font-size: 10pt;
+}
+
+/* Utilidades */
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.text-uppercase { text-transform: uppercase; }
+.bold { font-weight: bold; }
+.mt-1 { margin-top: 4px; }
+
+/* Para impressão */
+@media print {
+    body {
+        margin: 0;
+        padding: 0;
+        width: 420mm;
+        height: 297mm;
+    }
+
+    .a3-page {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    .a4-column {
+        border-right: 1px dashed #ccc;
+    }
+}
