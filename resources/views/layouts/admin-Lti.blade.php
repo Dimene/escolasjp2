@@ -482,6 +482,7 @@
                 <span class="brand-text font-weight-light">{{ session()->get('infosession')->TIpoSistema ?? 'Sistema' }}</span>
             </a>
             <div class="sidebar">
+            
                 @include('layouts.menum-master')
             </div>
         </aside>

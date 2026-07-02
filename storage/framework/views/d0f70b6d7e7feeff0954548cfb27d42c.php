@@ -482,6 +482,7 @@
                 <span class="brand-text font-weight-light"><?php echo e(session()->get('infosession')->TIpoSistema ?? 'Sistema'); ?></span>
             </a>
             <div class="sidebar">
+            
                 <?php echo $__env->make('layouts.menum-master', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
             </div>
         </aside>

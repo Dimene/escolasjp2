@@ -295,7 +295,7 @@ public function perfil()
 public function AtualizarPerfil(usuariosrequest $request, $id){
 
 
-$update =$this->usuario::where('id', $id)
+$update =User::where('id', $id)
 ->update([ 'name' =>$request->name ,
 'remember_token' =>$request->_token ,
 'Codigo' =>$request->codigo ,
@@ -305,7 +305,7 @@ if($update){
     if(isset($request['avatar-file'])){
 
 
-        $fotoAvatart=$this->usuario->find($id)->Avatar;
+        $fotoAvatart=User::find($id)->Avatar;
        //dd($fotoAvatart);
        //APAGAR a foto existente
        Storage::delete('profile/'.$fotoAvatart);  ;
@@ -381,7 +381,7 @@ public function fecharConta(request $request){
 public function updatesenha(Request $request, $id)
 {
 
-    $update =$this->usuario::where('id', $id)
+    $update =User::where('id', $id)
             ->update([ 'password' =>Hash::make($request->senha)]);
 
             $usuario= auth()->user()->id;
