@@ -6,10 +6,10 @@
     <title>Relatório Analítico de Pagamentos</title>
 
     <!-- Bootstrap 5 + Ícones + Fonts -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    {{-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"> --}}
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&display=swap" rel="stylesheet">
+    {{-- <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&display=swap" rel="stylesheet"> --}}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
 
     <style>
@@ -229,8 +229,8 @@
                 </div>
                 <div class="header-subtitle mt-2">
                     <i class="fas fa-calendar-alt me-1"></i> Período:
-                    {{ $outrosPagamentos->min('updated_at') ? date('d/m/Y', strtotime($outrosPagamentos->min('updated_at'))) : '---' }} —
-                    {{ $outrosPagamentos->max('updated_at') ? date('d/m/Y', strtotime($outrosPagamentos->max('updated_at'))) : '---' }}
+                    {{ $outrosPagamentos->min('data_pagamento') ? date('d/m/Y', strtotime($outrosPagamentos->min('data_pagamento'))) : '---' }} —
+                    {{ $outrosPagamentos->max('data_pagamento') ? date('d/m/Y', strtotime($outrosPagamentos->max('data_pagamento'))) : '---' }}
                     <span class="mx-2">•</span>
                     <i class="fas fa-receipt me-1"></i> {{ $outrosPagamentos->count() }} registos
                 </div>
@@ -249,7 +249,7 @@
         $totalPago = $outrosPagamentos->where('Estados', 'Pago')->sum('valorDescricao');
         $totalNaoPago = $outrosPagamentos->where('Estados', 'Não pago')->sum('valorDescricao');
         $mediaTicket = $outrosPagamentos->avg('valorDescricao') ?? 0;
-        $diasComMovimento = $outrosPagamentos->groupBy(function($i) { return date('Y-m-d', strtotime($i->updated_at)); })->count();
+        $diasComMovimento = $outrosPagamentos->groupBy(function($i) { return date('Y-m-d', strtotime($i->data_pagamento)); })->count();
         $mediaDiaria = $diasComMovimento > 0 ? $totalGeral / $diasComMovimento : 0;
     @endphp
 
@@ -263,7 +263,7 @@
     {{-- RELATÓRIO POR DATA, CLASSE E MÉTODO --}}
     @php
         $groupedByDate = $outrosPagamentos->groupBy(function($item) {
-            return date('Y-m-d', strtotime($item->updated_at));
+            return date('Y-m-d', strtotime($item->data_pagamento));
         })->sortKeysDesc();
     @endphp
 
@@ -289,14 +289,14 @@
                 </div>
 
                 {{-- Agrupar por classe --}}
-                @php 
-                    $groupedByClass = $itemsByDate->groupBy(function($item) { 
-                        return $item->classe ?? $item->classe_id ?? 'Sem classe'; 
-                    }); 
+                @php
+                    $groupedByClass = $itemsByDate->groupBy(function($item) {
+                        return $item->classe ?? $item->classe_id ?? 'Sem classe';
+                    });
                 @endphp
 
                 @foreach ($groupedByClass as $classeNome => $itemsByClass)
-                    @php 
+                    @php
                         $classUniqueId = 'class_' . preg_replace('/[^a-zA-Z0-9]/', '_', $classeNome) . '_' . $dateKey;
                     @endphp
                     <div class="class-card mb-4">
@@ -310,7 +310,7 @@
                             @php $groupedByMethod = $itemsByClass->groupBy(function($item) { return $item->metodo_pagamento ?? ($item->metodo_pagamento_id ? 'Método #'.$item->metodo_pagamento_id : 'Não definido'); }); @endphp
 
                             @foreach ($groupedByMethod as $metodoNome => $itemsByMethod)
-                                @php 
+                                @php
                                     $methodUniqueId = 'method_' . preg_replace('/[^a-zA-Z0-9]/', '_', $metodoNome) . '_' . preg_replace('/[^a-zA-Z0-9]/', '_', $classeNome) . '_' . $dateKey;
                                 @endphp
                                 <div class="method-group">
@@ -411,7 +411,7 @@ $(document).ready(function() {
         var classId = $(this).data('class-id');
         var contentDiv = $('#' + classId);
         var icon = $('[data-icon-id="' + classId + '"]');
-        
+
         // Toggle da classe de conteúdo
         if (contentDiv.hasClass('show')) {
             contentDiv.removeClass('show');
@@ -434,7 +434,7 @@ $(document).ready(function() {
         var methodId = $(this).data('method-id');
         var contentDiv = $('#' + methodId);
         var icon = $('[data-method-icon-id="' + methodId + '"]');
-        
+
         // Toggle da lista de alunos
         if (contentDiv.hasClass('show')) {
             contentDiv.removeClass('show');

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\registoAcademico;
 
 use App\Http\Controllers\Controller;
+use App\Models\detalhestabelavalores;
 use App\Models\registoAcademico\Aluno;
 use App\Models\registoAcademico\alunoClasse;
 use App\Models\registoAcademico\anolectivo;
@@ -791,24 +792,73 @@ public function pagamentos($ano, $classe, $data1, $data2, $tipo)
     // =========================
     // PAGAMENTOS
     // =========================
-    $outrosPagamentos = DB::table('outros_pagamentosview')
-    ->where("Estado","Pago")
 
-        ->whereBetween('updated_at', [
-            $dataInicio,
-            $dataFim
-        ])
-
-        ->whereIn('classe_id', $classesIds)
-
-
-        ->orderByDesc('updated_at')
-
-        ->get();
 
     // =========================
     // VIEW
     // =========================
+
+
+
+
+    $inicio = Carbon::parse($data1, 'Africa/Maputo')->startOfDay();
+    $fim = Carbon::parse($data2, 'Africa/Maputo')->endOfDay();
+
+
+
+    $dados = collect();
+
+        $pagamentos = detalhestabelavalores::where('tipo', $tipo)
+            ->where('anolectivo_id', $ano)
+            ->with([
+                'mensalidades' => function ($q) use ($inicio, $fim) {
+                    $q->where('Estado', 'Pago')
+                     ->whereNull('deleted_at')->with('alunoclasse','mes','metodopagamento')
+                        ->whereBetween('updated_at', [$inicio, $fim]);
+                }
+            ])
+            ->first();
+
+
+       $pagamentos?->mensalidades->map(function($e) use($dados,$pagamentos){
+         $dados->push((object)["aluno_classe_id"=>$e->alunoclasse->id,
+         'nome'=>$e->alunoclasse->aluno->nome,
+         'classe_id'=>$e->alunoclasse->classe_id,
+         'classe'=>$e->alunoclasse->classe->Descricao,
+         'anolectivo_id'=>$e->alunoclasse->anolectivo->id,
+         'anolectivo'=>$e->alunoclasse->anolectivo->anolectivo,
+         'tipo_pagamento_id'=>$pagamentos->tipo,
+         'tipo_pagamento_descricao'=>$pagamentos->Descricao,
+         'valorDescricao'=>$pagamentos->valorDescricao,
+         'data_pagamento'=>$e->data_pagamento,
+         'data_Inicio'=>$e->data_inicio,
+         'data_limite'=>$e->data_Fim,
+         'Ntalao'=>$e->Ntalao,
+         'Estados'=>$e->Estado,
+         'Multa'=>$e->Multa,
+         'mes_id'=>$e->mes_id,
+         'mes'=>$e->mes->Descricao,
+         'referencia'=>$e->referencia,
+         'deleted_at'=>$e->deleted_at,
+        //  'deleted_at'=>$e->deleted_at,
+         'metodo_pagamento'=>$e->metodopagamento->id,
+         'metodoPagDesc'=>$e->metodopagamento->Descricao,
+         ]);
+
+       });
+
+     $dados=  $dados->whereIn("classe_id",$classesIds);
+
+    // AGRUPAMENTO CORRETO (Collection)
+    $esperadoDetalhes = $dados->groupBy('data_pagamento')->map(function ($items) {
+        return (object)[
+            'data_pagamento' => $items->first()->data_pagamento,
+            'Classessize' => $items->pluck('classe_id')->unique()->count(),
+            'ClassesList' => $items->pluck('classe')->unique()->implode(', ')
+        ];
+    });
+
+    $outrosPagamentos = $dados;
     return view(
         'registoAcademico.outrosPagamento.relatoriospagamentos.pagamentos',
         compact(

@@ -8,6 +8,7 @@ use App\Imports\alunosImport;
 use App\Models\Admin\observadorSys;
 use App\Models\Admin\tipossaida;
 use App\Models\Admin\tranferencias_disistencias;
+use App\Models\detalhestabelavalores;
 use App\Models\modelmpesapay;
 use App\Models\registoAcademico\Aluno;
 use App\Models\registoAcademico\alunoClasse;
@@ -1390,50 +1391,76 @@ if (
         }
 
     }
+public function pagamentos($ano, $classe, $data1, $data2, $tipo)
+{
+    $inicio = Carbon::parse($data1, 'Africa/Maputo')->startOfDay();
+    $fim = Carbon::parse($data2, 'Africa/Maputo')->endOfDay();
 
-    // relatorio
-    public function pagamentos($ano, $classe, $data1, $data2, $tipo)
-    {
+    $classeArray = ($classe == 0)
+        ? classe::pluck('id')->toArray()
+        : classe::where('id', $classe)->pluck('id')->toArray();
 
-        $inicio = Carbon::parse($data1, 'Africa/Maputo')->startOfDay();
-        $fim = Carbon::parse($data2, 'Africa/Maputo')->endOfDay();
-        $classeArray = '';
-        if ($classe == 0) {
-            $classeArray = classe::all()->pluck('id')->toArray();
+    $dados = collect();
 
-        } else {
-            $classeArray = classe::where('id', $classe)->pluck('id')->toArray();
+    $pagamentos = detalhestabelavalores::where('tipo', $tipo)
+        ->where('anolectivo_id', $ano)
+        ->with([
+            'matriculas' => function ($q) use ($inicio, $fim, $classeArray) {
+                $q->where('estado', 'activo')
+                  ->whereIn('classe_id', $classeArray)
+                  ->whereNull('deleted_at')
+                  ->with(['metodopagamento'])
+                  ->whereBetween('updated_at', [$inicio, $fim]);
+            }
+        ])
+        ->first();
 
-        }
+    $pagamentos?->matriculas->each(function ($e) use ($dados, $pagamentos) {
+        $dados->push((object)[
+            "aluno_classe_id" => $e->id,
+            'nome' => $e->aluno->nome,
+            'classe_id' => $e->classe_id,
+            'classe' => $e->classe->Descricao,
+            'anolectivo_id' => $e->anolectivo->id,
+            'anolectivo' => $e->anolectivo->anolectivo,
+            'tipo_pagamento_id' => $pagamentos->tipo,
+            'tipo_pagamento_descricao' => $pagamentos->Descricao,
+            'valorDescricao' => $pagamentos->valorDescricao,
+            'data_pagamento' => $e->data_pagamento,
+            'data_Inicio' => $e->data_inicio,
+            'data_limite' => $e->data_Fim,
+            'Ntalao' => $e->Ntalao,
+            'estado' => $e->estado,
+            'Multa' => $e->Multa,
+            'mes_id' => $e->mes()->id,
+            'mes' => $e->mes()->Descricao,
+            'referencia' => $e->referencia,
+            'deleted_at' => $e->deleted_at,
+            'metodo_pagamento' => $e->metodopagamento?->id,
+            'metodoPagDesc' => $e->metodopagamento?->Descricao,
+        ]);
+    });
 
-        $esperadoDetalhes = DB::table('relatoriograficoview')
-            ->where('tipo_pagamento_id', $tipo)
-            ->where('deleted_at', null)
-            ->where('estado', 'activo')
-            ->whereIn('classe_id', $classeArray)
-            ->where('anolectivo_id', $ano)
-            ->whereBetween('data_pagamento', [$inicio, $fim])
-            ->select('data_pagamento',
-                DB::raw('COUNT(DISTINCT classe_id) as Classessize'),
-                DB::raw("GROUP_CONCAT(DISTINCT classe ORDER BY classe SEPARATOR ', ') as ClassesList")
+    // AGRUPAMENTO CORRETO (Collection)
+    $esperadoDetalhes = $dados->groupBy('data_pagamento')->map(function ($items) {
+        return (object)[
+            'data_pagamento' => $items->first()->data_pagamento,
+            'Classessize' => $items->pluck('classe_id')->unique()->count(),
+            'ClassesList' => $items->pluck('classe')->unique()->implode(', ')
+        ];
+    });
 
-            )->groupBy(['data_pagamento'])
-            ->get();
+    $outrosPagamentos = $dados;
 
-        $dados = DB::table('relatoriograficoview')
-            ->where('tipo_pagamento_id', $tipo)
-            ->where('deleted_at', null)
-            ->where('estado', 'activo')
-            ->whereIn('classe_id', $classeArray)
-            ->where('anolectivo_id', $ano)
-            ->whereBetween('data_pagamento', [$inicio, $fim])->get();
-
-        // dd($dados,$);
-        $outrosPagamentos=$dados;
-
-        return view('registoAcademico.relatoriospagamentos.pagamentos-Matricula', compact('esperadoDetalhes', 'outrosPagamentos', 'ano', 'inicio', 'fim', 'tipo'));
-
-    }
+    return view('registoAcademico.relatoriospagamentos.pagamentos-Matricula', compact(
+        'esperadoDetalhes',
+        'outrosPagamentos',
+        'ano',
+        'inicio',
+        'fim',
+        'tipo'
+    ));
+}
 
     public function pagamentosprint($ano, $classe, $data1, $data2, $tipo)
     {

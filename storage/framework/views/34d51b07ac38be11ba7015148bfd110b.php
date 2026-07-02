@@ -6,10 +6,10 @@
     <title>Relatório Analítico de Pagamentos</title>
 
     <!-- Bootstrap 5 + Ícones + Fonts -->
-    {{-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"> --}}
+    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    {{-- <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&display=swap" rel="stylesheet"> --}}
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
 
     <style>
@@ -225,7 +225,7 @@
 
 <div class="container py-4">
 
-    {{-- HEADER --}}
+    
     <div class="header-gradient text-white animate__animated animate__fadeInDown">
         <div class="row align-items-center">
             <div class="col-md-8">
@@ -234,26 +234,28 @@
                 </div>
                 <div class="header-subtitle mt-2">
                     <i class="fas fa-calendar-alt me-1"></i> Período:
-                    @if($outrosPagamentos->isNotEmpty())
-                        {{ \Carbon\Carbon::parse($outrosPagamentos->min('updated_at'))->format('d/m/Y') }} —
-                        {{ \Carbon\Carbon::parse($outrosPagamentos->max('updated_at'))->format('d/m/Y') }}
-                    @else
+                    <?php if($outrosPagamentos->isNotEmpty()): ?>
+                        <?php echo e(\Carbon\Carbon::parse($outrosPagamentos->min('updated_at'))->format('d/m/Y')); ?> —
+                        <?php echo e(\Carbon\Carbon::parse($outrosPagamentos->max('updated_at'))->format('d/m/Y')); ?>
+
+                    <?php else: ?>
                         ---
-                    @endif
+                    <?php endif; ?>
                     <span class="mx-2">•</span>
-                    <i class="fas fa-receipt me-1"></i> {{ $outrosPagamentos->count() }} registos
+                    <i class="fas fa-receipt me-1"></i> <?php echo e($outrosPagamentos->count()); ?> registos
                 </div>
             </div>
             <div class="col-md-4 text-md-end mt-3 mt-md-0">
                 <div class="header-subtitle">
-                    <i class="fas fa-sync-alt me-1"></i> Emissão: {{ now()->format('d/m/Y H:i') }}
+                    <i class="fas fa-sync-alt me-1"></i> Emissão: <?php echo e(now()->format('d/m/Y H:i')); ?>
+
                 </div>
             </div>
         </div>
     </div>
 
-    {{-- CARDS RESUMO --}}
-    @php
+    
+    <?php
         $totalGeral = $outrosPagamentos->sum('valorDescricao');
         $totalPago = $outrosPagamentos->where('estado', 'activo')->sum('valorDescricao');
         $totalNaoPago = 0; // Se não houver campo de estado pendente
@@ -272,22 +274,22 @@
         $groupedByDate = $outrosPagamentos->groupBy(function($item) {
             return \Carbon\Carbon::parse($item->data_pagamento)->format('Y-m-d');
         })->sortKeysDesc();
-    @endphp
+    ?>
 
     <div class="row g-4 mb-5 animate__animated animate__fadeInUp">
         <div class="col-md-3">
             <div class="summary-card">
                 <div class="summary-icon" style="background:#e3f2fd;color:#0d6efd;"><i class="fas fa-chart-line"></i></div>
                 <div class="summary-label">Total Arrecadado</div>
-                <div class="summary-value">{{ number_format($totalGeral,2,',','.') }} MT</div>
-                <small class="text-muted">em {{ $outrosPagamentos->count() }} transacções</small>
+                <div class="summary-value"><?php echo e(number_format($totalGeral,2,',','.')); ?> MT</div>
+                <small class="text-muted">em <?php echo e($outrosPagamentos->count()); ?> transacções</small>
             </div>
         </div>
         <div class="col-md-3">
             <div class="summary-card">
                 <div class="summary-icon" style="background:#d1fae5;color:#10b981;"><i class="fas fa-check-circle"></i></div>
                 <div class="summary-label">Total de Multas</div>
-                <div class="summary-value">{{ number_format($totalMultas,2,',','.') }} MT</div>
+                <div class="summary-value"><?php echo e(number_format($totalMultas,2,',','.')); ?> MT</div>
                 <small>valores adicionais</small>
             </div>
         </div>
@@ -295,7 +297,7 @@
             <div class="summary-card">
                 <div class="summary-icon" style="background:#fff3e0;color:#fd7e14;"><i class="fas fa-users"></i></div>
                 <div class="summary-label">Total Alunos</div>
-                <div class="summary-value">{{ $totalAlunos }}</div>
+                <div class="summary-value"><?php echo e($totalAlunos); ?></div>
                 <small>alunos únicos</small>
             </div>
         </div>
@@ -303,13 +305,13 @@
             <div class="summary-card">
                 <div class="summary-icon" style="background:#ffe6e6;color:#dc3545;"><i class="fas fa-ticket-alt"></i></div>
                 <div class="summary-label">Ticket Médio</div>
-                <div class="summary-value">{{ number_format($mediaTicket,2,',','.') }} MT</div>
+                <div class="summary-value"><?php echo e(number_format($mediaTicket,2,',','.')); ?> MT</div>
                 <small>por transacção</small>
             </div>
         </div>
     </div>
 
-    {{-- TABELA RESUMO POR CLASSE --}}
+    
     <div class="resumo-card mb-4 animate__animated animate__fadeInUp" style="background: white; border-radius: 20px; padding: 1.5rem; box-shadow: 0 5px 15px rgba(0,0,0,0.05);">
         <h5 class="mb-3"><i class="fas fa-chalkboard me-2"></i>Resumo por Classe</h5>
         <div class="table-responsive">
@@ -324,41 +326,41 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @php
+                    <?php
                         $grandeTotalPago = 0;
                         $grandeTotalMulta = 0;
-                    @endphp
-                    @foreach($classesResumo as $classe => $items)
-                        @php
+                    ?>
+                    <?php $__currentLoopData = $classesResumo; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $classe => $items): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <?php
                             $totalPagoClasse = $items->sum('valorDescricao');
                             $totalMultaClasse = $items->sum('Multa');
                             $alunosClasse = $items->unique('aluno_classe_id')->count();
                             $grandeTotalPago += $totalPagoClasse;
                             $grandeTotalMulta += $totalMultaClasse;
-                        @endphp
+                        ?>
                         <tr>
-                            <td><strong>{{ $classe }}</strong></td>
-                            <td class="text-center">{{ $alunosClasse }}</td>
-                            <td class="text-end">{{ number_format($totalPagoClasse,2,',','.') }}</td>
-                            <td class="text-end text-danger">{{ number_format($totalMultaClasse,2,',','.') }}</td>
-                            <td class="text-end"><strong>{{ number_format($totalPagoClasse + $totalMultaClasse,2,',','.') }}</strong></td>
+                            <td><strong><?php echo e($classe); ?></strong></td>
+                            <td class="text-center"><?php echo e($alunosClasse); ?></td>
+                            <td class="text-end"><?php echo e(number_format($totalPagoClasse,2,',','.')); ?></td>
+                            <td class="text-end text-danger"><?php echo e(number_format($totalMultaClasse,2,',','.')); ?></td>
+                            <td class="text-end"><strong><?php echo e(number_format($totalPagoClasse + $totalMultaClasse,2,',','.')); ?></strong></td>
                         </tr>
-                    @endforeach
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </tbody>
                 <tfoot class="table-secondary">
                     <tr>
                         <th>TOTAL GERAL</th>
-                        <th class="text-center">{{ $totalAlunos }}</th>
-                        <th class="text-end">{{ number_format($grandeTotalPago,2,',','.') }}</th>
-                        <th class="text-end">{{ number_format($grandeTotalMulta,2,',','.') }}</th>
-                        <th class="text-end">{{ number_format($grandeTotalPago + $grandeTotalMulta,2,',','.') }}</th>
+                        <th class="text-center"><?php echo e($totalAlunos); ?></th>
+                        <th class="text-end"><?php echo e(number_format($grandeTotalPago,2,',','.')); ?></th>
+                        <th class="text-end"><?php echo e(number_format($grandeTotalMulta,2,',','.')); ?></th>
+                        <th class="text-end"><?php echo e(number_format($grandeTotalPago + $grandeTotalMulta,2,',','.')); ?></th>
                     </tr>
                 </tfoot>
             </table>
         </div>
     </div>
 
-    {{-- TABELA RESUMO POR MÉTODO DE PAGAMENTO --}}
+    
     <div class="resumo-card mb-4 animate__animated animate__fadeInUp" style="background: white; border-radius: 20px; padding: 1.5rem; box-shadow: 0 5px 15px rgba(0,0,0,0.05);">
         <h5 class="mb-3"><i class="fas fa-credit-card me-2"></i>Resumo por Via de Pagamento</h5>
         <div class="table-responsive">
@@ -371,19 +373,19 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($metodosResumo as $metodo => $items)
-                        @php $valorMetodo = $items->sum('valorDescricao'); @endphp
+                    <?php $__currentLoopData = $metodosResumo; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $metodo => $items): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <?php $valorMetodo = $items->sum('valorDescricao'); ?>
                         <tr>
-                            <td><i class="fas fa-wallet me-2"></i> {{ $metodo }}</td>
-                            <td class="text-end">{{ number_format($valorMetodo,2,',','.') }}</td>
-                            <td class="text-end">{{ number_format(($valorMetodo / max($totalGeral,1)) * 100,2,',','.') }}%</td>
+                            <td><i class="fas fa-wallet me-2"></i> <?php echo e($metodo); ?></td>
+                            <td class="text-end"><?php echo e(number_format($valorMetodo,2,',','.')); ?></td>
+                            <td class="text-end"><?php echo e(number_format(($valorMetodo / max($totalGeral,1)) * 100,2,',','.')); ?>%</td>
                         </tr>
-                    @endforeach
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </tbody>
                 <tfoot class="table-secondary">
                     <tr>
                         <th>TOTAL</th>
-                        <th class="text-end">{{ number_format($totalGeral,2,',','.') }}</th>
+                        <th class="text-end"><?php echo e(number_format($totalGeral,2,',','.')); ?></th>
                         <th class="text-end">100%</th>
                     </tr>
                 </tfoot>
@@ -391,9 +393,9 @@
         </div>
     </div>
 
-    {{-- RELATÓRIO DETALHADO POR DATA, CLASSE E MÉTODO --}}
-    @forelse ($groupedByDate as $dateKey => $itemsByDate)
-        @php
+    
+    <?php $__empty_1 = true; $__currentLoopData = $groupedByDate; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $dateKey => $itemsByDate): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+        <?php
             $dateObj = \Carbon\Carbon::parse($dateKey);
             $diasSemana = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
             $meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
@@ -401,157 +403,158 @@
             $totalDia = $itemsByDate->sum('valorDescricao');
             $multasDia = $itemsByDate->sum('Multa');
             $porcentagemTotal = $totalGeral > 0 ? ($totalDia / $totalGeral) * 100 : 0;
-        @endphp
+        ?>
 
         <div class="date-card animate__animated animate__fadeInUp">
             <div class="card-header-custom text-white d-flex justify-content-between align-items-center flex-wrap">
                 <div>
                     <i class="fas fa-calendar-day me-2"></i>
-                    <strong>{{ $dataFormatada }}</strong>
-                    <span class="ms-3 small opacity-75">{{ $itemsByDate->count() }} pagamento(s)</span>
+                    <strong><?php echo e($dataFormatada); ?></strong>
+                    <span class="ms-3 small opacity-75"><?php echo e($itemsByDate->count()); ?> pagamento(s)</span>
                 </div>
                 <div>
-                    <span class="badge bg-light text-dark me-2">{{ number_format($porcentagemTotal,1) }}% do total</span>
+                    <span class="badge bg-light text-dark me-2"><?php echo e(number_format($porcentagemTotal,1)); ?>% do total</span>
                 </div>
             </div>
             <div class="card-body p-4">
                 <div class="total-card d-flex justify-content-between align-items-center mb-4">
                     <div><i class="fas fa-hand-holding-usd fs-4 me-2 text-secondary"></i><span class="fw-semibold">Total do dia (sem multas):</span></div>
-                    <div class="total-value-lg">{{ number_format($totalDia,2,',','.') }} MT</div>
+                    <div class="total-value-lg"><?php echo e(number_format($totalDia,2,',','.')); ?> MT</div>
                 </div>
-                @if($multasDia > 0)
+                <?php if($multasDia > 0): ?>
                 <div class="total-card d-flex justify-content-between align-items-center mb-4" style="border-left-color: #dc3545;">
                     <div><i class="fas fa-exclamation-triangle fs-4 me-2 text-danger"></i><span class="fw-semibold">Multas do dia:</span></div>
-                    <div class="total-value-lg text-danger">{{ number_format($multasDia,2,',','.') }} MT</div>
+                    <div class="total-value-lg text-danger"><?php echo e(number_format($multasDia,2,',','.')); ?> MT</div>
                 </div>
-                @endif
+                <?php endif; ?>
 
-                {{-- Agrupar por classe --}}
-                @php
+                
+                <?php
                     $groupedByClass = $itemsByDate->groupBy(function($item) {
                         return $item->classe ?? 'Sem classe';
                     });
-                @endphp
+                ?>
 
-                @foreach ($groupedByClass as $classeNome => $itemsByClass)
-                    @php $classSlug = Str::slug($classeNome).'_'.$dateKey; @endphp
+                <?php $__currentLoopData = $groupedByClass; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $classeNome => $itemsByClass): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <?php $classSlug = Str::slug($classeNome).'_'.$dateKey; ?>
 
                     <div class="class-card mb-4">
-                        <div class="class-header d-flex justify-content-between align-items-center" data-toggle-class="{{ $classSlug }}">
-                            <h5 class="mb-0"><i class="fas fa-chalkboard-user me-2"></i> {{ $classeNome }}</h5>
-                            <span><i class="fas fa-chevron-right toggle-icon" id="icon-{{ $classSlug }}"></i></span>
+                        <div class="class-header d-flex justify-content-between align-items-center" data-toggle-class="<?php echo e($classSlug); ?>">
+                            <h5 class="mb-0"><i class="fas fa-chalkboard-user me-2"></i> <?php echo e($classeNome); ?></h5>
+                            <span><i class="fas fa-chevron-right toggle-icon" id="icon-<?php echo e($classSlug); ?>"></i></span>
                         </div>
-                        <div id="class-content-{{ $classSlug }}" style="display: none;">
+                        <div id="class-content-<?php echo e($classSlug); ?>" style="display: none;">
 
-                            {{-- Agrupar por método de pagamento dentro da classe --}}
-                            @php
+                            
+                            <?php
                                 $groupedByMethod = $itemsByClass->groupBy(function($item) {
                                     return $item->metodoPagDesc ?? 'Não definido';
                                 });
-                            @endphp
+                            ?>
 
-                            @foreach ($groupedByMethod as $metodoNome => $itemsByMethod)
-                                @php $methodSlug = Str::slug($metodoNome).'_'.$classSlug; @endphp
+                            <?php $__currentLoopData = $groupedByMethod; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $metodoNome => $itemsByMethod): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <?php $methodSlug = Str::slug($metodoNome).'_'.$classSlug; ?>
 
                                 <div class="method-group">
-                                    <div class="method-header d-flex justify-content-between align-items-center" data-toggle-method="{{ $methodSlug }}">
+                                    <div class="method-header d-flex justify-content-between align-items-center" data-toggle-method="<?php echo e($methodSlug); ?>">
                                         <div>
                                             <i class="fas fa-credit-card me-2"></i>
-                                            <strong>{{ $metodoNome }}</strong>
-                                            <span class="badge-metodo ms-2">{{ $itemsByMethod->count() }} aluno(s)</span>
+                                            <strong><?php echo e($metodoNome); ?></strong>
+                                            <span class="badge-metodo ms-2"><?php echo e($itemsByMethod->count()); ?> aluno(s)</span>
                                         </div>
                                         <div>
-                                            <span class="fw-semibold text-success">{{ number_format($itemsByMethod->sum('valorDescricao'),2,',','.') }} MT</span>
-                                            <i class="fas fa-chevron-down toggle-icon-method ms-2" id="icon-method-{{ $methodSlug }}"></i>
+                                            <span class="fw-semibold text-success"><?php echo e(number_format($itemsByMethod->sum('valorDescricao'),2,',','.')); ?> MT</span>
+                                            <i class="fas fa-chevron-down toggle-icon-method ms-2" id="icon-method-<?php echo e($methodSlug); ?>"></i>
                                         </div>
                                     </div>
-                                    <div id="method-content-{{ $methodSlug }}" class="student-list">
-                                        @foreach ($itemsByMethod as $pag)
+                                    <div id="method-content-<?php echo e($methodSlug); ?>" class="student-list">
+                                        <?php $__currentLoopData = $itemsByMethod; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $pag): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                             <div class="student-item">
                                                 <div>
                                                     <i class="fas fa-user-graduate me-2 text-secondary"></i>
-                                                    <strong>{{ $pag->nome ?? '---' }}</strong>
-                                                    @if(($pag->Multa ?? 0) > 0)
-                                                        <span class="badge bg-warning text-dark ms-2"><i class="fas fa-exclamation-triangle me-1"></i> Multa: {{ number_format($pag->Multa,2,',','.') }} MT</span>
-                                                    @endif
+                                                    <strong><?php echo e($pag->nome ?? '---'); ?></strong>
+                                                    <?php if(($pag->Multa ?? 0) > 0): ?>
+                                                        <span class="badge bg-warning text-dark ms-2"><i class="fas fa-exclamation-triangle me-1"></i> Multa: <?php echo e(number_format($pag->Multa,2,',','.')); ?> MT</span>
+                                                    <?php endif; ?>
                                                 </div>
                                                 <div>
-                                                    <span class="text-success fw-bold">{{ number_format($pag->valorDescricao,2,',','.') }} MT</span>
+                                                    <span class="text-success fw-bold"><?php echo e(number_format($pag->valorDescricao,2,',','.')); ?> MT</span>
                                                     <button class="btn btn-sm btn-outline-primary btn-detail ms-2" data-bs-toggle="modal" data-bs-target="#detalheModal"
-                                                        data-nome="{{ $pag->nome }}"
-                                                        data-classe="{{ $classeNome }}"
-                                                        data-metodo="{{ $metodoNome }}"
-                                                        data-valor="{{ number_format($pag->valorDescricao,2,',','.') }}"
-                                                        data-multa="{{ number_format($pag->Multa ?? 0,2,',','.') }}"
+                                                        data-nome="<?php echo e($pag->nome); ?>"
+                                                        data-classe="<?php echo e($classeNome); ?>"
+                                                        data-metodo="<?php echo e($metodoNome); ?>"
+                                                        data-valor="<?php echo e(number_format($pag->valorDescricao,2,',','.')); ?>"
+                                                        data-multa="<?php echo e(number_format($pag->Multa ?? 0,2,',','.')); ?>"
                                                         data-estado="Pago"
-                                                        data-data="{{ \Carbon\Carbon::parse($pag->data_pagamento)->format('d/m/Y H:i') }}"
-                                                        data-mes="{{ $pag->mes ?? ($pag->mes_id ? 'Mês '.$pag->mes_id : 'Anual') }}"
-                                                        data-referencia="{{ $pag->referencia ?? '---' }}">
+                                                        data-data="<?php echo e(\Carbon\Carbon::parse($pag->data_pagamento)->format('d/m/Y H:i')); ?>"
+                                                        data-mes="<?php echo e($pag->mes ?? ($pag->mes_id ? 'Mês '.$pag->mes_id : 'Anual')); ?>"
+                                                        data-referencia="<?php echo e($pag->referencia ?? '---'); ?>">
                                                         <i class="fas fa-info-circle"></i> Detalhes
                                                     </button>
                                                 </div>
                                             </div>
-                                        @endforeach
-                                        {{-- Subtotal do método --}}
+                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                        
                                         <div class="student-item bg-light mt-2" style="border-radius: 8px;">
-                                            <div><strong>Subtotal {{ $metodoNome }}</strong></div>
-                                            <div><strong>{{ number_format($itemsByMethod->sum('valorDescricao') + $itemsByMethod->sum('Multa'),2,',','.') }} MT</strong></div>
+                                            <div><strong>Subtotal <?php echo e($metodoNome); ?></strong></div>
+                                            <div><strong><?php echo e(number_format($itemsByMethod->sum('valorDescricao') + $itemsByMethod->sum('Multa'),2,',','.')); ?> MT</strong></div>
                                         </div>
                                     </div>
                                 </div>
-                            @endforeach
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 
-                            {{-- Total da classe --}}
+                            
                             <div class="p-3 bg-light mx-3 mb-3 rounded" style="border-left: 4px solid #1e4663;">
                                 <div class="d-flex justify-content-between align-items-center">
-                                    <strong><i class="fas fa-chart-simple me-2"></i>Total da Classe {{ $classeNome }}</strong>
-                                    <strong class="text-primary">{{ number_format($itemsByClass->sum('valorDescricao') + $itemsByClass->sum('Multa'),2,',','.') }} MT</strong>
+                                    <strong><i class="fas fa-chart-simple me-2"></i>Total da Classe <?php echo e($classeNome); ?></strong>
+                                    <strong class="text-primary"><?php echo e(number_format($itemsByClass->sum('valorDescricao') + $itemsByClass->sum('Multa'),2,',','.')); ?> MT</strong>
                                 </div>
                             </div>
                         </div>
                     </div>
-                @endforeach
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </div>
         </div>
-    @empty
+    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
         <div class="alert alert-info text-center py-5 animate__animated animate__fadeIn">
             <i class="fas fa-inbox fa-3x mb-3"></i>
             <h5>Nenhum registo de pagamentos encontrado</h5>
             <p class="mb-0">Não existem transações no período selecionado.</p>
         </div>
-    @endforelse
+    <?php endif; ?>
 
-    {{-- TOTAL GERAL DO INTERVALO --}}
+    
     <div class="resumo-card mt-4 animate__animated animate__fadeInUp" style="background: linear-gradient(135deg, #1e4663 0%, #2a628f 100%); color: white; border-radius: 20px; padding: 1.5rem;">
         <h5 class="text-white mb-3"><i class="fas fa-chart-bar me-2"></i>TOTAL GERAL DO INTERVALO</h5>
         <div class="row text-center">
             <div class="col-md-4 mb-2">
                 <div class="border rounded p-3 bg-white text-dark">
                     <small>Total de Pagamentos</small>
-                    <h4 class="mb-0">{{ number_format($grandeTotalPago ?? $totalGeral,2,',','.') }} MT</h4>
+                    <h4 class="mb-0"><?php echo e(number_format($grandeTotalPago ?? $totalGeral,2,',','.')); ?> MT</h4>
                 </div>
             </div>
             <div class="col-md-4 mb-2">
                 <div class="border rounded p-3 bg-white text-dark">
                     <small>Total de Multas</small>
-                    <h4 class="mb-0 text-danger">{{ number_format($grandeTotalMulta ?? $totalMultas,2,',','.') }} MT</h4>
+                    <h4 class="mb-0 text-danger"><?php echo e(number_format($grandeTotalMulta ?? $totalMultas,2,',','.')); ?> MT</h4>
                 </div>
             </div>
             <div class="col-md-4 mb-2">
                 <div class="border rounded p-3 bg-warning">
                     <small>TOTAL GERAL COM MULTAS</small>
-                    <h4 class="mb-0">{{ number_format(($grandeTotalPago ?? $totalGeral) + ($grandeTotalMulta ?? $totalMultas),2,',','.') }} MT</h4>
+                    <h4 class="mb-0"><?php echo e(number_format(($grandeTotalPago ?? $totalGeral) + ($grandeTotalMulta ?? $totalMultas),2,',','.')); ?> MT</h4>
                 </div>
             </div>
         </div>
     </div>
 
     <footer>
-        <i class="fas fa-chart-pie me-1"></i> Relatório gerado automaticamente · Sistema de Gestão Escolar · {{ date('Y') }}
+        <i class="fas fa-chart-pie me-1"></i> Relatório gerado automaticamente · Sistema de Gestão Escolar · <?php echo e(date('Y')); ?>
+
     </footer>
 </div>
 
-{{-- MODAL DE DETALHES DO ALUNO --}}
+
 <div class="modal fade modal-details" id="detalheModal" tabindex="-1" aria-labelledby="detalheModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -622,3 +625,4 @@
 </script>
 </body>
 </html>
+<?php /**PATH C:\laragon\www\escolasaojoaopaulo\resources\views/registoAcademico/relatoriospagamentos/pagamentos-Matricula.blade.php ENDPATH**/ ?>
