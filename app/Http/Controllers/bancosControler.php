@@ -414,6 +414,10 @@ $colectmeses=collect();
 
 
 
+    $dadodospagos=outros_pagamentos::where("aluno_classe_id",$id)
+    ->where("tipo_pagamento_id",$dados->first()->idtabelavalores)->get();
+
+
 if($mes>0){
 $colectmeses= $dados->where("mes",$mes);
         }else{
@@ -450,11 +454,14 @@ $referenciasbancariasview=$dadosEnvio;
 
 // Formatação da data atual no estilo "24 de Outubro de 2025"
 $data = Carbon::now()->format('d') . ' de ' . Carbon::now()->translatedFormat('F') . ' de ' . Carbon::now()->format('Y');
-    $pdf = PDF::loadView('Financas.Banco.visualizar-entidadePrint',
-      compact('aluno','referenciasbancariasview','data'))
+     $pdf = PDF::loadView('Financas.Banco.visualizar-entidadePrint',
+      compact('aluno','referenciasbancariasview','data','dadodospagos'))
      ->setPaper('a5');;
-      return $pdf->download("Referencia" . Carbon::now() . ".pdf");
+  return $pdf->download("Referencia" . Carbon::now() . ".pdf");
 
+
+// return View('Financas.Banco.visualizar-entidadePrint',
+//       compact('aluno','referenciasbancariasview','data','dadodospagos'));
     }
 
 

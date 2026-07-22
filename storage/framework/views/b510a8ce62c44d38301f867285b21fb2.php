@@ -1,4 +1,4 @@
-@php
+<?php
 use Picqer\Barcode\BarcodeGeneratorPNG;
 
 $conf = DB::table("config")->first();
@@ -32,7 +32,7 @@ $bancoReferencia = $temRegistros ? ($referenciasbancariasview->first()->Banco ??
 
 $host = request()->getHost();
 $subdomain = explode('.', $host)[0];
-@endphp
+?>
 
 <div class="content container-fluid" id="content">
     <div class="container-fluid">
@@ -41,46 +41,50 @@ $subdomain = explode('.', $host)[0];
             <!-- CABEÇALHO: LOGO + NOME ESQUERDA | CÓDIGO DE BARRAS DIREITA -->
             <div class="recibo-header">
                 <div class="header-left">
-                    @if(isset($conf->avatar) && $conf->avatar)
-                        <img src="{{ asset('storage/'.$subdomain.'/logoMarca/'.$conf->avatar) }}"
+                    <?php if(isset($conf->avatar) && $conf->avatar): ?>
+                        <img src="<?php echo e(asset('storage/'.$subdomain.'/logoMarca/'.$conf->avatar)); ?>"
                              alt="Logo" class="logo-img">
-                    @else
+                    <?php else: ?>
                         <span class="logo-placeholder">🏫</span>
-                    @endif
+                    <?php endif; ?>
                     <div class="school-info">
-                        <strong>{{ $conf->nome ?? 'INSTITUIÇÃO DE ENSINO' }}</strong>
-                        <small>{{ $conf->lema ?? '' }}</small>
+                        <strong><?php echo e($conf->nome ?? 'INSTITUIÇÃO DE ENSINO'); ?></strong>
+                        <small><?php echo e($conf->lema ?? ''); ?></small>
                     </div>
                 </div>
                 <div class="header-right">
-                    @if($barcode)
-                        <img class="barcode-img" src="data:image/png;base64,{{ $barcode }}" alt="Código de Barras">
-                        <span class="barcode-text">{{ $codigoBarra }}</span>
-                    @else
-                        <div class="barcode-fallback">{{ $codigoBarra }}</div>
-                    @endif
+                    <?php if($barcode): ?>
+                        <img class="barcode-img" src="data:image/png;base64,<?php echo e($barcode); ?>" alt="Código de Barras">
+                        <span class="barcode-text"><?php echo e($codigoBarra); ?></span>
+                    <?php else: ?>
+                        <div class="barcode-fallback"><?php echo e($codigoBarra); ?></div>
+                    <?php endif; ?>
                 </div>
             </div>
 
             <!-- SUBTÍTULO -->
             <div class="recibo-subtitle">
-                REFERÊNCIAS TAXA {{ $tipoPagamento }}
+                REFERÊNCIAS TAXA <?php echo e($tipoPagamento); ?>
+
             </div>
 
             <!-- DADOS DO ALUNO -->
             <div class="profile-block">
                 <ul style="list-style: none;">
                     <li>
-                        <b>NOME:</b> {{ strtoupper($aluno->nome ?? '---') }} |
-                        <b>SEXO:</b> {{ $aluno->sexo ?? '---' }}
+                        <b>NOME:</b> <?php echo e(strtoupper($aluno->nome ?? '---')); ?> |
+                        <b>SEXO:</b> <?php echo e($aluno->sexo ?? '---'); ?>
+
                     </li>
                     <li>
-                        <b>ANO LECTIVO:</b> {{ $aluno->anolectivo ?? '---' }} |
-                        <b>CLASSE:</b> {{ $aluno->classe ?? '---' }}
+                        <b>ANO LECTIVO:</b> <?php echo e($aluno->anolectivo ?? '---'); ?> |
+                        <b>CLASSE:</b> <?php echo e($aluno->classe ?? '---'); ?>
+
                     </li>
                     <li>
-                        <b>EMISSÃO:</b> {{ $data }} |
-                        <b>REFERÊNCIA BANCO:</b> {{ $bancoReferencia }}
+                        <b>EMISSÃO:</b> <?php echo e($data); ?> |
+                        <b>REFERÊNCIA BANCO:</b> <?php echo e($bancoReferencia); ?>
+
                     </li>
                 </ul>
             </div>
@@ -98,9 +102,9 @@ $subdomain = explode('.', $host)[0];
                     </tr>
                 </thead>
                 <tbody>
-                    @if($temRegistros)
-                        @foreach ($referenciasbancariasview->sortBy('mes_id') as $itemDado)
-                            @php
+                    <?php if($temRegistros): ?>
+                        <?php $__currentLoopData = $referenciasbancariasview->sortBy('mes_id'); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $itemDado): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <?php
                                 // Tratar valor base
                                 $valorBase = isset($itemDado->valorDescricao) && $itemDado->valorDescricao ? $itemDado->valorDescricao : 0;
                                 $valorFinal = $valorBase;
@@ -130,37 +134,37 @@ $subdomain = explode('.', $host)[0];
                                 $referencia = $itemDado->referencia ?? '-';
 
                                 $escolha = $dadodospagos->where("mes_id", $itemDado->mes_id)->first();
-                            @endphp
-                            @if(!empty($itemDado) && $escolha->Estado == 'Não pago')
+                            ?>
+                            <?php if(!empty($itemDado) && $escolha->Estado == 'Não pago'): ?>
                             <tr>
-                                <td>{{ $mes }}</td>
-                                <td class="text-right">{{ number_format($valorFinal, 2, ',', '.') }}</td>
-                                <td>{{ $entidade }}</td>
-                                <td>{{ $referencia }}</td>
-                                <td>{{ $itemDado->Banco }}</td>
-                                <td>{{ $statusPrazo }}</td>
+                                <td><?php echo e($mes); ?></td>
+                                <td class="text-right"><?php echo e(number_format($valorFinal, 2, ',', '.')); ?></td>
+                                <td><?php echo e($entidade); ?></td>
+                                <td><?php echo e($referencia); ?></td>
+                                <td><?php echo e($itemDado->Banco); ?></td>
+                                <td><?php echo e($statusPrazo); ?></td>
                             </tr>
-                            @endif
-                        @endforeach
-                    @else
+                            <?php endif; ?>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                    <?php else: ?>
                         <tr>
                             <td colspan="6" style="text-align: center; padding: 20px;">
                                 <strong>NENHUM REGISTRO DE PAGAMENTO ENCONTRADO</strong><br>
                                 <small>Este aluno não possui referências bancárias cadastradas</small>
                             </td>
                         </tr>
-                    @endif
+                    <?php endif; ?>
                 </tbody>
             </table>
 
             <!-- ÁREA DE ASSINATURA -->
             <div class="assinatura">
-                <div>{{ $data }}</div>
+                <div><?php echo e($data); ?></div>
                 <div class="assinatura-line">
                     _______________________
                 </div>
                 <div>
-                    <small>{{ strtoupper(Auth()->user()->name ?? 'FUNCIONÁRIO') }}</small><br>
+                    <small><?php echo e(strtoupper(Auth()->user()->name ?? 'FUNCIONÁRIO')); ?></small><br>
                     <small>ASSINATURA / CARIMBO</small>
                 </div>
             </div>
@@ -168,11 +172,12 @@ $subdomain = explode('.', $host)[0];
             <!-- RODAPÉ -->
             <div class="rodape">
                 <b>ENDEREÇO:</b>
-                {{ $conf->Provincia ?? '-' }} -
-                {{ $conf->Distrito ?? '-' }} -
-                {{ $conf->Localizacao ?? '-' }}<br>
-                <b>CONTACTO:</b> {{ $conf->Contacto ?? '-' }} |
-                <b>EMAIL:</b> {{ $conf->Email ?? '-' }}
+                <?php echo e($conf->Provincia ?? '-'); ?> -
+                <?php echo e($conf->Distrito ?? '-'); ?> -
+                <?php echo e($conf->Localizacao ?? '-'); ?><br>
+                <b>CONTACTO:</b> <?php echo e($conf->Contacto ?? '-'); ?> |
+                <b>EMAIL:</b> <?php echo e($conf->Email ?? '-'); ?>
+
             </div>
         </div>
     </div>
@@ -182,7 +187,7 @@ $subdomain = explode('.', $host)[0];
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
       integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link rel="stylesheet" href="{{ asset('perfilView/assets/css/styles.min.css') }}">
+<link rel="stylesheet" href="<?php echo e(asset('perfilView/assets/css/styles.min.css')); ?>">
 
 <style>
     /* ESTILO GERAL */
@@ -414,3 +419,4 @@ $subdomain = explode('.', $host)[0];
         }
     }
 </style>
+<?php /**PATH C:\laragon\www\escolasaojoaopaulo\resources\views/Financas/Banco/visualizar-entidadePrint.blade.php ENDPATH**/ ?>
