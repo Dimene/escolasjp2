@@ -29,7 +29,7 @@ class bancosControler extends Controller
     {
 
 // $mes=meses::all();
-        $anolectivo = anolectivo::all();
+        $anolectivo = anolectivo::orderBy('id', 'desc')->get();
         $banco = banco::all();
         $tipopagamento = tipos_pagamentos::all();
         $classes = classe::all();
@@ -74,8 +74,10 @@ return response()->json($dadosmese);
      */
     public function create()
     {
-        $anolectivo = anolectivo::all();
+     $anolectivo = anolectivo::orderBy('id', 'desc')->get();
         $banco = banco::all();
+
+
         $tipopagamento = tipos_pagamentos::all();
         $classes = classe::all();
         return view('Financas.Banco.gerar-referencias', compact('anolectivo', 'banco', 'tipopagamento', 'classes'));

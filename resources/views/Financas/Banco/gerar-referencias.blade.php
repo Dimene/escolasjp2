@@ -60,12 +60,14 @@ $avatar= session()->get('infosession')[0]->avatar;
                 </select>
             </div>
             <div class="form-group col-md-12">
-                <label for="my-select">elecione  Ano Lectivo</label>
+                <label for="my-select">Selecione  Ano Lectivo</label>
                 <select id="my-select" class="form-control selectInput" name="anolectivo">
                     @foreach ( $anolectivo as $anolectivoItem )
 
 
                     <option value="{{ $anolectivoItem ->id}}"
+
+
                        >{{ $anolectivoItem ->anolectivo}}</option>
                     @endforeach
                 </select>
