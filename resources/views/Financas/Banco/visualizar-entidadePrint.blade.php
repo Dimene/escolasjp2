@@ -32,6 +32,27 @@ $bancoReferencia = $temRegistros ? ($referenciasbancariasview->first()->Banco ??
 
 $host = request()->getHost();
 $subdomain = explode('.', $host)[0];
+
+// ----- FUNÇÃO PARA CONVERTER LOGO EM BASE64 -----
+function getLogoBase64($path) {
+    if (file_exists($path)) {
+        $type = pathinfo($path, PATHINFO_EXTENSION);
+        $data = file_get_contents($path);
+        return 'data:image/' . $type . ';base64,' . base64_encode($data);
+    }
+    return null;
+}
+
+$logoPath = null;
+if (isset($conf->avatar) && $conf->avatar) {
+    // Tenta no storage
+    $logoPath = storage_path('app/public/' . $subdomain . '/logoMarca/' . $conf->avatar);
+    if (!file_exists($logoPath)) {
+        // Tenta no public
+        $logoPath = public_path('storage/' . $subdomain . '/logoMarca/' . $conf->avatar);
+    }
+}
+$logoBase64 = $logoPath ? getLogoBase64($logoPath) : null;
 @endphp
 
 <div class="content container-fluid" id="content">
@@ -41,9 +62,8 @@ $subdomain = explode('.', $host)[0];
             <!-- CABEÇALHO: LOGO + NOME ESQUERDA | CÓDIGO DE BARRAS DIREITA -->
             <div class="recibo-header">
                 <div class="header-left">
-                    @if(isset($conf->avatar) && $conf->avatar)
-                        <img src="{{ asset('storage/'.$subdomain.'/logoMarca/'.$conf->avatar) }}"
-                             alt="Logo" class="logo-img">
+                    @if($logoBase64)
+                        <img src="{{ $logoBase64 }}" alt="Logo" class="logo-img">
                     @else
                         <span class="logo-placeholder">🏫</span>
                     @endif
@@ -55,7 +75,7 @@ $subdomain = explode('.', $host)[0];
                 <div class="header-right">
                     @if($barcode)
                         <img class="barcode-img" src="data:image/png;base64,{{ $barcode }}" alt="Código de Barras">
-                        <span class="barcode-text">{{ $codigoBarra }}</span>
+                        {{-- <span class="barcode-text">{{ $codigoBarra }}</span> --}}
                     @else
                         <div class="barcode-fallback">{{ $codigoBarra }}</div>
                     @endif
@@ -101,11 +121,8 @@ $subdomain = explode('.', $host)[0];
                     @if($temRegistros)
                         @foreach ($referenciasbancariasview->sortBy('mes_id') as $itemDado)
                             @php
-                                // Tratar valor base
                                 $valorBase = isset($itemDado->valorDescricao) && $itemDado->valorDescricao ? $itemDado->valorDescricao : 0;
                                 $valorFinal = $valorBase;
-
-                                // Tratar data limite com segurança
                                 $statusPrazo = '---';
 
                                 if(isset($itemDado->limite) && $itemDado->limite) {
@@ -116,7 +133,6 @@ $subdomain = explode('.', $host)[0];
                                     }
                                 }
 
-                                // Calcular multa se houver
                                 if(isset($itemDado->multaflag) && $itemDado->multaflag == true) {
                                     $multaPercentual = isset($itemDado->multa) && $itemDado->multa ? $itemDado->multa : 0;
                                     $multaValor = ($multaPercentual / 100) * $valorBase;
@@ -124,11 +140,9 @@ $subdomain = explode('.', $host)[0];
                                     $statusPrazo = "VENCIDO + MULTA";
                                 }
 
-                                // Tratar outros campos
                                 $mes = isset($itemDado->mes) && $itemDado->mes ? strtoupper($itemDado->mes) : '-';
                                 $entidade = $itemDado->Entidade ?? '-';
                                 $referencia = $itemDado->referencia ?? '-';
-
                                 $escolha = $dadodospagos->where("mes_id", $itemDado->mes_id)->first();
                             @endphp
                             @if(!empty($itemDado) && $escolha->Estado == 'Não pago')
@@ -161,7 +175,7 @@ $subdomain = explode('.', $host)[0];
                 </div>
                 <div>
                     <small>{{ strtoupper(Auth()->user()->name ?? 'FUNCIONÁRIO') }}</small><br>
-                    <small>ASSINATURA / CARIMBO</small>
+                    {{-- <small>ASSINATURA / CARIMBO</small> --}}
                 </div>
             </div>
 
@@ -178,12 +192,6 @@ $subdomain = explode('.', $host)[0];
     </div>
 </div>
 
-<!-- CSS -->
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
-      integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link rel="stylesheet" href="{{ asset('perfilView/assets/css/styles.min.css') }}">
-
 <style>
     /* ESTILO GERAL */
     body {
@@ -195,7 +203,6 @@ $subdomain = explode('.', $host)[0];
         width: 100%;
     }
 
-    /* CABEÇALHO EM LINHA */
     .recibo-header {
         display: flex;
         justify-content: space-between;
@@ -203,6 +210,7 @@ $subdomain = explode('.', $host)[0];
         padding-bottom: 10px;
         border-bottom: 2px solid #000;
         margin-bottom: 10px;
+        width: 100%;
     }
 
     .header-left {
@@ -251,16 +259,16 @@ $subdomain = explode('.', $host)[0];
     .header-right {
         display: flex;
         flex-direction: column;
-        align-items: center;
+        align-items: flex-end;
     }
 
     .barcode-img {
-        width: 140px;
-        height: 30px;
+        width: 100px;
+        height: 15px;
     }
 
     .barcode-text {
-        font-size: 9px;
+        font-size: 5px;
         font-family: monospace;
         letter-spacing: 1px;
         color: #333;
@@ -269,14 +277,13 @@ $subdomain = explode('.', $host)[0];
 
     .barcode-fallback {
         font-family: monospace;
-        font-size: 14px;
+        font-size: 6px;
         font-weight: bold;
         padding: 5px 10px;
         background: #f0f0f0;
         border: 1px dashed #333;
     }
 
-    /* SUBTÍTULO */
     .recibo-subtitle {
         font-size: 10px;
         text-align: center;
@@ -286,7 +293,6 @@ $subdomain = explode('.', $host)[0];
         text-transform: uppercase;
     }
 
-    /* DADOS DO ALUNO */
     .profile-block {
         border: 1px dashed #333;
         padding: 8px;
@@ -304,7 +310,6 @@ $subdomain = explode('.', $host)[0];
         margin-bottom: 5px;
     }
 
-    /* TABELA */
     table.custom-borda {
         border-collapse: collapse;
         width: 100%;
@@ -331,7 +336,6 @@ $subdomain = explode('.', $host)[0];
         text-align: right;
     }
 
-    /* ASSINATURA */
     .assinatura {
         font-size: 10px;
         margin-top: 20px;
@@ -347,7 +351,6 @@ $subdomain = explode('.', $host)[0];
         padding-top: 5px;
     }
 
-    /* RODAPÉ */
     .rodape {
         font-size: 8px;
         text-align: center;
@@ -356,7 +359,6 @@ $subdomain = explode('.', $host)[0];
         padding-top: 10px;
     }
 
-    /* IMPRESSÃO A5 */
     @media print {
         @page {
             size: A5 portrait;
@@ -396,7 +398,6 @@ $subdomain = explode('.', $host)[0];
         }
     }
 
-    /* RESPONSIVO PARA TELAS PEQUENAS */
     @media (max-width: 600px) {
         .recibo-header {
             flex-direction: column;

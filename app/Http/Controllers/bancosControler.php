@@ -456,14 +456,14 @@ $referenciasbancariasview=$dadosEnvio;
 
 // Formatação da data atual no estilo "24 de Outubro de 2025"
 $data = Carbon::now()->format('d') . ' de ' . Carbon::now()->translatedFormat('F') . ' de ' . Carbon::now()->format('Y');
-//      $pdf = PDF::loadView('Financas.Banco.visualizar-entidadePrint',
-//       compact('aluno','referenciasbancariasview','data','dadodospagos'))
-//      ->setPaper('a5');;
-//   return $pdf->download("Referencia" . Carbon::now() . ".pdf");
+     $pdf = PDF::loadView('Financas.Banco.visualizar-entidadePrint',
+      compact('aluno','referenciasbancariasview','data','dadodospagos'))
+     ->setPaper('a5');;
+  return $pdf->download("Referencia" . Carbon::now() . ".pdf");
 
 
- return View('Financas.Banco.visualizar-entidadePrint',
-      compact('aluno','referenciasbancariasview','data','dadodospagos'));
+//  return View('Financas.Banco.visualizar-entidadePrint',
+//       compact('aluno','referenciasbancariasview','data','dadodospagos'));
     }
 
 
