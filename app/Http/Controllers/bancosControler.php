@@ -221,11 +221,15 @@ public function visuzlizarreferencias(Request $request)
     $meses = collect();
 $tipo=DB::table("detalhestabelavaores")
             ->where("tipo", $request->tipopagamento)
+            ->where("classe_id", $request->classe)
             ->where("anolectivo_id", $request->anolectivo)->first();
     // Se não vier mês, buscar todos os meses do tipo/ano
+
+    // dd($tipo,$request->all());
     if (is_null($request->mes)) {
         $meses = DB::table("detalhestabelavaores")
             ->where("tipo", $request->tipopagamento)
+             ->where("classe_id", $request->classe)
             ->where("anolectivo_id", $request->anolectivo)
             ->pluck("mes"); // já retorna Collection
     } else {
@@ -238,6 +242,8 @@ $tipo=DB::table("detalhestabelavaores")
 
    $dadods= alunoClasse::where('classe_id',$request->classe)->where("anolectivo_id", $request->anolectivo)->with(['mensalidades'=>function($e) use($tipo)
     {$e->tipo_Pagamento_id=$tipo->idtabelavalores;
+
+
 
 
     },"Aluno"])->get();
@@ -268,14 +274,14 @@ $multa=($tipo->multa/100)*$tipo->valorDescricao;
 
 
 
-    $referencia=referenciasbancaria::where("aluno_classe_id",$item->id)->
-    where('tipo_pagamento_id',$tipo->idtabelavalores)
+    $referencia=referenciasbancaria::where("aluno_classe_id",$item->id)
+     ->where('tipo_pagamento_id',$tipo->idtabelavalores)
     ->where('banco_id',$entidade->id)
     ->where("mes_id",$meses->mes_id)
      ->where("Multa",$dados)
     ->first();
 
-
+// dd($referencia,$item->id,$tipo->idtabelavalores,$meses->mes_id);
 
 
 $aluno->push((object)[
