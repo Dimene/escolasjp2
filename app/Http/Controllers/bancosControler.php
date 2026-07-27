@@ -6,6 +6,7 @@ use App\Helpers\ReferenciaBIMHelper;
 use App\Http\Controllers\registoAcademico\alunosController;
 use App\Http\Controllers\registoAcademico\MensalidadesController;
 use App\Models\banco;
+use App\Models\entidade;
 use App\Models\referenciasbancaria;
 use App\Models\registoAcademico\alunoClasse;
 use App\Models\registoAcademico\anolectivo;
@@ -218,7 +219,9 @@ public function visuzlizarreferencias(Request $request)
 {
     // Inicializar coleção de meses
     $meses = collect();
-
+$tipo=DB::table("detalhestabelavaores")
+            ->where("tipo", $request->tipopagamento)
+            ->where("anolectivo_id", $request->anolectivo)->first();
     // Se não vier mês, buscar todos os meses do tipo/ano
     if (is_null($request->mes)) {
         $meses = DB::table("detalhestabelavaores")
@@ -229,39 +232,90 @@ public function visuzlizarreferencias(Request $request)
         $meses->push($request->mes);
     }
 
-    // Query principal
-    $alunos = DB::table('referenciasviewbanco')
-        ->where('classe_id', $request->classe)
-        ->whereIn('mes_id', $meses)
-        ->where('tipo_pagamento_id', $request->tipopagamento)
-        ->where('anolectivo_id', $request->anolectivo)
-        ->where(function ($query) {
 
-            // CASO 1: Data ainda NÃO venceu
-            $query->where(function ($q) {
-                $q->where('limite', '>=', Carbon::now())
-                  ->where(function ($q2) {
-                      $q2->where('multaflagrefe', 0)
-                         ->orWhereNull('multaflagrefe');
-                  });
-            })
+    $aluno=collect();
+ if($request->tipopagamento>2){
 
-            // CASO 2: Data já venceu
-            ->orWhere(function ($q) {
-                $q->where('limite', '<', Carbon::now())
-                  ->where(function ($q2) {
-                      $q2->where('multaflagrefe', 1)
-                         ->orWhereNull('multaflagrefe');
-                  });
-            });
+   $dadods= alunoClasse::where('classe_id',$request->classe)->where("anolectivo_id", $request->anolectivo)->with(['mensalidades'=>function($e) use($tipo)
+    {$e->tipo_Pagamento_id=$tipo->idtabelavalores;
 
-        })
-        ->orderBy('nome', 'asc')   // 👈 ordena por nome
-    ->orderBy('mes_id', 'asc') // 👈 depois por mês
-        ->get();
 
-    // Buscar entidade
-    $entidade = banco::where("id", $request->Entidade)->first();
+    },"Aluno"])->get();
+
+
+    foreach($dadods as $item){
+
+    foreach($item->mensalidades as $meses):
+
+    $entidade=entidade::where("id",$request->Entidade)->first();
+
+$dados=0;
+
+$multa=0;
+
+    if(!empty($meses->data_Fim)){
+ if(Carbon::parse($meses->data_Fim)->isPast()){
+$dados=1;
+
+
+$multa=($tipo->multa/100)*$tipo->valorDescricao;
+ }
+
+    }
+    else{
+       $dados=0;
+    }
+
+
+
+    $referencia=referenciasbancaria::where("aluno_classe_id",$item->id)->
+    where('tipo_pagamento_id',$tipo->idtabelavalores)
+    ->where('banco_id',$entidade->id)
+    ->where("mes_id",$meses->mes_id)
+     ->where("Multa",$dados)
+    ->first();
+
+
+
+
+$aluno->push((object)[
+    "id"=>$item->id,
+    "idoutro"=>$meses->id,
+    'idmensalidademes'=>$meses->id,
+    "aluno_classe_id"=>$item->id,
+    "nome"=>$item->Aluno->nome,
+    "Entidade"=>$entidade->Entidade,
+    "Banco"=>$entidade->descricao,
+    "mes_id"=>$meses->mes_id,
+    "mes"=>$meses->mes->Descricao,
+    "limite"=>$meses->data_Fim,
+    "referenciaBanco"=> $referencia?->referencia,
+     "valorDescricao"=>$tipo->valorDescricao,
+     "multaP"=>$tipo->multa,
+     "tipo"=>$tipo->tipo,
+    //  "tipo_pagamento_id"=>$tipo->idtabelavalores,
+     "tipo_pagamento_id"=>$tipo->idtabelavalores,
+
+]);
+
+
+
+
+    endforeach;
+    }
+
+ }
+ else{
+
+ }
+
+
+//  dd($aluno);
+
+$alunos=$aluno;
+
+
+
 
     // Retornar view
     return view(
@@ -413,7 +467,7 @@ $colectmeses=collect();
     ->where("tipo",$idpagamento)
     ->where("classe_id",$aluno->Classe_id)
     ->where("anolectivo_id", $aluno->anolectivo_id)->get();
-
+// dd($dados,$aluno,$id, $idpagamento,$mes);
 
 
     $dadodospagos=outros_pagamentos::where("aluno_classe_id",$id)

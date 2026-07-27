@@ -82,7 +82,7 @@
                                     <strong><?php echo e($value->nome ?? '-'); ?></strong>
                                 </div>
                             </td>
-                            <td><?php echo e($value->banco ?? '-'); ?></td>
+                            <td><?php echo e($value->Banco ?? '-'); ?></td>
                             <td><?php echo e($value->Entidade ?? '-'); ?></td>
                             <td>
                                 <?php if(!empty($value->referenciaBanco)): ?>
@@ -116,7 +116,7 @@
                                 <div class="btn-group btn-group-sm" role="group">
                                     <button class="btn btn-secondary visualizarentidadesReferencias"
                                             idaluno="<?php echo e($value->id); ?>"
-                                            idpagamento="<?php echo e($value->tipo_pagamento_id ?? 0); ?>"
+                                            idpagamento="<?php echo e($value->tipo ?? 0); ?>"
                                             title="Imprimir Referência">
                                         <i class="fa fa-print"></i>
                                     </button>

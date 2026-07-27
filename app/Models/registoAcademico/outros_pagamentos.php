@@ -55,6 +55,11 @@ class outros_pagamentos extends Model
  }
 
 
+ public function referencidas(){
+return $this->hasMany(referenciasbancaria::class,['aluno_classe_id','tipo_pagamento_id'],['aluno_classe_id','tipo_pagamento_id']);
+
+ }
+
 
 
 

@@ -10,6 +10,6 @@ class entidade extends Model
 {
     use HasFactory;
     use SoftDeletes;
-    protected $table="entidadesbancarias";
-    protected $fillable=["descricao","banco_id",];
+    protected $table="bancos";
+    protected $fillable=["descricao","Entidade",];
 }

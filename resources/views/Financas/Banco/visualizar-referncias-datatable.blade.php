@@ -82,7 +82,7 @@
                                     <strong>{{ $value->nome ?? '-' }}</strong>
                                 </div>
                             </td>
-                            <td>{{ $value->banco ?? '-' }}</td>
+                            <td>{{ $value->Banco ?? '-' }}</td>
                             <td>{{ $value->Entidade ?? '-' }}</td>
                             <td>
                                 @if(!empty($value->referenciaBanco))
@@ -115,7 +115,7 @@
                                 <div class="btn-group btn-group-sm" role="group">
                                     <button class="btn btn-secondary visualizarentidadesReferencias"
                                             idaluno="{{ $value->id }}"
-                                            idpagamento="{{ $value->tipo_pagamento_id ?? 0 }}"
+                                            idpagamento="{{ $value->tipo ?? 0 }}"
                                             title="Imprimir Referência">
                                         <i class="fa fa-print"></i>
                                     </button>
