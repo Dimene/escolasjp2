@@ -60,6 +60,11 @@ return $this->hasMany(referenciasbancaria::class,['aluno_classe_id','tipo_pagame
 
  }
 
+ public function anolectivo(){
+
+ return $this->belongsToMany(anolectivo::class,'aluno_classes','id','anolectivo_id','aluno_classe_id','id');
+ }
+
 
 
 

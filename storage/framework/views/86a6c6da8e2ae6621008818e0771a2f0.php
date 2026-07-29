@@ -4,10 +4,10 @@ $dadosInfo = session()->get('nomeEm');
 // $avatar = session()->get('infosession')[0]->avatar;
 
 ?>
-@extends('layouts.admin-Lti')
-@section('title', 'Pagina Inicial')
 
-@section('content')
+<?php $__env->startSection('title', 'Pagina Inicial'); ?>
+
+<?php $__env->startSection('content'); ?>
 
     <section class="content">
         <!-- Content Wrapper. Contains page content -->
@@ -31,8 +31,8 @@ $dadosInfo = session()->get('nomeEm');
             <!-- /.content-header -->
 
             <div class=" container container-fluid">
-                <form method="POST" action="{{ route('sms.send') }}">
-                    @csrf
+                <form method="POST" action="<?php echo e(route('sms.send')); ?>">
+                    <?php echo csrf_field(); ?>
                     <label>Numero</label>
                     <input class="form-control" type="text" name="to" required>
                     <label>Mensagem</label>
@@ -40,4 +40,6 @@ $dadosInfo = session()->get('nomeEm');
                     <input type="submit" value="Send">
                 </form>
     </section>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.admin-Lti', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\laragon\www\escolasaojoaopaulo\resources\views/mensagems-index.blade.php ENDPATH**/ ?>

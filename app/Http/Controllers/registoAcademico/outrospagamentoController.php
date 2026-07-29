@@ -819,7 +819,6 @@ public function pagamentos($ano, $classe, $data1, $data2, $tipo)
             ])
             ->first();
 
-
        $pagamentos?->mensalidades->map(function($e) use($dados,$pagamentos){
          $dados->push((object)["aluno_classe_id"=>$e->alunoclasse->id,
          'nome'=>$e->alunoclasse->aluno->nome,

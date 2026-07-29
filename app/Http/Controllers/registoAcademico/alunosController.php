@@ -86,12 +86,12 @@ class alunosController extends Controller
     public function saidaTran(Request $request)
     {
 
-        $tipoSaisa = tipossaida::where('id', $request->TiposaidaSelect)->first();
+        $tipoSaisa = tipossaida::where('id', $request["Tiposaida"])->first();
 
 
-//  dd($request->all(), $tipoSaisa );
+//  dd($request->all(), $tipoSaisa);
 
-        if ($request->TiposaidaSelect == 100) {
+        if ($request->id == 100) {
 
             tranferencias_disistencias::where(
                 'aluno_classe_id', $request->idAluno)->forceDelete();
@@ -111,6 +111,9 @@ class alunosController extends Controller
 
             outros_pagamentos::where('aluno_classe_id', $request->idAluno)->where('Estado', '!=', 'Pago')->delete();
         }
+
+
+
 
         return redirect()->route('aluno.index');
     }
@@ -180,6 +183,9 @@ class alunosController extends Controller
     {
 
         $resul = '';
+
+
+        // dd($request->all());
         $talaoNumero = $this->talao($request->tipopagamento, $request->ano_lectivo);
 
         $multa = $request->input('multaAct', 0);
@@ -1856,6 +1862,7 @@ public function pagamentos($ano, $classe, $data1, $data2, $tipo)
         ->where('id', $metodo)
         ->first();
 
+        // dd( $metodoPagamento);
     $anoRe = Carbon::now()->format('y');
 
     /*
@@ -1864,12 +1871,14 @@ public function pagamentos($ano, $classe, $data1, $data2, $tipo)
     |--------------------------------------------------------------------------
     */
 
-    if ($metodoPagamento->tipo <= 0) {
+    if ($metodoPagamento->tipo == 1) {
 
         $ultimoNtalao = alunoClasse::where('Estado', 'Pendente')
             ->whereNotNull('Ntalao')
             ->where('anolectivo_id', $ano)
             ->max('Ntalao');
+
+
 
     } else {
 
@@ -1879,10 +1888,15 @@ public function pagamentos($ano, $classe, $data1, $data2, $tipo)
         |--------------------------------------------------------------------------
         */
 
-        $ntalao1 = outros_pagamentos::where('Estado', 'Pago')
-            ->whereNotNull('Ntalao')
-            ->where('anolectivo_id', $ano)
-            ->max('Ntalao');
+        // dd($ano);
+
+     $ntalao1 = outros_pagamentos::where('Estado', 'Pago')
+    ->whereNotNull('Ntalao')
+    ->whereHas('anolectivo', function($query) use($ano){
+        $query->where('anolectivos.id', $ano);
+    })
+    ->max('Ntalao');
+
 
         $ntalao2 = alunoClasse::where('Estado', 'activo')
             ->whereNotNull('Ntalao')
