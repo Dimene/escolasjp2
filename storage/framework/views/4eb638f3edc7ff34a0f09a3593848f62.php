@@ -413,43 +413,7 @@ $avatar = session()->get('infosession')->avatar;
         <div class="">
             <div class="container-fluid fade-in">
 
-                <!-- ===== ALERTA DE PERÍODO COM MULTA ===== -->
-                <?php
-                    $diaAtual = \Carbon\Carbon::now()->day;
-                    $dataMaiorQue11 = $diaAtual > 11;
-                ?>
 
-                <div class="alert <?php echo e($dataMaiorQue11 ? 'alert-danger-custom' : 'alert-info-custom'); ?> alert-custom mb-4">
-                    <i class="fa <?php echo e($dataMaiorQue11 ? 'fa-exclamation-triangle' : 'fa-info-circle'); ?> fa-2x"></i>
-                    <div class="flex-grow-1">
-                        <strong>
-                            <?php if($dataMaiorQue11): ?>
-                                ⚠️ PERÍODO COM APLICAÇÃO DE MULTA (Dia <?php echo e($diaAtual); ?>)
-                            <?php else: ?>
-                                ℹ️ PERÍODO SEM MULTA (Dia <?php echo e($diaAtual); ?>)
-                            <?php endif; ?>
-                        </strong>
-                        <br>
-                        <small>
-                            <?php if($dataMaiorQue11): ?>
-                                Referências vencidas estão sujeitas a multa a partir do dia 11.
-                            <?php else: ?>
-                                Multa será aplicada apenas a partir do dia 11.
-                            <?php endif; ?>
-                        </small>
-                    </div>
-                    <div class="text-right">
-                        <span class="badge <?php echo e($dataMaiorQue11 ? 'badge-danger' : 'badge-info'); ?>" style="font-size: 0.9rem; padding: 8px 16px;">
-                            <i class="fa fa-calendar"></i> Dia <?php echo e($diaAtual); ?>
-
-                        </span>
-                        <?php if($dataMaiorQue11): ?>
-                            <span class="badge badge-danger ml-2" style="font-size: 0.9rem; padding: 8px 16px; background: #dc2626;">
-                                <i class="fa fa-exclamation-circle"></i> Multa Ativa
-                            </span>
-                        <?php endif; ?>
-                    </div>
-                </div>
 
                 <!-- Alerta informativo -->
                 <div class="alert alert-info-custom alert-custom mb-4">
