@@ -40,6 +40,7 @@ class bancosControler extends Controller
 ->get();
 
 
+
         return view('Financas.Banco.visualizar-referencias', compact('anolectivo',
          'banco', 'tipopagamento', 'classes', 'detalhes'));
 

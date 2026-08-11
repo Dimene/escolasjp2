@@ -114,12 +114,26 @@
                             <td>
                                 <?php if(!empty($value->referenciaBanco)): ?>
                                 <div class="btn-group btn-group-sm" role="group">
+                                    <button class="btn btn-primary AtualizarReferencia"
+                                            idaluno="<?php echo e($value->id); ?>"
+                                            idpagamento="<?php echo e($value->tipo ?? 0); ?>"
+
+                                             linha="<?php echo e($key); ?>"
+                                            value="<?php echo e($value->idoutro); ?>"
+                                            title="Gerar Referencia">
+                                        <i class="fa fa-refresh"></i>
+                                    </button>
+
+                                </div>
+
+                                <div class="btn-group btn-group-sm" role="group">
                                     <button class="btn btn-secondary visualizarentidadesReferencias"
                                             idaluno="<?php echo e($value->id); ?>"
                                             idpagamento="<?php echo e($value->tipo ?? 0); ?>"
                                             title="Imprimir Referência">
                                         <i class="fa fa-print"></i>
                                     </button>
+
                                 </div>
                                 <?php endif; ?>
                             </td>
@@ -344,6 +358,9 @@
                                 Swal.fire('Erro', response.message || 'Erro ao gerar referência', 'error');
                                 btn.html(originalHtml).prop('disabled', false);
                             }
+
+ btn.html('<i class="fa fa-refresh "></i>').prop('disabled', false);
+
                         },
                         error: function(xhr) {
                             console.error('Erro:', xhr);
