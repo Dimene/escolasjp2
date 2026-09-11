@@ -5,8 +5,8 @@ $direcao = DB::table("classe_direcao")
               ->orWhere("pedagogico_id", auth()->user()->id);
     })
     ->exists(); // More efficient than first() ? true : false
-    
-    
+
+
 
 ?>
 
@@ -56,8 +56,8 @@ $direcao = DB::table("classe_direcao")
         <?php endif; ?>
 
         
-        
-         <?php if($direcao ): ?>
+
+         <?php if($direcao ||Gate::check("Configuracoes-Trimestrais")): ?>
         <li class="nav-item">
             <a href="<?php echo e(route('notas.ConfiguracoesTrimestrais')); ?>"
                class="nav-link <?php echo e(Request::is('RegistoAcademico/notas/disciplinas/notasTrimestrais/painel/configuracoes') ? 'active' : ''); ?>">
@@ -65,6 +65,8 @@ $direcao = DB::table("classe_direcao")
                 <p>Configurações</p>
             </a>
         </li>
+
+
 <?php endif; ?>
 <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check("Gerar-Documento")): ?>
         

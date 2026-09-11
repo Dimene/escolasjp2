@@ -4,7 +4,7 @@
 
 <div class="messagem-alert col-md-8 col-sm-8 mensagemdeAlerta container"  style="width: 100%" >
     <?php if(isset($mensagem)): ?>
- <h3>   <?php echo e($mensagem); ?> </h3>
+ <h5>   <?php echo e($mensagem); ?> </h5>
  <?php endif; ?>
         </div>
 

@@ -23,7 +23,11 @@
 
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <!-- AdminLTE CSS -->
     <link rel="stylesheet" href="{{ asset('Admin-LTE/plugins/font-awesome/css/font-awesome.min.css') }}">
     <link rel="stylesheet" href="{{ asset('Admin-LTE/dist/css/adminlte.min.css') }}">
@@ -482,7 +486,7 @@
                 <span class="brand-text font-weight-light">{{ session()->get('infosession')->TIpoSistema ?? 'Sistema' }}</span>
             </a>
             <div class="sidebar">
-            
+
                 @include('layouts.menum-master')
             </div>
         </aside>

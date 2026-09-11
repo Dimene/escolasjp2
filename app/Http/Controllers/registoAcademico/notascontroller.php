@@ -2945,6 +2945,7 @@ $dad = DB::table("turmasalunosview as t")
     ->where("t.classe_id", $classe)
     ->where("v.divisao_id", $tipoDoc)
     ->where("v.nota_meta_id", 0)
+
     ->get();
     endif;
 
@@ -2952,7 +2953,7 @@ $dad = DB::table("turmasalunosview as t")
 
 
 
-
+// dd($codigo,$dad);
 
 
 
@@ -3063,7 +3064,7 @@ $classe_direcao=DB::table('classe_direcao')->where("classe_id",$classe)->where("
 }
 
 
-  
+
    public function  TrancarTrimestreAll(Request $request){
 
 //   dd($request->all());
@@ -3157,8 +3158,12 @@ $request =Request();
     $host = $request->getHost();
 
     $subdomain = explode('.', $host)[0];
-
 $direcao=DB::table("classe_direcao")->where("classe_id",$classe)->first();
+
+    if(empty($direcao)){
+        return view("include.mensage-alerta",["mensagem"=>"a direcao da Classe nao Definida Directo/Pedagogio"]);
+    };
+
 $director=User::where("id",$direcao->director_id)->first();
 $nivel=DB::table("nivel")->where("id",$director->Nivel_id)->first()->Descricao;
 

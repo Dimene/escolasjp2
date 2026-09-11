@@ -437,13 +437,13 @@ endforeach;
 <div class="container-fluid animate-fadeInUp" style="animation-delay: 0.1s;">
     <div class="card filter-card">
         <div class="card-body row">
-           
+
             <div class="col-md-4">
                 <label><i class="fa fa-calendar"></i> <strong>Ano Lectivo</strong></label>
                 <select class="form-control Ano">
                     <?php $__currentLoopData = $anolectivo; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $ano): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                    
-                  
+
+
                     <option value="<?php echo e($ano->id); ?>" <?php if($ano->anolectivo == now()->year): echo 'selected'; endif; ?>>
                         📅 <?php echo e($ano->anolectivo); ?>
 
@@ -451,9 +451,9 @@ endforeach;
                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </select>
             </div>
-          
 
-       
+
+
             <div class="col-md-4">
                 <label><i class="fa fa-calendar-range"></i> <strong>Intervalo de Datas</strong></label>
                 <div id="reportrange" class="form-control" style="cursor: pointer;">
@@ -461,9 +461,9 @@ endforeach;
                     <span class="datashow"></span> <i class="fa fa-caret-down"></i>
                 </div>
             </div>
-          
 
-          
+
+
             <div class="col-md-4">
                 <label><i class="fa fa-credit-card"></i> <strong>Tipo de Pagamento</strong></label>
                <select class="form-control Tipo">
@@ -479,7 +479,7 @@ endforeach;
     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 </select>
             </div>
-          
+
         </div>
     </div>
 </div>
@@ -1074,7 +1074,7 @@ function renderPizza(dados) {
 function visualizarDiariasDetalhes() {
     mostrarTabela(window.diariadetalhes, '📅 Receita Diária - Detalhes',diariasPermissao);
     $("#exportarPDFCompleto").attr("permission",diariasPermissao);
-   
+
 }
 
 function visualizarMensalDetalhes() {
@@ -1339,7 +1339,7 @@ function exportarParaExcel() {
 }
 
 function exportarParaPDF() {
-    
+
 permisao= $("#exportarPDFCompleto").attr("permission");
 
     if (!dadosTabelaAtuais || dadosTabelaAtuais.length === 0) {

@@ -1,599 +1,1219 @@
 @extends('layouts.admin-Lti')
-@section('title','- Relatório da Loja')
+
+@section('title', 'Cadastro de Aluno')
 @section('content')
 
-<section class="content">
-    <ol class="breadcrumb">
-        <li class="breadcrumb-item">
-            <a href="{{ Route('produto.index') }}">
-                <span>Estoque</span>
-            </a>
-        </li>
-        <li class="breadcrumb-item active">
-            <a><span><b>Relatório</b></span></a>
-        </li>
-    </ol>
-</section>
+<head>
+    @push('style')
+         <link rel="stylesheet" href="{{ asset('assets/css/styles.min.css') }}">
+    @endpush
 
-<div class="container-fluid col-12" style="background:#fff; border-radius:10px; padding:20px;">
+    {{-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/webcamjs/1.0.26/webcam.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    --}}
+   <style>
+        /* Popup PDF */
+.pdf-popup {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 9999;
+  animation: fadeIn 0.3s ease;
+}
 
-    {{-- FILTROS DE PESQUISA --}}
-    <div class="row mb-4">
-        <div class="col-md-6">
-            <div class="form-group">
-                <label><strong>Dados do Fornecedor</strong></label>
-                <select class="form-control compraIdShow select2" style="width: 100%;" name="Compra">
-                    <optgroup class="CompraSelet">
-                        <option value="0">Todas as faturas</option>
-                        @foreach ($compra as $compraItem)
-                            <option value="{{ $compraItem->id }}">
-                                {{ $compraItem->Codigo_Fatura }}
-                            </option>
-                        @endforeach
-                    </optgroup>
-                </select>
-            </div>
-        </div>
+.pdf-popup-content {
+  position: relative;
+  margin: 2% auto;
+  width: 90%;
+  height: 90%;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 5px 30px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  animation: slideIn 0.3s ease;
+}
 
-        <div class="col-md-6">
-            <div class="form-group">
-                <label><strong>Categoria de Fármacos</strong></label>
-                <div class="select2-purple">
-                    <select class="select2 CategoriaFarmacos" multiple="multiple" name="Categoria[]"
-                            data-placeholder="Selecione as categorias"
-                            data-dropdown-css-class="select2-purple" style="width: 100%;">
-                        @foreach ($categora as $categoraItem)
-                            <option value="{{ $categoraItem->id }}">
-                                {{ $categoraItem->Descricao }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-            </div>
-        </div>
+.pdf-close-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10000;
+  background: #dc3545;
+  color: #fff;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.3s;
+}
+
+.pdf-close-btn:hover {
+  background: #c82333;
+}
+
+.pdf-controls {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 10000;
+  display: flex;
+  gap: 10px;
+}
+
+.pdf-control-btn {
+  background: #007bff;
+  color: #fff;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.3s;
+}
+
+.pdf-control-btn:hover {
+  background: #0056b3;
+}
+
+.pdf-container {
+  width: 100%;
+  height: 100%;
+  padding: 60px 20px 20px 20px;
+}
+
+#pdfFrame {
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: 4px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.pdf-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  z-index: 100;
+}
+
+.pdf-loading p {
+  margin-top: 15px;
+  color: #666;
+  font-size: 16px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { transform: translateY(-30px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Para impressão do popup */
+@media print {
+  .pdf-popup {
+    position: static;
+    background: #fff;
+  }
+
+  .pdf-popup-content {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    box-shadow: none;
+  }
+
+  .pdf-close-btn,
+  .pdf-controls {
+    display: none !important;
+  }
+
+  .pdf-container {
+    padding: 0;
+  }
+
+  #pdfFrame {
+    box-shadow: none;
+  }
+}
+        /* FOTO FLUTUANTE */
+        .foto-flutuante {
+            position: sticky;
+            top: 80px;
+            z-index: 100;
+        }
+
+        /* AVATAR */
+        .avatar-container, #camera-preview {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            overflow: hidden;
+            margin: auto;
+            background: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 3px solid #dee2e6;
+        }
+
+        .campo-erro {
+            border: 2px solid #dc3545 !important;
+            background-color: #fff3f3;
+        }
+
+        .campo-valido {
+            border: 2px solid #28a745 !important;
+        }
+
+        .avatar-container img, #camera-preview video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+
+        /* BOTÃO UPLOAD */
+        .custom-file-label {
+            background-color: #f8f9fa;
+            border: 1px solid #ced4da;
+            color: #495057;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .custom-file-label:hover {
+            background-color: #e9ecef;
+        }
+
+        /* BOTÕES DA CÂMERA */
+        .btn-foto button {
+            margin-top: 5px;
+            width: 100%;
+        }
+
+        /* STATUS REFERÊNCIA */
+        .status-referencia {
+            font-size: 0.875rem;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .status-referencia.valida {
+            color: #28a745;
+            display: block;
+        }
+
+        .status-referencia.invalida {
+            color: #dc3545;
+            display: block;
+        }
+
+        /* LOADING */
+        .spinner-avatar {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .imgprocessar {
+            display: none;
+        }
+
+        .imgprocessar.ativo {
+            display: inline-block;
+        }
+
+        /* PAGAMENTOS */
+        .list-group-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .checkbox-pagamento:checked + div strong {
+            color: #28a745;
+        }
+
+        /* VALIDAÇÃO */
+        .is-invalid {
+            border-color: #dc3545 !important;
+        }
+
+        .is-valid {
+            border-color: #28a745 !important;
+        }
+
+        /* MODAL FIX */
+        .modal-body {
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+ <div class="breadcrumb-modern animate-fadeInUp">
+        <ol class="breadcrumb" style="background: transparent; margin: 0; padding: 0;">
+            <li class="breadcrumb-item">
+                <a href="#"><i class="fa fa-graduation-cap"></i> Registo Académico</a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="#"><i class="fa fa-users"></i>Matricula</a>
+            </li>
+            <li class="breadcrumb-item active">
+                <i class="fa fa-edit"></i> <b>Matricula Externos</b>
+            </li>
+        </ol>
     </div>
 
-    {{-- TABS MELHORADAS --}}
-    <ul class="nav nav-tabs" id="relatorioTabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="vendas-tab" data-bs-toggle="tab"
-                    data-bs-target="#vendas" type="button" role="tab"
-                    aria-controls="vendas" aria-selected="true">
-                <i class="fas fa-shopping-cart"></i> Vendas
-                <span class="badge bg-primary ms-1" id="vendasBadge">0</span>
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="estoque-tab" data-bs-toggle="tab"
-                    data-bs-target="#estoque" type="button" role="tab"
-                    aria-controls="estoque" aria-selected="false">
-                <i class="fas fa-boxes"></i> Estoque
-                <span class="badge bg-info ms-1" id="estoqueBadge">0</span>
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="faturacao-tab" data-bs-toggle="tab"
-                    data-bs-target="#faturacao" type="button" role="tab"
-                    aria-controls="faturacao" aria-selected="false">
-                <i class="fas fa-file-invoice"></i> Faturação
-                <span class="badge bg-success ms-1" id="faturacaoBadge">0</span>
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="iva-tab" data-bs-toggle="tab"
-                    data-bs-target="#iva" type="button" role="tab"
-                    aria-controls="iva" aria-selected="false">
-                <i class="fas fa-percent"></i> IVA
-                <span class="badge bg-warning ms-1" id="ivaBadge">0</span>
-            </button>
-        </li>
-    </ul>
+<div class="">
 
-    {{-- CONTEÚDO DAS TABS --}}
-    <div class="tab-content mt-3" id="relatorioTabsContent">
 
-        {{-- TAB VENDAS --}}
-        <div class="tab-pane fade show active" id="vendas" role="tabpanel" aria-labelledby="vendas-tab">
-            <div class="card">
-                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="fas fa-shopping-cart"></i> Histórico de Vendas</h5>
-                    <div>
-                        <span class="badge bg-light text-dark me-2" id="totalVendas">0 vendas</span>
-                        <button class="btn btn-sm btn-light" onclick="window.print()">
-                            <i class="fas fa-print"></i> Imprimir
+    <form id="formAluno" method="POST" enctype="multipart/form-data">
+        @csrf
+
+        <div class="container-fluid">
+            <div class="row">
+                {{-- FOTO FLUTUANTE --}}
+                <div class="col-lg-4 foto-flutuante">
+                    <div class="card mb-3">
+                        <div class="card-body text-center">
+                            {{-- Container para imagem final --}}
+                            <div class="avatar-container" id="avatar-container">
+                                <img src="{{ asset('storage/fotoAluno/avatar.png') }}" id="avatar-img" alt="Avatar do Aluno">
+                            </div>
+
+                            {{-- Container para câmera --}}
+                            <div id="camera-preview" style="display:none;"></div>
+
+                            <input type="hidden" name="image" class="image-tag">
+
+                            {{-- BOTÃO UPLOAD --}}
+                            <div class="custom-file mt-2">
+                                <input type="file" class="custom-file-input" id="fileexplorer" name="avatar_file" accept="image/*">
+                                <label class="custom-file-label" for="fileexplorer" id="fileexplorer-label">
+                                    <i class="fas fa-upload"></i> Escolher Foto
+                                </label>
+                            </div>
+
+                            <div class="btn-foto mt-3">
+                                <button type="button" id="startCamera" class="btn btn-dark">
+                                    <i class="fas fa-video"></i> Abrir Câmara
+                                </button>
+
+                                <button type="button" id="stopCamera" class="btn btn-danger" style="display:none">
+                                    <i class="fas fa-stop"></i> Parar Câmara
+                                </button>
+
+                                <button type="button" id="takeSnapshot" class="btn btn-secondary" style="display:none">
+                                    <i class="fas fa-camera"></i> Tirar Foto
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- CONTEÚDO --}}
+                <div class="col-lg-8">
+                    {{-- ABAS --}}
+                    <ul class="nav nav-tabs" id="alunoTabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" data-toggle="tab" href="#dados" role="tab">
+                                <i class="fas fa-user"></i> Dados do Aluno
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-toggle="tab" href="#endereco" role="tab">
+                                <i class="fas fa-home"></i> Endereço
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-toggle="tab" href="#naturalidade" role="tab">
+                                <i class="fas fa-globe"></i> Naturalidade
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-toggle="tab" href="#saude" role="tab">
+                                <i class="fas fa-heartbeat"></i> Saúde
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-toggle="tab" href="#filiacao" role="tab">
+                                <i class="fas fa-users"></i> Filiação
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-toggle="tab" href="#encarregado" role="tab">
+                                <i class="fas fa-user-tie"></i> Encarregado
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-toggle="tab" href="#pagamentos" role="tab">
+                                <i class="fas fa-credit-card"></i> Pagamentos
+                            </a>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content mt-3">
+                        {{-- DADOS DO ALUNO --}}
+                        <div class="tab-pane fade show active" id="dados" role="tabpanel">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="form-group">
+                                        <label><strong>Ano Lectivo *</strong></label>
+                                        <select class="form-control select-class-ano" name="ano_lectivo" required>
+                                            @foreach($anolelctivo as $a)
+                                            <option value="{{ $a->id }}">{{ $a->anolectivo }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label><strong>Classe *</strong></label>
+                                        <select class="form-control select-class-ano" name="classe" required>
+                                            @foreach($classes as $c)
+                                            <option value="{{ $c->id }}">{{ $c->Descricao }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label><strong>Nome do Aluno *</strong></label>
+                                        <input class="form-control" name="nome_aluno" required placeholder="Digite o nome completo">
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label><strong>Data de Nascimento *</strong></label>
+                                                <input type="date" class="form-control" name="data_nascimento" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label><strong>Sexo *</strong></label>
+                                                <select class="form-control" name="sexo_aluno" required>
+                                                    <option value="M">Masculino</option>
+                                                    <option value="F">Feminino</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label><strong>Religião *</strong></label>
+                                                <select class="form-control" name="religiao" required>
+                                                    @foreach($religiao as $religiaoitem)
+                                                    <option value="{{ $religiaoitem->id }}">{{ $religiaoitem->nome }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- ENDEREÇO --}}
+                        <div class="tab-pane fade" id="endereco" role="tabpanel">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="form-group">
+                                        <label><strong>Bairro</strong></label>
+                                        <input class="form-control" name="bairro" placeholder="Nome do bairro">
+                                    </div>
+                                    <div class="form-group">
+                                        <label><strong>Rua / Avenida</strong></label>
+                                        <input class="form-control" name="rua_avenida" placeholder="Nome da rua ou avenida">
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label><strong>Quarteirão</strong></label>
+                                                <input class="form-control" name="quarteirao" placeholder="Número do quarteirão">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label><strong>Casa Nº</strong></label>
+                                                <input class="form-control" name="casa_numero" placeholder="Número da casa">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- NATURALIDADE --}}
+                        <div class="tab-pane fade" id="naturalidade" role="tabpanel">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="form-group">
+                                        <label><strong>Natural de</strong></label>
+                                        <input class="form-control" name="naturalidade" placeholder="Cidade de nascimento">
+                                    </div>
+                                    <div class="form-group">
+                                        <label><strong>Província</strong></label>
+                                        <input class="form-control" name="provincia" placeholder="Província de nascimento">
+                                    </div>
+                                    <div class="form-group">
+                                        <label><strong>País</strong></label>
+                                        <input class="form-control" name="pais" value="Moçambique" list="listaNacionalidades">
+                                        <datalist id="listaNacionalidades">
+                                            <option value="Moçambique">
+                                            <option value="Angola">
+                                            <option value="Portugal">
+                                            <option value="Brasil">
+                                        </datalist>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- SAÚDE --}}
+                        <div class="tab-pane fade" id="saude" role="tabpanel">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label class="form-label"><strong>Estado de Saúde</strong></label><br>
+                                        <div class="btn-group" role="group">
+                                            <input type="radio" class="btn-check" name="estado_saude" id="saudeNao" value="nao" autocomplete="off" checked>
+                                            <label class="btn btn-outline-success" for="saudeNao">
+                                                <i class="fas fa-check-circle"></i> Sem Doença
+                                            </label>
+
+                                            <input type="radio" class="btn-check" name="estado_saude" id="saudeSim" value="sim" autocomplete="off">
+                                            <label class="btn btn-outline-danger" for="saudeSim">
+                                                <i class="fas fa-exclamation-circle"></i> Com Doença
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div id="campoDoencas" style="display:none">
+                                        <label><strong>Doenças</strong></label>
+                                        <div id="listaDoencas">
+                                            <div class="input-group mb-2">
+                                                <input type="text" class="form-control" name="doencas[]" placeholder="Nome da doença">
+                                                <div class="input-group-append">
+                                                    <button type="button" class="btn btn-danger remove-doenca">
+                                                        <i class="fas fa-minus"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <button type="button" class="btn btn-success mt-2" id="addDoenca">
+                                            <i class="fas fa-plus"></i> Adicionar Doença
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- FILIAÇÃO --}}
+                        <div class="tab-pane fade" id="filiacao" role="tabpanel">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="text-muted mb-3">Dados do Pai</h6>
+                                    <div class="form-group">
+                                        <label><strong>Nome do Pai</strong></label>
+                                        <input class="form-control" name="nome_pai" placeholder="Nome completo do pai">
+                                    </div>
+                                    <div class="form-group">
+                                        <label><strong>Profissão do pai</strong></label>
+                                        <input class="form-control" name="profissao_pai" list="listaProfissoes" autocomplete="on" placeholder="Profissão do pai">
+                                    </div>
+
+                                    <hr class="my-4">
+
+                                    <h6 class="text-muted mb-3">Dados da Mãe</h6>
+                                    <div class="form-group">
+                                        <label><strong>Nome da Mãe</strong></label>
+                                        <input class="form-control" name="nome_mae" placeholder="Nome completo da mãe">
+                                    </div>
+                                    <div class="form-group">
+                                        <label><strong>Profissão da mãe</strong></label>
+                                        <input class="form-control" name="profissao_mae" list="listaProfissoes" autocomplete="on" placeholder="Profissão da mãe">
+                                    </div>
+
+                                    <datalist id="listaProfissoes">
+                                        @foreach($profissao as $profissaoItem)
+                                        <option value="{{ $profissaoItem->Descricao }}">
+                                        @endforeach
+                                    </datalist>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- ENCARREGADO DE EDUCAÇÃO --}}
+                        <div class="tab-pane fade" id="encarregado" role="tabpanel">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="form-group">
+                                        <label><strong>Nome do Encarregado</strong></label>
+                                        <input class="form-control" name="nome_encarregado" placeholder="Nome completo do encarregado">
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label><strong>Sexo</strong></label>
+                                                <select class="form-control" name="sexo_encarregado">
+                                                    <option value="M">Masculino</option>
+                                                    <option value="F">Feminino</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label><strong>Grau de Parentesco</strong></label>
+                                                <select class="form-control" name="grau_parentesco">
+                                                    <option value="">-- Selecione --</option>
+                                                    @foreach($grauparentesco as $g)
+                                                    <option value="{{ $g->id }}">{{ $g->Descricao }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label><strong>Profissão</strong></label>
+                                        <input class="form-control" name="profissao_encarregado" list="listaProfissoes" autocomplete="on" placeholder="Profissão do encarregado">
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label><strong>Contactos</strong></label>
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <input class="form-control mb-2" name="contacto[]" placeholder="Contacto 1" type="tel">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <input class="form-control mb-2" name="contacto[]" placeholder="Contacto 2" type="tel">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <input class="form-control mb-2" name="contacto[]" placeholder="Contacto 3" type="tel">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- PAGAMENTOS --}}
+                        <div class="tab-pane fade" id="pagamentos" role="tabpanel">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5>Tipos de Pagamento</h5>
+                                    <p class="text-muted">Selecione os tipos de pagamento para este aluno</p>
+
+                                    <ul class="list-group" id="listaPagamentosTab">
+                                        <!-- Dinamicamente carregado -->
+                                    </ul>
+
+                                    <div class="alert alert-info mt-3">
+                                        <i class="fas fa-info-circle"></i> Os pagamentos serão configurados após a matrícula.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- BOTÃO MATRICULAR --}}
+                    <div class="text-right my-3">
+                        <button type="button" class="btn btn-secondary mr-2" id="btnLimpar">
+                            <i class="fas fa-eraser"></i> Limpar
+                        </button>
+                        <button type="button" class="btn btn-primary" id="btnMatricular">
+                            <i class="fas fa-user-plus"></i> Matricular Aluno
                         </button>
                     </div>
                 </div>
-                <div class="card-body" id="elementosSlectCompra">
-                    {{-- Conteúdo carregado via AJAX --}}
-                    <div class="text-center py-5">
-                        <i class="fas fa-spinner fa-spin fa-3x text-primary"></i>
-                        <p class="mt-3">Carregando dados...</p>
-                    </div>
-                </div>
             </div>
         </div>
-
-        {{-- TAB ESTOQUE --}}
-        <div class="tab-pane fade" id="estoque" role="tabpanel" aria-labelledby="estoque-tab">
-            <div class="card">
-                <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="fas fa-boxes"></i> Gestão de Estoque</h5>
-                    <span class="badge bg-light text-dark">Produtos em stock</span>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover" id="tabelaEstoque">
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Produto</th>
-                                    <th>Categoria</th>
-                                    <th class="text-center">Quantidade</th>
-                                    <th class="text-end">Preço Compra</th>
-                                    <th class="text-end">Preço Venda</th>
-                                    <th class="text-end">Valor Total</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @php $totalEstoque = 0; @endphp
-                                @forelse ($produtos ?? [] as $produto)
-                                    @php
-                                        $qtde = $produto->quantidade ?? 0;
-                                        $precoVenda = $produto->preco_venda ?? 0;
-                                        $totalEstoque += $qtde * $precoVenda;
-                                    @endphp
-                                    <tr>
-                                        <td>{{ $loop->iteration }}</td>
-                                        <td>{{ $produto->nome ?? 'N/A' }}</td>
-                                        <td>{{ $produto->categoria->Descricao ?? 'N/A' }}</td>
-                                        <td class="text-center">
-                                            <span class="badge {{ $qtde > 10 ? 'bg-success' : ($qtde > 5 ? 'bg-warning' : 'bg-danger') }}">
-                                                {{ $qtde }}
-                                            </span>
-                                        </td>
-                                        <td class="text-end">{{ number_format($produto->preco_compra ?? 0, 2) }} MZN</td>
-                                        <td class="text-end">{{ number_format($precoVenda, 2) }} MZN</td>
-                                        <td class="text-end">{{ number_format($qtde * $precoVenda, 2) }} MZN</td>
-                                        <td>
-                                            @if($qtde > 10)
-                                                <span class="badge bg-success">Stock Alto</span>
-                                            @elseif($qtde > 5)
-                                                <span class="badge bg-warning">Stock Médio</span>
-                                            @elseif($qtde > 0)
-                                                <span class="badge bg-danger">Stock Baixo</span>
-                                            @else
-                                                <span class="badge bg-secondary">Esgotado</span>
-                                            @endif
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="8" class="text-center text-muted py-4">
-                                            <i class="fas fa-box-open fa-2x d-block mb-2"></i>
-                                            Nenhum produto em estoque
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                            <tfoot>
-                                <tr class="table-info font-weight-bold">
-                                    <td colspan="6" class="text-end">VALOR TOTAL DO ESTOQUE:</td>
-                                    <td class="text-end">{{ number_format($totalEstoque, 2) }} MZN</td>
-                                    <td></td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {{-- TAB FATURAÇÃO --}}
-        <div class="tab-pane fade" id="faturacao" role="tabpanel" aria-labelledby="faturacao-tab">
-            <div class="card">
-                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="fas fa-file-invoice"></i> Resumo de Faturação</h5>
-                    <span class="badge bg-light text-dark">Período atual</span>
-                </div>
-                <div class="card-body">
-                    @php
-                        $totalVendas = 0;
-                        $totalProdutosVendidos = 0;
-                        $totalFaturado = 0;
-                        $totalLucro = 0;
-                    @endphp
-
-                    @foreach ($dados ?? [] as $venda)
-                        @php
-                            $totalVendas++;
-                            foreach ($venda->produto as $item) {
-                                $qtde = $item->qunatidade ?? 0;
-                                $preco = $item->produtos->produto_compra->preco_venda ?? 0;
-                                $compra = $item->produtos->produto_compra->preco_compra ?? 0;
-                                $totalProdutosVendidos += $qtde;
-                                $totalFaturado += $qtde * $preco;
-                                $totalLucro += $qtde * ($preco - $compra);
-                            }
-                        @endphp
-                    @endforeach
-
-                    {{-- CARDS RESUMO --}}
-                    <div class="row mb-4">
-                        <div class="col-md-3 col-6">
-                            <div class="card bg-primary text-white">
-                                <div class="card-body text-center">
-                                    <h6 class="text-white-50">Total Vendas</h6>
-                                    <h3 class="mb-0">{{ $totalVendas }}</h3>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3 col-6">
-                            <div class="card bg-info text-white">
-                                <div class="card-body text-center">
-                                    <h6 class="text-white-50">Produtos Vendidos</h6>
-                                    <h3 class="mb-0">{{ $totalProdutosVendidos }}</h3>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3 col-6">
-                            <div class="card bg-success text-white">
-                                <div class="card-body text-center">
-                                    <h6 class="text-white-50">Total Faturado</h6>
-                                    <h3 class="mb-0">{{ number_format($totalFaturado, 0) }} MZN</h3>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3 col-6">
-                            <div class="card {{ $totalLucro >= 0 ? 'bg-warning' : 'bg-danger' }} text-white">
-                                <div class="card-body text-center">
-                                    <h6 class="text-white-50">Lucro Total</h6>
-                                    <h3 class="mb-0">{{ number_format($totalLucro, 0) }} MZN</h3>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- TABELA DETALHADA --}}
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover" id="tabelaFaturacao">
-                            <thead>
-                                <tr>
-                                    <th>Venda #</th>
-                                    <th>Data</th>
-                                    <th>Cliente</th>
-                                    <th>Tipo</th>
-                                    <th class="text-end">Total</th>
-                                    <th class="text-end">Lucro</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse ($dados ?? [] as $venda)
-                                    @php
-                                        $totalVenda = 0;
-                                        $lucroVenda = 0;
-                                        foreach ($venda->produto as $item) {
-                                            $qtde = $item->qunatidade ?? 0;
-                                            $preco = $item->produtos->produto_compra->preco_venda ?? 0;
-                                            $compra = $item->produtos->produto_compra->preco_compra ?? 0;
-                                            $totalVenda += $qtde * $preco;
-                                            $lucroVenda += $qtde * ($preco - $compra);
-                                        }
-                                    @endphp
-                                    <tr>
-                                        <td><strong>#{{ $venda->id }}</strong></td>
-                                        <td>{{ $venda->created_at->format('d/m/Y H:i') ?? 'N/A' }}</td>
-                                        <td>{{ $venda->cliente->nome ?? 'Consumidor Final' }}</td>
-                                        <td>{{ $venda->TipodeVenda ?? 'N/A' }}</td>
-                                        <td class="text-end">{{ number_format($totalVenda, 2) }} MZN</td>
-                                        <td class="text-end {{ $lucroVenda >= 0 ? 'text-success' : 'text-danger' }}">
-                                            {{ number_format($lucroVenda, 2) }} MZN
-                                        </td>
-                                        <td>
-                                            <span class="badge bg-success">Concluída</span>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="7" class="text-center text-muted py-4">
-                                            <i class="fas fa-receipt fa-2x d-block mb-2"></i>
-                                            Nenhuma venda registrada
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {{-- TAB IVA --}}
-        <div class="tab-pane fade" id="iva" role="tabpanel" aria-labelledby="iva-tab">
-            <div class="card">
-                <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="fas fa-percent"></i> Gestão de IVA</h5>
-                    <span class="badge bg-dark text-white">Taxa: 17%</span>
-                </div>
-                <div class="card-body">
-                    @php
-                        $taxaIva = 17;
-                        $totalSemIva = 0;
-                        $totalIva = 0;
-                        $totalComIva = 0;
-                    @endphp
-
-                    @foreach ($dados ?? [] as $venda)
-                        @foreach ($venda->produto as $item)
-                            @php
-                                $precoVenda = $item->produtos->produto_compra->preco_venda ?? 0;
-                                $qtde = $item->qunatidade ?? 0;
-                                $valor = $qtde * $precoVenda;
-                                $iva = ($valor * $taxaIva) / 100;
-                                $semIva = $valor - $iva;
-
-                                $totalSemIva += $semIva;
-                                $totalIva += $iva;
-                                $totalComIva += $valor;
-                            @endphp
-                        @endforeach
-                    @endforeach
-
-                    {{-- CARDS IVA --}}
-                    <div class="row mb-4">
-                        <div class="col-md-3 col-6">
-                            <div class="card bg-info text-white">
-                                <div class="card-body text-center">
-                                    <h6 class="text-white-50">Base de Cálculo</h6>
-                                    <h4 class="mb-0">{{ number_format($totalSemIva, 2) }} MZN</h4>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3 col-6">
-                            <div class="card bg-primary text-white">
-                                <div class="card-body text-center">
-                                    <h6 class="text-white-50">Taxa IVA</h6>
-                                    <h4 class="mb-0">{{ $taxaIva }}%</h4>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3 col-6">
-                            <div class="card bg-warning text-dark">
-                                <div class="card-body text-center">
-                                    <h6 class="text-dark-50">Valor IVA</h6>
-                                    <h4 class="mb-0">{{ number_format($totalIva, 2) }} MZN</h4>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3 col-6">
-                            <div class="card bg-success text-white">
-                                <div class="card-body text-center">
-                                    <h6 class="text-white-50">Total com IVA</h6>
-                                    <h4 class="mb-0">{{ number_format($totalComIva, 2) }} MZN</h4>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- TABELA IVA --}}
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover" id="tabelaIva">
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Produto</th>
-                                    <th>Qtd</th>
-                                    <th class="text-end">Base sem IVA</th>
-                                    <th class="text-center">Taxa</th>
-                                    <th class="text-end">Valor IVA</th>
-                                    <th class="text-end">Total com IVA</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse ($dados ?? [] as $venda)
-                                    @foreach ($venda->produto as $item)
-                                        @php
-                                            $precoVenda = $item->produtos->produto_compra->preco_venda ?? 0;
-                                            $qtde = $item->qunatidade ?? 0;
-                                            $valor = $qtde * $precoVenda;
-                                            $iva = ($valor * $taxaIva) / 100;
-                                            $semIva = $valor - $iva;
-                                        @endphp
-                                        <tr>
-                                            <td>{{ $loop->parent->iteration ?? $loop->iteration }}</td>
-                                            <td>{{ $item->produtos->produto_compra->produtos->nome ?? 'N/A' }}</td>
-                                            <td class="text-center">{{ $qtde }}</td>
-                                            <td class="text-end">{{ number_format($semIva, 2) }} MZN</td>
-                                            <td class="text-center">{{ $taxaIva }}%</td>
-                                            <td class="text-end text-success">{{ number_format($iva, 2) }} MZN</td>
-                                            <td class="text-end text-primary">{{ number_format($valor, 2) }} MZN</td>
-                                        </tr>
-                                    @endforeach
-                                @empty
-                                    <tr>
-                                        <td colspan="7" class="text-center text-muted py-4">
-                                            <i class="fas fa-calculator fa-2x d-block mb-2"></i>
-                                            Nenhum dado para calcular IVA
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                            <tfoot>
-                                <tr class="table-warning font-weight-bold">
-                                    <td colspan="3" class="text-end">TOTAIS:</td>
-                                    <td class="text-end">{{ number_format($totalSemIva, 2) }} MZN</td>
-                                    <td class="text-center">{{ $taxaIva }}%</td>
-                                    <td class="text-end">{{ number_format($totalIva, 2) }} MZN</td>
-                                    <td class="text-end">{{ number_format($totalComIva, 2) }} MZN</td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-    </div>
+    </form>
 </div>
 
-{{-- SCRIPTS --}}
-@push('script')
-<script src="{{ asset('Datatable/js/jquery.dataTables.min.js') }}"></script>
-<script src="{{ asset('Datatable/js/dataTables.buttons.min.js') }}"></script>
-<script src="{{ asset('Datatable/js/buttons.flash.min.js') }}"></script>
-<script src="{{ asset('Datatable/js/jszip.min.js') }}"></script>
-<script src="{{ asset('Datatable/js/pdfmake.min.js') }}"></script>
-<script src="{{ asset('Datatable/js/vfs_fonts.js') }}"></script>
-<script src="{{ asset('Datatable/js/buttons.html5.min.js') }}"></script>
-<script src="{{ asset('Datatable/js/buttons.print.min.js') }}"></script>
-<script src="{{ asset('Datatable/js/buttons.colVis.min.js') }}"></script>
+{{-- MODAL DE PAGAMENTOS --}}
+<div class="modal fade" id="modalPagamentos" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Configurar Pagamentos</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="corpoConteudo"></div>
+
+                <!-- Loading -->
+                <div class="text-center">
+                    <img src="{{ asset('imageproceaament/loading.gif') }}" class="imgprocessar" style="width:100px; height:100px;">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+
+                <button type="button" class="btn btn-primary" id="btnConfirmarPagamento">
+                    <i class="fas fa-check"></i> Confirmar Pagamento
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Popup para PDF -->
+<div id="pdfPopup" class="pdf-popup">
+  <div class="pdf-popup-content">
+    <!-- Botão de fechar -->
+    <button id="closeBtn" class="pdf-close-btn">
+      <i class="fas fa-times"></i> Fechar
+    </button>
+
+    <!-- Botões de controle -->
+    <div class="pdf-controls">
+      <button id="printBtn" class="pdf-control-btn">
+        <i class="fas fa-print"></i> Imprimir
+      </button>
+      <button id="downloadBtn" class="pdf-control-btn">
+        <i class="fas fa-download"></i> Baixar
+      </button>
+    </div>
+
+    <!-- Container do PDF -->
+    <div class="pdf-container">
+      <iframe id="pdfFrame" frameborder="0"></iframe>
+    </div>
+
+    <!-- Loading -->
+    <div id="pdfLoading" class="pdf-loading">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Carregando PDF...</span>
+      </div>
+      <p>Carregando recibo...</p>
+    </div>
+  </div>
+</div>
+<script src="{{ asset('assets/js/jquery.min.js') }}"></script>
+<script src="{{ asset('js/webcam.min.js') }}"></script>
+{{-- <script src="https://cdnjs.cloudflare.com/ajax/libs/webcamjs/1.0.26/webcam.min.js"></script> --}}
+<script src="{{ asset('assets/bootstrap/js/bootstrap.min.js') }}"></script>
+<script src="{{ asset('Admin-LTE/plugins/sweetalert2/sweetalert2.js') }}"></script>
+<script src="{{ asset('MyJs/imprimirRecibo.js') }}"></script>
+
+
+
 
 <script>
-var urlcreate = '{{ Route('RelatorioSaldo.create2') }}';
-var urlstore = '{{ Route('fornecedor.store') }}';
-var token = '{{ Session::token() }}';
+    let pagamentosFiltrados=[];
+$(document).ready(function() {
+    // ============ VARIÁVEIS GLOBAIS ============
+    const URLS = {
+        store: '{{ route("aluno.store") }}',
+        matriculaStore: "/aluno/matricula/store",
+        selecionarValores: "/aluno/matricula/selecionar_tabelaValores/",
+        imprimirRecibo: "/aluno/matricula/imprimir/recibo/",
+        validarReferencia: "/aluno/matricula/validarReferencia/",    };
 
-$(document).ready(function(){
+    const tabelaValoresAno = @json($tabelavaloresano);
+    const CSRF_TOKEN = '{{ csrf_token() }}';
+    let statusValidacaoReferencia = "";
+    let processandoPagamento = false;
 
-    // INICIALIZAR TABS
-    inicializarTabs();
-
-    // CARREGAR DADOS INICIAIS
-    carregarDadosVendas($("form").serialize());
-
-    // EVENTOS DOS FILTROS
-    $(".compraIdShow").change(function(){
-        carregarDadosVendas($("form").serialize());
-    });
-
-    $(".CategoriaFarmacos").change(function(){
-        carregarDadosVendas($("form").serialize());
-    });
-
-    // DATATABLE
-    $('#listaprodutos').DataTable({
-        "paging": true,
-        "lengthChange": true,
-        "searching": true,
-        "ordering": true,
-        "info": false,
-        "autoWidth": true,
-        "lengthMenu": [[5, 10, 25, 50, -1], [5, 10, 25, 50, "All"]],
-        language: {
-            "lengthMenu": "visualizar _MENU_ ",
-            "zeroRecords": "Nada foi encontrado",
-            "info": "mostrar página por página",
-            "processing": "processando..",
-            "infoEmpty": "Nada tem ",
-            "infoFiltered": "(filtrado de _MAX_ registros)",
-            "loadingRecords": "processando...",
-            "search": "pesquisar:",
-            "paginate": {
-                "first": "primeira",
-                "last": "última",
-                "next": "próxima",
-                "previous": " Anterior"
-            }
-        }
-    });
-
-    // ATUALIZAR BADGES
-    atualizarBadges();
-});
-
-// FUNÇÃO PARA INICIALIZAR TABS
-function inicializarTabs() {
-    // Ativar tabs com Bootstrap 4/5
-    $('#relatorioTabs button').on('click', function(e) {
-        e.preventDefault();
-        $(this).tab('show');
-    });
-
-    // Persistência da tab ativa
-    var activeTab = localStorage.getItem('activeRelatorioTab');
-    if (activeTab) {
-        $('#relatorioTabs button[data-bs-target="' + activeTab + '"]').tab('show');
+    // ============ INICIALIZAÇÃO ============
+    function inicializar() {
+        const anoId = $("[name='ano_lectivo']").val();
+        const classeId = $("[name='classe']").val();
+        atualizarPagamentosPorAno(anoId, classeId);
     }
 
-    // Guardar tab ativa
-    $('#relatorioTabs button').on('shown.bs.tab', function(e) {
-        var target = $(e.target).attr('data-bs-target');
-        localStorage.setItem('activeRelatorioTab', target);
-    });
-}
-
-// FUNÇÃO PARA CARREGAR DADOS DAS VENDAS
-function carregarDadosVendas(dadosForm) {
-    $('#elementosSlectCompra').html(`
-        <div class="text-center py-5">
-            <i class="fas fa-spinner fa-spin fa-3x text-primary"></i>
-            <p class="mt-3">Carregando dados...</p>
-        </div>
-    `);
-
-    $.ajax({
-        url: urlcreate,
-        type: 'GET',
-        data: dadosForm,
-        success: function(data) {
-            $('#elementosSlectCompra').html(data);
-            atualizarBadges();
-
-            // Re-inicializar DataTables se necessário
-            if ($.fn.DataTable.isDataTable('#tabelaVendas')) {
-                $('#tabelaVendas').DataTable().destroy();
+    // ============ FUNÇÕES DE FOTO ============
+    $('#fileexplorer').on('change', function() {
+        const file = this.files[0];
+        if (file) {
+            if (file.size > 5 * 1024 * 1024) { // 5MB
+                mostrarAlerta('Erro', 'A imagem não pode exceder 5MB', 'error');
+                $(this).val('');
+                return;
             }
-            // Inicializar nova tabela
-            $('#tabelaVendas').DataTable({
-                "paging": true,
-                "lengthChange": true,
-                "searching": true,
-                "ordering": true,
-                "info": false,
-                "autoWidth": true,
-                "language": {
-                    "lengthMenu": "visualizar _MENU_ ",
-                    "zeroRecords": "Nada foi encontrado",
-                    "info": "mostrar página por página",
-                    "processing": "processando.."
-                }
-            });
-        },
-        error: function() {
-            $('#elementosSlectCompra').html(`
-                <div class="alert alert-danger">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    Erro ao carregar dados. Tente novamente.
-                </div>
-            `);
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                $('#avatar-img').attr('src', e.target.result);
+                $('.image-tag').val('');
+            };
+            reader.readAsDataURL(file);
+            $('#fileexplorer-label').html(`<i class="fas fa-check"></i> ${file.name}`);
         }
     });
-}
 
-// FUNÇÃO PARA ATUALIZAR BADGES
-function atualizarBadges() {
-    // Contar itens em cada tab
-    var totalVendas = $('#tabelaVendas tbody tr').length || 0;
-    var totalEstoque = $('#tabelaEstoque tbody tr:not(:empty)').length || 0;
-    var totalFaturacao = $('#tabelaFaturacao tbody tr:not(:empty)').length || 0;
-    var totalIva = $('#tabelaIva tbody tr:not(:empty)').length || 0;
+    $('#startCamera').click(function() {
+        $('#camera-preview').show();
+        $('#avatar-container').hide();
 
-    $('#vendasBadge').text(totalVendas);
-    $('#estoqueBadge').text(totalEstoque);
-    $('#faturacaoBadge').text(totalFaturacao);
-    $('#ivaBadge').text(totalIva);
-    $('#totalVendas').text(totalVendas + ' vendas');
-}
+        Webcam.set({
+            width: 200,
+            height: 200,
+            image_format: 'jpeg',
+            jpeg_quality: 90
+        });
 
-// FUNÇÃO PARA GUARDAR PRODUTO
-function guadar_produto_funct() {
-    $('.Guardar_produto').click(function(e) {
-        $("[name='FornecedorAdd']").val($("[name='Fornecedor']").val());
+        Webcam.attach('#camera-preview');
+        $('#stopCamera, #takeSnapshot').show();
+        $('#startCamera, #fileexplorer').hide();
     });
-}
-</script>
-@endpush
 
+    $('#stopCamera').click(function() {
+        Webcam.reset();
+        $('#camera-preview').hide();
+        $('#avatar-container').show();
+        $('#stopCamera, #takeSnapshot').hide();
+        $('#startCamera, #fileexplorer').show();
+    });
+
+    $('#takeSnapshot').click(function() {
+        Webcam.snap(function(uri) {
+            $('.image-tag').val(uri);
+            $('#avatar-img').attr('src', uri);
+            $('#camera-preview').hide();
+            $('#avatar-container').show();
+            Webcam.reset();
+            $('#stopCamera, #takeSnapshot').hide();
+            $('#startCamera, #fileexplorer').show();
+            $('#fileexplorer').val('');
+            $('#fileexplorer-label').html('<i class="fas fa-upload"></i> Escolher Foto');
+        });
+    });
+
+    // ============ FUNÇÕES DE SAÚDE ============
+    $('input[name="estado_saude"]').on('change', function() {
+        if ($(this).val() === 'sim') {
+            $('#campoDoencas').slideDown();
+        } else {
+            $('#campoDoencas').slideUp();
+            $('#listaDoencas input').val('');
+        }
+    });
+
+    $('#addDoenca').click(function() {
+        $('#listaDoencas').append(`
+            <div class="input-group mb-2">
+                <input type="text" class="form-control" name="doencas[]" placeholder="Nome da doença">
+                <div class="input-group-append">
+                    <button type="button" class="btn btn-danger remove-doenca">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                </div>
+            </div>
+        `);
+    });
+
+    $(document).on('click', '.remove-doenca', function() {
+        $(this).closest('.input-group').remove();
+    });
+
+    // ============ VALIDAÇÃO DE FORMULÁRIO ============
+    function validarCampos() {
+        let valido = true;
+        const camposInvalidos = [];
+
+        $('input[required], select[required]').each(function() {
+
+
+             const $campo = $(this);
+        const idCampo = $campo.attr('name');
+
+        // ⭐ EXCLUIR CAMPO REFERÊNCIA ⭐
+        if (idCampo === 'Referencia') {
+            return true; // Pula para o próximo campo (continue)
+        }
+            if (!$campo .val().trim()) {
+                $(this).addClass('is-invalid').removeClass('is-valid');
+                camposInvalidos.push($campo .attr('name'));
+                valido = false;
+            } else {
+                $campo .removeClass('is-invalid').addClass('is-valid');
+            }
+        });
+
+        // Validação de data de nascimento
+        const dataNascimento = $('[name="data_nascimento"]').val();
+        if (dataNascimento) {
+            const nascimento = new Date(dataNascimento);
+            const hoje = new Date();
+            const idade = hoje.getFullYear() - nascimento.getFullYear();
+
+            if (idade < 3 || idade > 25) {
+                $('[name="data_nascimento"]').addClass('is-invalid');
+                camposInvalidos.push('data_nascimento (idade inválida)');
+                valido = false;
+            }
+        }
+
+        if (!valido) {
+            const mensagem = `Preencha os seguintes campos obrigatórios:\n${camposInvalidos.join('\n')}`;
+            mostrarAlerta('Campos obrigatórios', mensagem, 'warning');
+
+            // Vai para a primeira aba com erro
+            const primeiroErro = $('.is-invalid').first();
+            if (primeiroErro.length) {
+                const abaPai = primeiroErro.closest('.tab-pane');
+                if (abaPai.length) {
+                    const abaId = abaPai.attr('id');
+                    $(`a[href="#${abaId}"]`).tab('show');
+                    primeiroErro.focus();
+                }
+            }
+        }
+
+        return valido;
+    }
+
+    // ============ FUNÇÕES DE PAGAMENTO ============
+    function atualizarPagamentosPorAno(anoId, classeId) {
+        $('#listaPagamentosTab').empty();
+
+        const pagamentosFiltrados = tabelaValoresAno.filter(function(item) {
+            return item.idanolectivo == anoId && item.classId == classeId;
+        });
+
+        let htmlDados = "";
+
+        pagamentosFiltrados.forEach(function(item) {
+            if (item.id > 2) {
+                const detalhes = typeof item.detalhes === "string" ? JSON.parse(item.detalhes) : item.detalhes;
+                const numeroDetalhes = Array.isArray(detalhes) ? detalhes.length : 0;
+
+                htmlDados += `
+                    <li class="list-group-item">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input checkbox-pagamento"
+                                   id="pagamento-${item.id}" value="${item.id}" checked>
+                            <label class="custom-control-label d-flex justify-content-between w-100" for="pagamento-${item.id}">
+                                <div>
+                                    <strong>${item.Finalidade}</strong><br>
+                                    <small class="text-muted">${numeroDetalhes} parcela(s)</small>
+                                </div>
+                                <div>
+                                    <span class="badge badge-primary">${item.valorDescricao},00 MT</span>
+                                </div>
+                            </label>
+                        </div>
+                    </li>`;
+            }
+        });
+
+        if (htmlDados === "") {
+            htmlDados = `
+                <li class="list-group-item text-center text-muted">
+                    <i class="fas fa-info-circle fa-2x mb-2"></i><br>
+                    Nenhum pagamento configurado para esta classe/ano
+                </li>`;
+        }
+
+        $('#listaPagamentosTab').html(htmlDados);
+    }
+
+    function obterPagamentosSelecionados() {
+        const pagamentos = [];
+        $('.checkbox-pagamento:checked').each(function() {
+            pagamentos.push($(this).val());
+        });
+        return pagamentos;
+    }
+
+    function carregarModalPagamentos(pagamentos, classeId, anoId,tipoId) {
+
+
+        if (processandoPagamento) return;
+
+        processandoPagamento = true;
+        $('.imgprocessar').addClass('ativo');
+
+
+        $.ajax({
+            url: `${URLS.selecionarValores}${classeId}/${anoId}/${tipoId}`,
+            type: "GET",
+            data: { pagamentos: pagamentos },
+            success: function(data) {
+                $('.corpoConteudo').html(data);
+                 $("#btnConfirmarPagamento").show();
+                if($(".flagdeativaConformacao").val()==parseInt(0)){
+  $("#btnConfirmarPagamento").hide();
+                }
+
+                $('#modalPagamentos').modal('show');
+                // console.log($(".flagdeativaConformacao").val(), "flagdkdkdkdkd");
+            },
+            error: function() {
+                mostrarAlerta('Erro', 'Não foi possível carregar os pagamentos', 'error');
+            },
+            complete: function() {
+                $('.imgprocessar').removeClass('ativo');
+                processandoPagamento = false;
+            }
+        });
+    }
+
+    // ============ VALIDAÇÃO DE REFERÊNCIA ============
+    function validarReferencia(referencia) {
+        return new Promise((resolve, reject) => {
+            if (!referencia || referencia.trim() === "") {
+                resolve({ valido: false, mensagem: "Referência não pode estar vazia" });
+              //  $('#btnConfirmarPagamento').
+
+                return;
+            }
+
+           // const url = URLS.validarReferencia.replace(':referencia', encodeURIComponent(referencia));
+         const  url= `${URLS.validarReferencia}${referencia}`
+
+            $.ajax({
+                url: url,
+                type: "GET",
+                dataType: 'json',
+                success: function(response) {
+                    if (response.status === "invalido") {
+                        statusValidacaoReferencia = "invalido";
+                        resolve({
+                            valido: false,
+                            mensagem: "Referência inválida",
+                            detalhes: response
+                        });
+                    } else {
+                        statusValidacaoReferencia = "valido";
+                        resolve({
+                            valido: true,
+                            mensagem: "Referência válida",
+                            detalhes: response
+                        });
+                    }
+                },
+                error: function() {
+                    reject("Erro ao validar referência");
+                }
+            });
+        });
+    }
+
+    // ============ ENVIO DO FORMULÁRIO ============
+    async function enviarFormulario() {
+        // Validação inicial
+        if (!validarCampos()) {
+            return false;
+        }
+
+        // Obter dados
+        const anoId = $("[name='ano_lectivo']").val();
+        const classeId = $("[name='classe']").val();
+        const pagamentos = obterPagamentosSelecionados();
+
+        if (pagamentos.length === 0&&pagamentosFiltrados.length>0) {
+            mostrarAlerta('Atenção', 'Selecione pelo menos um tipo de pagamento', 'warning');
+            return false;
+        }
+
+        // Carregar modal de pagamentos
+        carregarModalPagamentos(pagamentos, classeId, anoId,1);
+        return false;
+    }
+
+    // ============ EVENT LISTENERS ============
+    $(document).on("change", ".select-class-ano", function() {
+        const anoId = $("[name='ano_lectivo']").val();
+        const classeId = $("[name='classe']").val();
+        atualizarPagamentosPorAno(anoId, classeId);
+    });
+
+    $('#btnLimpar').click(function() {
+        Swal.fire({
+            title: 'Limpar formulário?',
+            text: "Todos os dados serão perdidos!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Sim, limpar!',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $('#formAluno')[0].reset();
+                $('#avatar-img').attr('src', '{{ asset("storage/fotoAluno/avatar.png") }}');
+                $('.image-tag').val('');
+                $('#fileexplorer-label').html('<i class="fas fa-upload"></i> Escolher Foto');
+                $('.is-invalid, .is-valid').removeClass('is-invalid is-valid');
+                inicializar();
+                mostrarAlerta('Sucesso', 'Formulário limpo com sucesso', 'success');
+            }
+        });
+    });
+
+    $('#formAluno').on('submit', function(e) {
+        e.preventDefault();
+        enviarFormulario();
+    });
+
+    $('#btnMatricular').click(function() {
+        // $('#formAluno').submit();
+        enviarFormulario();
+    });
+
+    $(document).on('click', '#btnConfirmarPagamento', async function() {
+        const btn = $(this);
+        const originalText = btn.html();
+
+        try {
+            btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processando...');
+
+            // Validar referência se existir
+            const campoReferencia = $("[name='Referencia']");
+            if (campoReferencia.length > 0) {
+                const referencia = campoReferencia.val().trim();
+
+                if (!referencia) {
+                    mostrarAlerta('Erro', 'Digite a referência de pagamento', 'error');
+                    campoReferencia.addClass('is-invalid').focus();
+                    btn.prop('disabled', false).html(originalText);
+                    return;
+                }
+
+                const validacao = await validarReferencia(referencia);
+                if (!validacao.valido) {
+                    $('#statusReferencia')
+                        .removeClass('valida')
+                        .addClass('invalida')
+                        .text(validacao.mensagem)
+                        .show();
+                    mostrarAlerta('Referência Inválida', validacao.mensagem, 'error');
+                    btn.prop('disabled', false).html(originalText);
+                    return;
+                }
+
+                $('#statusReferencia')
+                    .removeClass('invalida')
+                    .addClass('valida')
+                    .text(validacao.mensagem)
+                    .show();
+            }
+
+            // Preparar dados do formulário
+            const formData = new FormData($('#formAluno')[0]);
+
+            // Adicionar dados do modal de pagamento
+            $('#modalPagamentos form').serializeArray().forEach(function(field) {
+                if (field.name !== "_token") {
+                    formData.append(field.name, field.value);
+                }
+            });
+
+            // Enviar para o servidor
+            $.ajax({
+                url: URLS.store,
+                method: "POST",
+                data: formData,
+                processData: false,
+                contentType: false,
+                headers: {
+                    'X-CSRF-TOKEN': CSRF_TOKEN
+                },
+                beforeSend: function() {
+                   // $('.imgprocessar').addClass('ativo');
+                },
+                success: function(response) {
+                    if (response.estado === "INS-0") {
+                        Swal.fire({
+                            title: 'Sucesso!',
+                            text: 'Aluno matriculado com sucesso!',
+                            icon: 'success',
+                            showCancelButton: true,
+                            confirmButtonText: 'Ver Recibo',
+                            cancelButtonText: 'Fechar'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                // Imprimir recibo
+                                // const dados = response.meses.map(e => ({
+                                //     tipo: e.tipo,
+                                //     mes: e.mes
+                                // }));
+ // const dadosEncoded = encodeURIComponent(JSON.stringify(dados));
+const urlRecibo =`${URLS.imprimirRecibo}${response.anolectivo}/${response.idaluno}/${response.talao}/${response.metodo}`
+                               // window.open(urlRecibo, '_blank');
+abrirReciboPDF(urlRecibo,response.idaluno)
+
+
+
+                            }
+
+                            // Limpar formulário
+                            $('#formAluno')[0].reset();
+                            $('#modalPagamentos').modal('hide');
+                            inicializar();
+                        });
+                    }
+                     else {
+                        mostrarAlerta('Erro', response.messagem , 'error');
+                    }
+                },
+                error: function(xhr) {
+                    let mensagem = 'Erro ao processar a matrícula';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        mensagem = xhr.responseJSON.message;
+                    } else if (xhr.status === 422) {
+                        const errors = xhr.responseJSON.errors;
+                        mensagem = Object.values(errors).flat().join('\n');
+                    }
+                    mostrarAlerta('Erro', mensagem, 'error');
+                },
+                complete: function() {
+                    btn.prop('disabled', false).html(originalText);
+                    $('.imgprocessar').removeClass('ativo');
+                }
+            });
+
+        } catch (error) {
+            console.error('Erro:', error);
+            mostrarAlerta('Erro', 'Ocorreu um erro inesperado', 'error');
+            btn.prop('disabled', false).html(originalText);
+        }
+    });
+
+    // ============ FUNÇÕES AUXILIARES ============
+    function mostrarAlerta(titulo, texto, tipo) {
+        Swal.fire({
+            title: titulo,
+            text: texto,
+            icon: tipo,
+            confirmButtonText: 'OK',
+            confirmButtonColor: '#3085d6'
+        });
+    }
+
+    // Auto-validação em tempo real
+    $('input[required], select[required]').on('input change', function() {
+        if ($(this).val().trim()) {
+            $(this).removeClass('is-invalid').addClass('is-valid');
+        } else {
+            $(this).removeClass('is-valid');
+        }
+    });
+
+    // Inicializar
+    inicializar();
+});
+
+
+
+
+           // Abre o PDF no pop
+</script>
 @endsection

@@ -13,7 +13,7 @@
     </thead>
     <tbody>
         @if(!empty($dad))
-        @foreach ($dad as $dadItem)
+        @foreach ($dad->unique('aluno_classe_id') as $dadItem)
 
 
         <tr>
