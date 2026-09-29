@@ -35,7 +35,7 @@
     <h3>Recibo: {{ $matricula->codigo_AC }}</h3>
     <img src="data:image/png;base64,{{ $barcode }}" alt="Código de Barras">
 </div>
-
+oriotrior
 <div style="text-align: center; margin-top: 10px;">
     <div style="display: inline-block; height: 60px; width: 60px; border-radius: 60px; overflow: hidden;">
         <img src="{{ asset('storage/logoMarca/' . $conf->avatar) }}"

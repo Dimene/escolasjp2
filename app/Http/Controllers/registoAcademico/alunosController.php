@@ -1188,7 +1188,8 @@ foreach ($array as $itemArray) {
 
         // Gerar PDF
 
-        $pdf = Pdf::loadView('registoAcademico.recibo-matricula-Remprimir', [
+        // $pdf = Pdf::load
+      return  View('registoAcademico.recibo-matricula-Remprimir', [
             'matricula' => $matricula,
             'data' => $data,
             'dadosMatriculaValores' => $dadosMatriculaValores,
