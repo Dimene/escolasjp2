@@ -626,7 +626,7 @@ if(count($request->mesid)==1){
             ->get();
 
 
-        if ($flag == 0) :
+        if ($flag == 1) :
 
             return  view("registoAcademico.outrosPagamento.mensalidadespagas", compact('aluno', 'meses', 'Valores_pago'));
         else :
