@@ -1,3 +1,4 @@
+    <link rel="stylesheet" href="{{ asset('Admin-LTE/plugins/colorpicker/bootstrap-colorpicker.min.css') }}">
 @php
     use Illuminate\Support\Str;
     use Carbon\Carbon;
@@ -77,7 +78,6 @@
                 <table class="table align-middle mb-0 relatorio-pagamentos">
                     <thead>
                         <tr>
-                            <th class="text-center" style="width: 50px;">#</th>
                             <th style="min-width: 220px;">Nome do Aluno</th>
                             @foreach ($meses as $mesId => $mesNome)
                                 <th class="text-center text-nowrap" style="min-width: 110px;">
@@ -92,14 +92,12 @@
                             @php
                                 $pagosAluno = 0;
                                 $devidoAluno = 0;
+                                $linhaPar = ($i % 2 === 0);
                             @endphp
-                            <tr class="row-aluno">
-                                <td class="text-center text-muted fw-semibold">{{ $i + 1 }}</td>
+                            <tr class="row-aluno {{ $linhaPar ? 'linha-par' : 'linha-impar' }}">
                                 <td class="fw-semibold aluno-nome">
                                     <div class="d-flex align-items-center gap-2">
-                                        <div class="avatar-initial">
-                                            {{ strtoupper(substr($aluno->nome, 0, 1)) }}
-                                        </div>
+                                        
                                         <span>{{ $aluno->nome }}</span>
                                     </div>
                                 </td>
@@ -157,7 +155,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="{{ $totalMeses + 3 }}" class="text-center py-5 empty-state">
+                                <td colspan="{{ $totalMeses + 2 }}" class="text-center py-5 empty-state">
                                     <div class="empty-icon">
                                         <i class="fa fa-inbox"></i>
                                     </div>
@@ -170,7 +168,7 @@
                     @if ($totalAlunos > 0)
                         <tfoot>
                             <tr>
-                                <td colspan="2" class="text-end total-label">
+                                <td class="text-end total-label">
                                     <i class="fa fa-coins me-1"></i> Total pago por mês
                                 </td>
                                 @foreach ($meses as $mesId => $mesNome)
@@ -197,7 +195,7 @@
     </div>
 </div>
 
-@push('styles')
+
 <style>
     /* ============ SHELL ============ */
     .relatorio-pagamentos-shell {
@@ -332,16 +330,22 @@
         border-color: rgba(15, 23, 42, 0.06);
     }
 
-    .row-aluno {
-        transition: background-color .18s ease;
+    /* ============ LINHAS INTERCALADAS (ZEBRADO) ============ */
+    .relatorio-pagamentos tbody tr.linha-par {
+        background-color: #ffffff;
     }
 
-    .row-aluno:hover {
-        background-color: rgba(13, 110, 253, 0.035);
+    .relatorio-pagamentos tbody tr.linha-impar {
+        background-color: #f4f8ff;
+    }
+
+    .relatorio-pagamentos tbody tr.linha-par:hover,
+    .relatorio-pagamentos tbody tr.linha-impar:hover {
+        background-color: rgba(13, 110, 253, 0.07);
     }
 
     .aluno-nome {
-        background: rgba(255, 255, 255, .4);
+        background: transparent;
     }
 
     /* ============ AVATAR ============ */
@@ -506,6 +510,11 @@
             background: #555 !important;
             box-shadow: none !important;
         }
+        .relatorio-pagamentos tbody tr.linha-par {
+            background-color: #ffffff !important;
+        }
+        .relatorio-pagamentos tbody tr.linha-impar {
+            background-color: #f4f8ff !important;
+        }
     }
 </style>
-@endpush
