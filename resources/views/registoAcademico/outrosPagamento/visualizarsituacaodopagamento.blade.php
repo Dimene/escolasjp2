@@ -73,10 +73,10 @@
                                  @php
                                     $Descricao=$tipoPagamentoItem->Descricao;
                                 @endphp
-                                @can("RelatorioPagameto-$Descricao")
+                              
                                     <option value="{{ $tipoPagamentoItem->id }}">{{ $tipoPagamentoItem->Descricao }}
                                     </option>
-                                    @endcan
+                                    
                                 @endforeach
 
                             </select>
