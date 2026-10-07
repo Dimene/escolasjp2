@@ -646,6 +646,30 @@ if(count($request->mesid)==1){
 
         return view("registoAcademico.outrosPagamento.relatorio-mensalidades", compact('anolectivos', 'classes', 'tipoPagamento')
         );
+    } 
+    
+    public function situacao($ano,$classe ,$tipo)
+    {
+
+// $tipoPagamento=tipos_pagamentos::where("id",$tipo)->first();
+$tipoPagamento=DB::table('detalhes2')->where("tipo",$tipo)
+->where('anolectivo_id',$ano)
+->where('classe_id',$classe)
+->first();
+
+$dados=DB::table('outros_pagamentosview')
+->where("classe_id",$classe)
+->where("classe_id",$classe)
+->where("anolectivo_id",$ano)
+->where("tipoPagamento_id",$tipoPagamento->id)
+->get();
+
+
+
+
+
+        return view("registoAcademico.outrosPagamento.situacao", compact('dados','ano','classe' ,'tipo')
+        );
     }
 
 
@@ -979,5 +1003,24 @@ $metodosPagamentos=DB::table('metodo_pagamento')->get();
             "registoAcademico.outrosPagamento.recibo-mes",
             compact('dadosmes', 'dadoTabelavalores', 'dias', "datalimite",'mesestipo')
         );
+}
+
+
+public function detalhada($ano,$classe,$tipo,$turma=null){
+
+
+                $dados = DB::table('outros_pagamentosview')
+                     ->where('tipo_pagamento_id', $tipo)
+                    ->where('turma_id', $turma)
+                    ->where('anolectivo_id', $ano)
+                    ->where('classe_id', $classe)
+                    ->get();
+
+// dd($dados);
+                    return view(
+                        "registoAcademico.outrosPagamento.outrospagamento-detalhes-situacao",
+                        compact('dados','turma')
+                    ); 
+
 }
 }

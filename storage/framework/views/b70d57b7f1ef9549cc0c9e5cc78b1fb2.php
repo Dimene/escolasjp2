@@ -52,6 +52,14 @@ foreach ($tipospagamentos->where("id", ">", 2) as $item) {
         </li>
         <?php endif; ?>
 
+        <li class="nav-item">
+            <a href="<?php echo e(route('pagament.visualizarExtrart')); ?>"
+               class="nav-link <?php echo e(Request::is("$basePath/visualizarsituacao") ? 'active' : ''); ?>">
+                <i class="fa fa-pencil-square nav-icon"></i>
+                <p>Situação   por pagamento</p>
+            </a>
+        </li>
+
         
         <?php if($canRelatorio): ?>
         <li class="nav-item">

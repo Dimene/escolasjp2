@@ -170,4 +170,142 @@
   </div>
 </div>
 
+<script>
+  // Função para abrir o PDF
+function abrirReciboPDF(url,idaluno) {
+    // Prepara dados para envio
+    // const dados = response.meses.map(e => ({
+    //     tipo: e.tipo,
+    //     mes: e.mes
+    // }));
+
+    //const dadosEncoded = encodeURIComponent(JSON.stringify(dados));
+
+    // Monta a URL
+   // const urlRecibo = `${URLS.imprimirRecibo}${response.anolectivo}/${response.idaluno}/${dadosEncoded}/${response.metodo}`;
+
+    console.log('URL do PDF:', url);
+
+    // Mostra loading
+    const popup = document.getElementById('pdfPopup');
+    const loading = document.getElementById('pdfLoading');
+    const pdfFrame = document.getElementById('pdfFrame');
+
+    popup.style.display = 'block';
+    loading.style.display = 'block';
+    pdfFrame.style.display = 'none';
+
+    // Faz a requisição do PDF
+    fetch(url, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/pdf'
+        }
+    })
+    .then(res => {
+        if (!res.ok) {
+            throw new Error(`Erro ao buscar o PDF: ${res.status} ${res.statusText}`);
+        }
+        return res.blob();
+    })
+    .then(blob => {
+        // Cria URL do blob
+        const pdfUrl = URL.createObjectURL(blob);
+
+        // Configura o iframe
+        pdfFrame.src = pdfUrl;
+        loading.style.display = 'none';
+        pdfFrame.style.display = 'block';
+
+        // Configura o botão de download
+        document.getElementById('downloadBtn').onclick = function() {
+            const link = document.createElement('a');
+            link.href = pdfUrl;
+            link.download = `recibo-matricula-${idaluno}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+
+        // Configura impressão automática se necessário
+        if (response.metodo !== 2) { // Só imprime automaticamente se não for M-Pesa
+            setTimeout(() => {
+                const iframeWindow = pdfFrame.contentWindow;
+                if (iframeWindow) {
+                    iframeWindow.focus();
+                    iframeWindow.print();
+                }
+            }, 1000);
+        }
+    })
+    .catch(err => {
+        console.error('Falha ao carregar o PDF:', err);
+        loading.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h4>Erro ao carregar recibo</h4>
+                <p>${err.message}</p>
+                <button onclick="document.getElementById('pdfPopup').style.display='none'"
+                        class="btn btn-sm btn-danger">
+                    Fechar
+                </button>
+            </div>
+        `;
+    });
+}
+// Fecha popup
+document.addEventListener('click', function(e) {
+    if (e.target && e.target.id === 'closeBtn') {
+        const popup = document.getElementById('pdfPopup');
+        const pdfFrame = document.getElementById('pdfFrame');
+
+        popup.style.display = 'none';
+        if (pdfFrame.src) {
+            URL.revokeObjectURL(pdfFrame.src);
+            pdfFrame.src = '';
+        }
+    }
+});
+
+// Imprimir
+document.addEventListener('click', function(e) {
+    if (e.target && e.target.id === 'printBtn') {
+        const pdfFrame = document.getElementById('pdfFrame');
+        const iframeWindow = pdfFrame.contentWindow;
+
+        if (iframeWindow) {
+            iframeWindow.focus();
+            iframeWindow.print();
+        }
+    }
+});
+
+// Fecha popup ao clicar fora
+document.addEventListener('click', function(e) {
+    const popup = document.getElementById('pdfPopup');
+    if (popup && e.target === popup) {
+        popup.style.display = 'none';
+        const pdfFrame = document.getElementById('pdfFrame');
+        if (pdfFrame.src) {
+            URL.revokeObjectURL(pdfFrame.src);
+            pdfFrame.src = '';
+        }
+    }
+});
+
+// Fecha com tecla ESC
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const popup = document.getElementById('pdfPopup');
+        if (popup && popup.style.display === 'block') {
+            popup.style.display = 'none';
+            const pdfFrame = document.getElementById('pdfFrame');
+            if (pdfFrame.src) {
+                URL.revokeObjectURL(pdfFrame.src);
+                pdfFrame.src = '';
+            }
+        }
+    }
+});
+</script>
 <?php /**PATH C:\laragon\www\escolasaojoaopaulo\resources\views/Componetes/frame-imprimir.blade.php ENDPATH**/ ?>

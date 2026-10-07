@@ -75,7 +75,7 @@ class alunoClasse extends Model
  */
 public function Alunos()
 {
-    return $this->hasMany(Aluno::class, 'id', 'aluno_id');
+    return $this->hasOne(Aluno::class, 'id', 'aluno_id');
 }
 
     public function classe()

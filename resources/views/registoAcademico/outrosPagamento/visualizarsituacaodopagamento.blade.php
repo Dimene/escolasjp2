@@ -1,7 +1,8 @@
-<?php $__env->startSection('title', 'Relatorio Mensalidades'); ?>
-<?php $__env->startSection('content'); ?>
+@extends('layouts.admin-Lti')
+@section('title', 'Relatorio Mensalidades')
+@section('content')
 
-    <link rel="stylesheet" href="<?php echo e(asset('Datatable/css/jquery.dataTables.min.css')); ?>" />
+    <link rel="stylesheet" href="{{ asset('Datatable/css/jquery.dataTables.min.css') }}" />
 
 
     <!-- Content Wrapper. Contains page content -->
@@ -16,7 +17,7 @@
                 <a href="#"><i class="fa fa-credit-card"></i>Pagamentos</a>
             </li>
             <li class="breadcrumb-item active">
-                <i class="fa fa-chart-line"></i> <b>Relatorio Generico</b>
+                <i class="fa fa-chart-line"></i> <b>Situa&ccedil;&atilde;o</b>
             </li>
         </ol>
     </div>
@@ -35,12 +36,11 @@
 
                                 <div class="form-group">
                                     <label>Ano</label>
-                                    <select class="anolectivo selectescohido" data-placeholder="" style="width: 100%;">
-                                        <?php $__currentLoopData = $anolectivos; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $anolectivoItem): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                            <option value="<?php echo e($anolectivoItem->id); ?>"><?php echo e($anolectivoItem->anolectivo); ?>
-
+                                    <select class="anolectivo selectescohido selectescohido" data-placeholder="" style="width: 100%;">
+                                        @foreach ($anolectivos as $anolectivoItem)
+                                            <option value="{{ $anolectivoItem->id }}">{{ $anolectivoItem->anolectivo }}
                                             </option>
-                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                        @endforeach
 
                                     </select>
                                 </div>
@@ -56,9 +56,9 @@
                         <div class="form-group">
                             <label>Classe</label>
                             <select class="select2 classes selectescohido" style="width: 100%;">
-                                <?php $__currentLoopData = $classes; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $classesItem): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                    <option value="<?php echo e($classesItem->id); ?>"><?php echo e($classesItem->Descricao); ?></option>
-                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                @foreach ($classes as $classesItem)
+                                    <option value="{{ $classesItem->id }}">{{ $classesItem->Descricao }}</option>
+                                @endforeach
 
                             </select>
                         </div>
@@ -69,16 +69,15 @@
                             <label>Tipo de Pagamento</label>
                             <select class="select2 tipo selectescohido" style="width: 100%;">
 
-                                <?php $__currentLoopData = $tipoPagamento; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $tipoPagamentoItem): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                 <?php
+                                @foreach ($tipoPagamento as $tipoPagamentoItem)
+                                 @php
                                     $Descricao=$tipoPagamentoItem->Descricao;
-                                ?>
-                                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check("RelatorioPagameto-$Descricao")): ?>
-                                    <option value="<?php echo e($tipoPagamentoItem->id); ?>"><?php echo e($tipoPagamentoItem->Descricao); ?>
-
+                                @endphp
+                                @can("RelatorioPagameto-$Descricao")
+                                    <option value="{{ $tipoPagamentoItem->id }}">{{ $tipoPagamentoItem->Descricao }}
                                     </option>
-                                    <?php endif; ?>
-                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                    @endcan
+                                @endforeach
 
                             </select>
                         </div>
@@ -113,7 +112,7 @@
         </div>
     </div>
 
-        <?php $__env->startPush('script'); ?>
+        @push('script')
             <script>
                 $(document).ready(function() {
 
@@ -141,7 +140,7 @@
 
                 function relatoriotesto($ano, $classe, $tipo, $flag) {
                     $.ajax({
-                        url: "/RegistoAcademico/outrosPagamento/Relatorio/" + $ano + "/" + $classe + "/" + $tipo,
+                        url: "/RegistoAcademico/outrosPagamento/situacao/" + $ano + "/" + $classe + "/" + $tipo,
                         type: 'GET',
                         success: function(data, textStatus, jqXHR) {
 
@@ -150,12 +149,10 @@
                     })
                 }
             </script>
-        <?php $__env->stopPush(); ?>
+        @endpush
 
 
 
 
 
-    <?php $__env->stopSection(); ?>
-
-<?php echo $__env->make('layouts.admin-Lti', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\laragon\www\escola2025\resources\views/registoAcademico/outrosPagamento/relatorio-mensalidades.blade.php ENDPATH**/ ?>
+    @endsection

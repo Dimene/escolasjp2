@@ -134,6 +134,7 @@ Route::get(
 
         Route::resource("pagament",efetuarPagamentoController::class);
         Route::get("pagamento/efetuar",[efetuarPagamentoController::class,"show"])->name('pagament.show');
+        Route::get("pagamento/visualizarsituacao",[efetuarPagamentoController::class,"visualizarExtrart"])->name('pagament.visualizarExtrart');
         Route::get("pagamento/relatorio",[efetuarPagamentoController::class,"relatorio"])->name('pagament.relatorio');
         Route::get("pagamento/relatoriogenerico",[efetuarPagamentoController::class,"relatoriogenerico"])->name(name: 'pagament.relatoriogenerico');
 
@@ -295,6 +296,9 @@ Route::get('outrosPagamento/imprimirUnica/{id}/{tipo}/{mes}', [outrospagamentoCo
     Route::get('outrosPagamento/imprimir/{id}/{tipo}/{flag}', [outrospagamentoController::class, 'imprimirTodasMensalidadesAluno'])->name('outrosPagamento.imprimirTodasMensalidadesAluno');
 
     Route::get('outrosPagamento/Relatorio', [outrospagamentoController::class, 'Relatorio'])->name('outrosPagamento.Relatorio');
+    Route::get('outrosPagamento/situacao/{ano}/{classe}/{tipo}', [outrospagamentoController::class, 'situacao'])->name('outrosPagamento.situacao');
+    Route::get('outrosPagamento/situacao/detalhada/{ano}/{classe}/{tipo}/{turma?}', [outrospagamentoController::class, 'detalhada'])->name('outrosPagamento.detalhada');
+    
     Route::get('outrosPagamento/Relatorio/{ano}/{classe}/{tipo}', [outrospagamentoController::class, 'RelatorioAnoClasse'])->name('outrosPagamento.RelatorioAnoClasse');
     Route::get('outrosPagamento/Relatorio/detalhado/{ano}/{classe}/{mes}/{tipo}/{flag}', [outrospagamentoController::class, 'Relatoriodetalhado'])->name('outrosPagamento.Relatoriodetalhado');
 

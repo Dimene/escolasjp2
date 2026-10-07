@@ -2033,7 +2033,7 @@ public function pagamentos($ano, $classe, $data1, $data2, $tipo)
 public function MatriculaFila(Request $DADOSeXCEL)
 
 {
-    // dd($DADOSeXCEL->all());
+    //  dd($DADOSeXCEL->all(),$DADOSeXCEL->ano);
 
 
 
@@ -2045,6 +2045,7 @@ public function MatriculaFila(Request $DADOSeXCEL)
         ->pluck('Descricao')
         ->unique()
         ->toArray();
+        // dd( $tipos);
 
 
 
@@ -2056,7 +2057,7 @@ public function MatriculaFila(Request $DADOSeXCEL)
 $sizepagamentoFolha= (count($DADOSeXCEL->cabecalho)-28);
 
 
-	// dd($TIPOS_SIZE,$DADOSeXCEL->ano);
+	//  dd($TIPOS_SIZE,$DADOSeXCEL,$anolectivo);
     if( ($TIPOS_SIZE)!=$sizepagamentoFolha){
 
 
@@ -2071,7 +2072,9 @@ $sizepagamentoFolha= (count($DADOSeXCEL->cabecalho)-28);
      $matriculaid = DB::table("detalhestabelavaores")
         ->where("anolectivo_id", $DADOSeXCEL->ano)
         ->where("classe_id", $classe->id)
-        ->where("tipo", 1)->first();
+        ->where("tipo", 1)
+        ->first();
+        // dd($matriculaid,$classe,$DADOSeXCEL);
 
         if (!auth()->user()->can('Efetuar-matricula')) {
             continue;

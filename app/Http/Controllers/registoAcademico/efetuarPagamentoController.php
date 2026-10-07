@@ -135,4 +135,14 @@ $tipoPagamento=tipos_pagamentos::where('id','>',2)->get();
         );
     }
 
+
+    public function visualizarExtrart(){
+  $anolectivos = DB::select("SELECT * FROM anolectivos ORDER BY id DESC");
+        $classes = DB::table('classes')->get();
+        $tipoPagamento=tipos_pagamentos::where('id',">",2)->get();
+        return view("registoAcademico.outrosPagamento.visualizarsituacaodopagamento",
+         compact('anolectivos', 'classes', 'tipoPagamento'));
+
+    }
+
 }

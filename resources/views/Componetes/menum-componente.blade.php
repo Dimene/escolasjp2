@@ -52,6 +52,14 @@ foreach ($tipospagamentos->where("id", ">", 2) as $item) {
         </li>
         @endif
 
+        <li class="nav-item">
+            <a href="{{ route('pagament.visualizarExtrart') }}"
+               class="nav-link {{ Request::is("$basePath/visualizarsituacao") ? 'active' : '' }}">
+                <i class="fa fa-pencil-square nav-icon"></i>
+                <p>Situação   por pagamento</p>
+            </a>
+        </li>
+
         {{-- 📊 RELATÓRIO --}}
         @if ($canRelatorio)
         <li class="nav-item">
