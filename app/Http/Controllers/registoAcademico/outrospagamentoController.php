@@ -217,14 +217,14 @@ $today = now()->toDateString(); // Gets current date in Y-m-d format
   public function mostrarElementosDomes($ano, $class, $tipoPagamento, $data)
 {
     // Buscar alunos
-    $alunos = DB::table('outros_pagamentosview')
-        ->where('idtabelavalores', $tipoPagamento)
-        ->where('classe_id', $class)
-        ->where('mes_id', $data)
-        ->where("deleted_at",null)
-        ->where('anolectivo_id', $ano)
-        ->get();
-
+  $alunos = DB::table('outros_pagamentosview')
+    ->where('idtabelavalores', $tipoPagamento)
+    ->where('classe_id', $class)
+    ->where('mes_id', $data)
+    ->whereNull('deleted_at')
+    ->where('anolectivo_id', $ano)
+    ->whereNull('TIPOSAIDA')
+    ->get();
     $datas = collect();
 
     foreach ($alunos as $key=>$dadosId) {
@@ -687,6 +687,7 @@ $dados=DB::table('outros_pagamentosview')
 
 
                 $relatoriomes=DB::select("call relatorioGeericoOutrospagametos(?,?,?,?)",[$mesesIem->id,$tipo->Finalidade ,$ano,$classe]);
+              
                 array_push($arrayrelatorio, [
                     "mes" => $mesesIem->Descricao,
                     'NrAlunos' => $relatoriomes[0]->NrAlunos,

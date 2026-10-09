@@ -86,24 +86,26 @@ class alunosController extends Controller
     public function saidaTran(Request $request)
     {
 
-        $tipoSaisa = tipossaida::where('id', $request["Tiposaida"])->first();
+        $tipoSaisa = tipossaida::where('id', $request["TiposaidaSelect"])->first();
 
 
-//  dd($request->all(), $tipoSaisa);
+// dd($request->all(), $tipoSaisa);
 
-        if ($request->id == 100) {
+        if ($request->TiposaidaSelect == 100) {
 
-            tranferencias_disistencias::where(
-                'aluno_classe_id', $request->idAluno)->forceDelete();
+            tranferencias_disistencias::where('aluno_classe_id', $request->idAluno)->forceDelete();
             alunoClasse::where('id', $request->idAluno)->update(['Estado' => $tipoSaisa->Descricao]);
 
             outros_pagamentos::where('aluno_classe_id', $request->idAluno)->restore();
         } else {
 
+
+        
             tranferencias_disistencias::updateOrCreate(
                 ['aluno_classe_id' => $request->idAluno],
 
-                ['aluno_classe_id' => $request->idAluno, 'tipo_id' => $tipoSaisa->id, 'mes_id' => $request->mes_id]
+                ['aluno_classe_id' => $request->idAluno,
+                 'tipo_id' => $tipoSaisa->id, 'mes_id' => $request->mes_id]
 
             );
             alunoClasse::where('id', $request->idAluno)->update(

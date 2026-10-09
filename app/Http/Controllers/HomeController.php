@@ -263,6 +263,8 @@ public function homedadospagamentos($ano, $data1, $data2, $tipo)
     |--------------------------------------------------------------------------
     */
     $dados = DB::table('outros_pagamentosview')
+    ->whereNull('TIPOSAIDA')
+   
         ->whereIn('idtabelavalores', $tabelavalores)
         ->get()
         ->map(function ($item) {
