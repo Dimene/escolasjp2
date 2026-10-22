@@ -1,31 +1,54 @@
 <div class="card">
     <div class="card-body">
         <div class="row mb-3">
-            <div class="col-md-8">
+            <div class="col-md-6">
                 <div class="input-group">
-                    <span class="input-group-text bg-transparent border-end-0">
+                    <span class="input-group-text bg-transparent border-right-0">
                         <i class="fa fa-search text-primary"></i>
                     </span>
-                    <input type="text" id="searchFarmacos" class="form-control border-start-0"
+                    <input type="search" id="searchReferencias" class="form-control border-left-0"
                            placeholder="Pesquisar por nome, banco, entidade ou referência...">
                 </div>
             </div>
-            <div class="col-md-4 text-end">
+            <div class="col-md-6 text-right">
                 <button type="button" class="btn btn-primary modalUploadAlunos" data-toggle="modal" data-target="#modalUploadAlunos">
                     <i class="fa fa-upload"></i> Importar Referências
                 </button>
             </div>
         </div>
 
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <label for="filtroMesReferencia" class="sr-only">Filtrar por mês</label>
+                <select id="filtroMesReferencia" class="form-control">
+                    <option value="">Todos os meses</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="filtroEstadoMesReferencia" class="sr-only">Filtrar por estado do mês</label>
+                <select id="filtroEstadoMesReferencia" class="form-control">
+                    <option value="">Todos os estados do mês</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <button type="button" id="limparFiltrosMesReferencia" class="btn btn-outline-secondary">
+                    <i class="fa fa-eraser" aria-hidden="true"></i> Limpar filtros
+                </button>
+            </div>
+        </div>
+
         <div class="table-responsive">
             <table class="table table-hover table-striped" style="width:100%" id="listadosalunos">
+                <caption class="sr-only">Referências bancárias dos alunos</caption>
                 <thead class="table-dark">
                     <tr>
                         <th>#</th>
                         <th>Nome do Aluno</th>
                         <th>Banco</th>
                         <th>Entidade</th>
+
                         <th>Referência</th>
+                        <th>Estado do Mês</th>
                         <th>Valor (MZN)</th>
                         <th>Estado</th>
                         <th>Ações</th>
@@ -34,91 +57,132 @@
                 <tbody>
                     @foreach($alunos as $key => $value)
                         @php
-                            $valor = $value->valorDescricao ?? 0;
-                            $limite = $value->limite ?? '';
-                            $dataVencimento = $value->data_Fim ?? $value->limite;
-                            $hoje = \Carbon\Carbon::now();
-                            $dataVencimentoCarbon = \Carbon\Carbon::parse($dataVencimento);
-                            $diasRestantes = $hoje->diffInDays($dataVencimentoCarbon, false);
-                            $estaVencido = $diasRestantes < 0;
-                            $multa = (($value->multaP ?? 0) / 100) * $valor;
-
-                            // Determinar cor da referência baseada no status
+                            $tabela = $value->TBdetalhes($value->tipo_pagamento_id, $value->mes_id);
+                            $valor = (float) ($tabela->valorDescricao ?? 0);
+                            $multaPercentual = (float) ($tabela->multa ?? 0);
+                            $multa = ($multaPercentual / 100) * $valor;
+                            $dataVencimento = $tabela->data_Fim ?? $tabela->limite ?? null;
+                            $dataVencimentoCarbon = filled($dataVencimento)
+                                ? \Carbon\Carbon::parse($dataVencimento)->startOfDay()
+                                : null;
+                            $diasRestantes = $dataVencimentoCarbon
+                                ? now()->startOfDay()->diffInDays($dataVencimentoCarbon, false)
+                                : null;
+                            $estaVencido = $diasRestantes !== null && $diasRestantes < 0;
+                            $flag = $estaVencido ? 1 : 0;
+                            $referencia = $value->referencidas(
+                                $value->mes_id,
+                                $value->tipo_pagamento_id,
+                                $value->aluno_classe_id
+                            )
+                                ->where('Multa', $flag)
+                                ->where('banco_id', $entidade->id)
+                                ->first()
+                                ?->referencia;
+                            $referenciaNumerica = preg_replace('/\D/', '', (string) $referencia);
+                            $referenciaMalGerada = filled($referencia) && strlen($referenciaNumerica) < 11;
+                            $estadoMesLabel = trim((string) ($value->Estado ?? '')) ?: 'Sem estado';
+                            $estadoMesFiltro = strtolower($estadoMesLabel);
+                            $mesIdFiltro = (string) ($value->mes_id ?? '');
+                            $mesNomeFiltro = $value->mes->Descricao ?? ($mesIdFiltro !== '' ? 'Mês ' . $mesIdFiltro : '');
                             $referenciaClasse = 'badge bg-success';
                             $referenciaIcone = 'fa fa-check-circle';
 
-                            if(!empty($value->referenciaBanco)) {
-                                if($estaVencido) {
+                            if (filled($referencia)) {
+                                if ($referenciaMalGerada) {
+                                    $referenciaClasse = 'badge bg-danger referencia-mal-gerada';
+                                    $referenciaIcone = 'fa fa-exclamation-circle';
+                                } elseif ($estaVencido) {
                                     $referenciaClasse = 'badge bg-danger';
                                     $referenciaIcone = 'fa fa-exclamation-circle';
-                                } elseif($diasRestantes <= 3 && $diasRestantes >= 0) {
+                                } elseif ($diasRestantes !== null && $diasRestantes <= 3 && $diasRestantes >= 0) {
                                     $referenciaClasse = 'badge bg-warning';
                                     $referenciaIcone = 'fa fa-clock-o';
-                                } else {
-                                    $referenciaClasse = 'badge bg-success';
-                                    $referenciaIcone = 'fa fa-check-circle';
                                 }
                             }
 
-                            // Estado formatado
-                            if($estaVencido){
+                            if ($estaVencido) {
                                 $valor = $valor + $multa;
-                                $estadoHtml = "<span class='text-danger'><i class='fa fa-exclamation-triangle'></i> Prazo Vencido - " . \Carbon\Carbon::parse($dataVencimento)->format('d/m/Y') .
-                                    ($value->mes)."</span>";
-                            } elseif($diasRestantes <= 3 && $diasRestantes >= 0) {
-                                $estadoHtml = "<span class='text-warning'><i class='fa fa-clock-o'></i> Próximo ao Vencimento - {$diasRestantes} dia(s) restante(s). ($value->mes).  </span>";
-                            } else {
-                                $estadoHtml = "<span class='text-success'><i class='fa fa-calendar-check-o'></i> Dentro do Prazo - Vence em " . \Carbon\Carbon::parse($dataVencimento)->format('d/m/Y') . ($value->mes). "</span>";
                             }
                         @endphp
-                        <tr>
+                        <tr data-has-reference="{{ filled($referencia) ? '1' : '0' }}"
+                            data-is-overdue="{{ $estaVencido ? '1' : '0' }}"
+                            data-is-mal-generated="{{ $referenciaMalGerada ? '1' : '0' }}"
+                            data-mes-id="{{ $mesIdFiltro }}"
+                            data-mes-nome="{{ $mesNomeFiltro }}"
+                            data-estado-mes="{{ $estadoMesFiltro }}"
+                            data-estado-mes-label="{{ $estadoMesLabel }}">
                             <td>{{ $key + 1 }}</td>
                             <td>
                                 <div class="d-flex align-items-center">
                                     @if($value->avatar ?? false)
                                         <img src="{{ asset('storage/' . $value->avatar) }}"
-                                             class="rounded-circle me-2" width="30" height="30">
+                                             class="rounded-circle mr-2" width="30" height="30"
+                                             alt="Fotografia de {{ $value->nome ?? 'aluno' }}" loading="lazy">
                                     @endif
-                                    <strong>{{ $value->nome ?? '-' }}</strong>
+                                    <strong>{{ $value->alunoclasse->aluno->nome ?? $value->nome ?? '-' }}</strong>
                                 </div>
                             </td>
-                            <td>{{ $value->Banco ?? '-' }}</td>
-                            <td>{{ $value->Entidade ?? '-' }}</td>
+                            <td>{{ $entidade->descricao ?? '-' }}</td>
+                            <td>{{ $entidade->Entidade ?? '-' }}</td>
                             <td>
-                                @if(!empty($value->referenciaBanco))
+                                @if(!empty($referencia))
                                     <span class="{{ $referenciaClasse }}" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;">
                                         <i class="{{ $referenciaIcone }}"></i>
-                                        {{ $value->referenciaBanco }}
-                                        @if($diasRestantes <= 3 && $diasRestantes >= 0 && !$estaVencido)
+                                        {{ $referencia }}
+                                        @if($diasRestantes !== null && $diasRestantes <= 3 && $diasRestantes >= 0)
                                             <small class="d-block">Expira em {{ $diasRestantes }} dia(s)</small>
+                                        @endif
+                                        @if($referenciaMalGerada)
+                                            <small class="d-block">Referência inválida</small>
                                         @endif
                                     </span>
                                 @else
-                                    <button class="btn btn-sm btn-warning AtualizarReferencia"
-                                            linha="{{ $key }}"
-                                            value="{{ $value->idoutro}}">
+                                    <button type="button" class="btn btn-sm btn-warning AtualizarReferencia btn-gerar-pendente"
+                                            data-action="generate"
+                                            value="{{ $value->id }}">
                                         <i class="fa fa-download"></i> Gerar Referência
                                     </button>
                                 @endif
                             </td>
+                            <td>{{$value->Estado}}</td>
                             <td>
-                                <strong class="{{ $estaVencido ? 'text-danger' : ($diasRestantes <= 3 && $diasRestantes >= 0 ? 'text-warning' : 'text-primary') }}">
+                                <strong data-value="{{ number_format((float) $valor, 2, '.', '') }}"
+                                        class="{{ $estaVencido ? 'text-danger' : ($diasRestantes !== null && $diasRestantes <= 3 && $diasRestantes >= 0 ? 'text-warning' : 'text-primary') }}">
                                     {{ number_format($valor, 2, ',', '.') }} MZN
                                 </strong>
                                 @if($multa > 0 && $estaVencido)
                                     <small class="d-block text-danger">(Multa: {{ number_format($multa, 2, ',', '.') }})</small>
                                 @endif
                             </td>
-                            <td>{!! $estadoHtml !!}</td>
                             <td>
-                                @if(!empty($value->referenciaBanco))
+                                @if ($diasRestantes === null)
+                                    <span class="text-muted"><i class="fa fa-calendar-times-o"></i> Sem data limite</span>
+                                @elseif ($estaVencido)
+                                    <span class="text-danger">
+                                        <i class="fa fa-exclamation-triangle"></i>
+                                        Prazo vencido - {{ $dataVencimentoCarbon->format('d/m/Y') }} ({{ $value->mes->Descricao ?? '' }})
+                                    </span>
+                                @elseif ($diasRestantes <= 3)
+                                    <span class="text-warning">
+                                        <i class="fa fa-clock-o"></i>
+                                        Próximo do vencimento - {{ $diasRestantes }} dia(s) ({{ $value->mes->Descricao ?? '' }})
+                                    </span>
+                                @else
+                                    <span class="text-success">
+                                        <i class="fa fa-calendar-check-o"></i>
+                                        Dentro do prazo - {{ $dataVencimentoCarbon->format('d/m/Y') }} ({{ $value->mes->Descricao ?? '' }})
+                                    </span>
+                                @endif
+                            </td>
+                            <td>
+                                @if(!empty($referencia))
                                 <div class="btn-group btn-group-sm" role="group">
-                                    <button class="btn btn-primary AtualizarReferencia"
-                                            idaluno="{{ $value->id }}"
-                                            idpagamento="{{ $value->tipo ?? 0 }}"
-
-                                             linha="{{ $key }}"
-                                            value="{{ $value->idoutro}}"
+                                    <button type="button" class="btn btn-primary AtualizarReferencia"
+                                            data-action="regenerate"
+                                            idaluno="{{ $value->aluno_classe_id }}"
+                                            idpagamento="{{ $tabela->tipo ?? 0 }}"
+                                            value="{{ $value->id }}"
                                             title="Gerar Referencia">
                                         <i class="fa fa-refresh"></i>
                                     </button>
@@ -126,9 +190,9 @@
                                 </div>
 
                                 <div class="btn-group btn-group-sm" role="group">
-                                    <button class="btn btn-secondary visualizarentidadesReferencias"
-                                            idaluno="{{ $value->id }}"
-                                            idpagamento="{{ $value->tipo ?? 0 }}"
+                                    <button type="button" class="btn btn-secondary visualizarentidadesReferencias"
+                                            idaluno="{{ $value->aluno_classe_id }}"
+                                            idpagamento="{{ $tabela->tipo ?? 0 }}"
                                             title="Imprimir Referência">
                                         <i class="fa fa-print"></i>
                                     </button>
@@ -141,7 +205,7 @@
                 </tbody>
                 <tfoot class="table-light">
                     <tr>
-                        <th colspan="5" class="text-end">Total Geral:</th>
+                        <th colspan="6" class="text-right">Total Geral:</th>
                         <th id="totalValor" class="text-primary">0.00 MZN</th>
                         <th colspan="2"></th>
                     </tr>
@@ -204,190 +268,151 @@
 </div>
 
 <script>
-    var dataTable = null;
-
     $(document).ready(function () {
-        // Inicializar DataTable apenas uma vez
-        if (!$.fn.DataTable.isDataTable('#listadosalunos')) {
-            dataTable = $('#listadosalunos').DataTable({
-                dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rt<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
-                buttons: [
-                    { extend: 'copy', text: '<i class="fa fa-copy"></i> Copiar', className: 'btn btn-sm btn-primary' },
-                    { extend: 'excel', text: '<i class="fa fa-file-excel"></i> Excel', className: 'btn btn-sm btn-success' },
-                    { extend: 'pdf', text: '<i class="fa fa-file-pdf"></i> PDF', className: 'btn btn-sm btn-danger' },
-                    { extend: 'print', text: '<i class="fa fa-print"></i> Imprimir', className: 'btn btn-sm btn-info' }
-                ],
-                responsive: true,
-                pageLength: 10,
-                lengthMenu: [[5, 10, 25, 50, 100, -1], [5, 10, 25, 50, 100, "Todos"]],
-                language: {
-                    lengthMenu: "Visualizar _MENU_ registros",
-                    zeroRecords: "Nenhum registro encontrado",
-                    info: "Página _PAGE_ de _PAGES_",
-                    infoEmpty: "Sem registros disponíveis",
-                    infoFiltered: "(filtrado de _MAX_ registros)",
-                    search: "Pesquisar:",
-                    paginate: {
-                        first: "Primeira",
-                        last: "Última",
-                        next: "Próxima",
-                        previous: "Anterior"
-                    }
-                },
-                footerCallback: function(row, data, start, end, display) {
-                    var api = this.api();
-                    var total = api.column(5, { page: 'current' }).data()
-                        .reduce(function(a, b) {
-                            var cleanValue = String(b).replace(/[^\d,-]/g, '').replace(',', '.');
-                            var num = parseFloat(cleanValue);
-                            return a + (isNaN(num) ? 0 : num);
-                        }, 0);
-                    $('#totalValor').html(total.toFixed(2) + ' MZN');
-                }
-            });
-        } else {
-            dataTable = $('#listadosalunos').DataTable();
-        }
+    function carregarOpcoesFiltro(selector, valorAtributo, textoAtributo, textoPadrao) {
+        var opcoes = new Map();
 
-        // Pesquisa customizada
-        $('#searchFarmacos').on('keyup', function() {
-            dataTable.search(this.value).draw();
+        $('#listadosalunos tbody tr').each(function() {
+            var valor = this.getAttribute(valorAtributo);
+            var texto = this.getAttribute(textoAtributo);
+            if (valor && texto && !opcoes.has(valor)) {
+                opcoes.set(valor, texto);
+            }
         });
 
-        // Atualizar referência (mantido)
-        $(document).on('click', '.AtualizarReferencia', function() {
-            var id = $(this).attr('value');
-            var btn = $(this);
-            var linhaTabela = $(this).closest('tr');
-            var entidade = $("[name='Entidade']").val();
+        var $select = $(selector).empty().append(
+            $('<option>', { value: '', text: textoPadrao })
+        );
+        Array.from(opcoes.entries())
+            .sort(function(a, b) {
+                return a[1].localeCompare(b[1], 'pt');
+            })
+            .forEach(function(opcao) {
+                $select.append($('<option>', {
+                    value: opcao[0],
+                    text: opcao[1]
+                }));
+            });
+    }
 
-            if (!entidade) {
-                Swal.fire({
-                    title: 'Atenção!',
-                    text: 'Selecione um banco/entidade primeiro',
-                    icon: 'warning',
-                    confirmButtonColor: '#3085d6'
-                });
-                return;
+    carregarOpcoesFiltro(
+        '#filtroMesReferencia',
+        'data-mes-id',
+        'data-mes-nome',
+        'Todos os meses'
+    );
+    carregarOpcoesFiltro(
+        '#filtroEstadoMesReferencia',
+        'data-estado-mes',
+        'data-estado-mes-label',
+        'Todos os estados do mês'
+    );
+
+    $('#filtroMesReferencia, #filtroEstadoMesReferencia')
+        .off('change.filtrosMesReferencia')
+        .on('change.filtrosMesReferencia', function() {
+            if (typeof dataTableInstance !== 'undefined' && dataTableInstance) {
+                dataTableInstance.draw();
             }
+        });
 
-            Swal.fire({
-                title: 'Gerar Referência',
-                text: 'Deseja gerar uma nova referência bancária?',
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Sim, gerar',
-                cancelButtonText: 'Cancelar'
-            }).then((result) => {
-                if (result.isConfirmed) {
+    $('#limparFiltrosMesReferencia')
+        .off('click.filtrosMesReferencia')
+        .on('click.filtrosMesReferencia', function() {
+            $('#filtroMesReferencia, #filtroEstadoMesReferencia').val('');
+            if (typeof dataTableInstance !== 'undefined' && dataTableInstance) {
+                dataTableInstance.draw();
+            }
+        });
+
+    // Atualizar referência (mantido)
+        $(document).off('click.referenciaIndividual', '.AtualizarReferencia')
+            .on('click.referenciaIndividual', '.AtualizarReferencia', function(e) {
+                e.preventDefault();
+                var btn = $(this);
+                var id = btn.val();
+                var entidade = $("[name='Entidade']").val();
+
+                if (btn.prop('disabled')) {
+                    return;
+                }
+                if (!id) {
+                    Swal.fire('Erro', 'Não foi possível identificar a parcela selecionada.', 'error');
+                    return;
+                }
+                if (!entidade) {
+                    Swal.fire('Atenção!', 'Selecione um banco/entidade primeiro.', 'warning');
+                    return;
+                }
+
+                Swal.fire({
+                    title: btn.attr('data-action') === 'regenerate' ? 'Regenerar Referência' : 'Gerar Referência',
+                    text: 'Deseja gerar uma nova referência bancária?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Sim, gerar',
+                    cancelButtonText: 'Cancelar'
+                }).then(function(result) {
+                    if (!result.isConfirmed) {
+                        return;
+                    }
+
                     var originalHtml = btn.html();
-                    btn.html('<i class="fa fa-spinner fa-spin"></i>').prop('disabled', true);
+                    btn.html('<i class="fa fa-spinner fa-spin" aria-hidden="true"></i> A gerar...')
+                        .prop('disabled', true);
 
                     $.ajax({
-                        url: '/Financas/Banco/referencas/gerar/' + id + '/' + entidade,
+                        url: @json(url('/Financas/Banco/gerar/referencas/aluno')) + '/' +
+                            encodeURIComponent(id) + '/' + encodeURIComponent(entidade),
                         type: 'POST',
                         dataType: 'json',
                         data: {
                             _token: '{{ csrf_token() }}'
-                        },
-                        success: function(response) {
-                            console.log(response);
-
-                            if (response.Estado="Pago" && response.referenciaBanco) {
-                                var badgeClass = 'badge bg-success';
-                                var badgeIcon = 'fa fa-check-circle';
-
-                                if (response.multaflagrefe>0) {
-                                    badgeClass = 'badge bg-danger';
-                                    badgeIcon = 'fa fa-exclamation-circle';
-                                } else {
-                                    badgeClass = 'badge bg-warning';
-                                    badgeIcon = 'fa fa-clock-o';
-                                }
-
-                                var cell = linhaTabela.find('td:eq(4)');
-                                var referenciaHtml = '<span class="' + badgeClass + '" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;">';
-                                referenciaHtml += '<i class="' + badgeIcon + '"></i> ' + response.referenciaBanco;
-                                if (response.data_Fim <= 3 && response.diasRestantes >= 0 && !response.estaVencido) {
-                                    referenciaHtml += '<small class="d-block">Expira em ' + response.diasRestantes + ' dia(s)</small>';
-                                }
-                                referenciaHtml += '</span>';
-                                cell.html(referenciaHtml);
-                                linhaTabela.find('td:eq(3)').html(response.Entidade);
-                                linhaTabela.find('td:eq(2)').html(response.banco);
-
-                                if (response.valor) {
-                                    var valorCell = linhaTabela.find('td:eq(5)');
-                                    var valorClass = response.estaVencido ? 'text-danger' : (response.diasRestantes <= 3 ? 'text-warning' : 'text-primary');
-                                    var valorHtml = '<strong class="' + valorClass + '">' + formatMoney(response.valor) + ' MZN</strong>';
-                                    if (response.multa && response.multa > 0) {
-                                        valorHtml += '<small class="d-block text-danger">(Multa: ' + formatMoney(response.multa) + ')</small>';
-                                    }
-                                    valorCell.html(valorHtml);
-                                }
-
-                                if (response.estado) {
-                                    var estadoCell = linhaTabela.find('td:eq(6)');
-                                    estadoCell.html(response.estado);
-                                }
-
-                                if (dataTable) {
-                                    var rowIndex = dataTable.row(linhaTabela).index();
-                                    dataTable.cell(rowIndex, 4).data(response.referenciaBanco);
-                                    if (response.valor) dataTable.cell(rowIndex, 5).data(formatMoney(response.valor));
-                                    if (response.estado) dataTable.cell(rowIndex, 6).data(response.estado);
-                                }
-
-                                var acoesCell = linhaTabela.find('td:eq(7)');
-                                if (acoesCell.find('.btn-secondary').length === 0) {
-                                    var printBtn = '<a class="btn btn-secondary btn-sm" href="/Financas/Banco/referencas/alunoReferenciasPrint/' + response.id + '/' + response.tipo_pagamento_id + '/0" target="_blank" title="Imprimir Referência"><i class="fa fa-print"></i></a>';
-                                    acoesCell.find('.btn-group').append(printBtn);
-                                }
-
-                                Swal.fire({
-                                    title: 'Sucesso!',
-                                    html: 'Referência gerada com sucesso!<br><small>' + response.referenciaBanco + '</small>',
-                                    icon: 'success',
-                                    timer: 3000,
-                                    showConfirmButton: false
-                                });
-                            } else {
-                                Swal.fire('Erro', response.message || 'Erro ao gerar referência', 'error');
-                                btn.html(originalHtml).prop('disabled', false);
-                            }
-
- btn.html('<i class="fa fa-refresh "></i>').prop('disabled', false);
-
-                        },
-                        error: function(xhr) {
-                            console.error('Erro:', xhr);
-                            var errorMsg = xhr.responseJSON?.message || 'Erro ao gerar referência bancária';
-                            Swal.fire('Erro', errorMsg, 'error');
-                            btn.html(originalHtml).prop('disabled', false);
                         }
+                    }).done(function(response) {
+                        var referencia = response.referenciaBanco || response.referencia;
+                        if (!referencia) {
+                            Swal.fire('Erro', response.message || 'O servidor não devolveu a referência gerada.', 'error');
+                            return;
+                        }
+
+                        Swal.fire({
+                            title: 'Sucesso!',
+                            text: 'Referência gerada com sucesso: ' + referencia,
+                            icon: 'success',
+                            timer: 2500,
+                            showConfirmButton: false
+                        });
+                        if (typeof consultarReferencias === 'function') {
+                            consultarReferencias();
+                        }
+                    }).fail(function(xhr) {
+                        console.error('Erro:', xhr);
+                        var errorMsg = xhr.responseJSON && xhr.responseJSON.message
+                            ? xhr.responseJSON.message
+                            : 'Erro ao gerar referência bancária.';
+                        Swal.fire('Erro', errorMsg, 'error');
+                    }).always(function() {
+                        btn.html(originalHtml).prop('disabled', false);
                     });
-                }
-            });
+                });
         });
 
         // ---------- UPLOAD DE ARQUIVO TXT (EXTRATO) ----------
-        // Garantir remoção do backdrop ao fechar o modal
-        $('#modalUploadAlunos').on('hidden.bs.modal', function () {
-            $('body').removeClass('modal-open');
-            $('.modal-backdrop').remove();
-        });
-
         // Atualizar label do input file
         $('.custom-file-input').on('change', function() {
             var fileName = $(this).val().split('\\').pop();
-            $(this).next('.custom-file-label').html(fileName);
+            $(this).next('.custom-file-label').text(fileName);
         });
 
         // Submissão do formulário via AJAX
         $('#formUploadReferencias').on('submit', function(e) {
             e.preventDefault();
+            if ($('#btnUpload').prop('disabled')) {
+                return;
+            }
 
             var formData = new FormData(this);
             var ano = $('#anoSelect').val();
@@ -397,6 +422,14 @@
                 Swal.fire('Atenção', 'Selecione um arquivo para importar.', 'warning');
                 return;
             }
+            if (!/\.txt$/i.test(fileInput[0].files[0].name)) {
+                Swal.fire('Atenção', 'Selecione um ficheiro no formato .txt.', 'warning');
+                return;
+            }
+            if (fileInput[0].files[0].size > 5 * 1024 * 1024) {
+                Swal.fire('Atenção', 'O arquivo excede o limite de 5 MB.', 'warning');
+                return;
+            }
 
             $('#progressUpload').removeClass('d-none');
             $('#progressUpload .progress-bar').css('width', '0%');
@@ -404,7 +437,7 @@
             $('#btnUpload').prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Importando...');
 
             $.ajax({
-                url: '/Financas/Banco/CaregarReferencias/' + ano,
+                url: '/Financas/Banco/CaregarReferencias/' + encodeURIComponent(ano),
                 type: 'POST',
                 data: formData,
                 processData: false,
@@ -421,21 +454,22 @@
                 },
                 success: function(response) {
                     $('#progressUpload .progress-bar').css('width', '100%');
-                    $('#uploadStatus').html('<span class="text-success"><i class="fa fa-check-circle"></i> ' + response.message + '</span>');
-                    Swal.fire('Sucesso!', response.message, 'success');
+                    var mensagem = response.message || 'Referências importadas com sucesso.';
+                    $('#uploadStatus').empty().append(
+                        $('<span>', { class: 'text-success' })
+                            .append($('<i>', { class: 'fa fa-check-circle' }))
+                            .append(document.createTextNode(' ' + mensagem))
+                    );
+                    Swal.fire('Sucesso!', mensagem, 'success');
 
                     setTimeout(function() {
                         $('#modalUploadAlunos').modal('hide');
-                        // Força a remoção do backdrop
-                        $('body').removeClass('modal-open');
-                        $('.modal-backdrop').remove();
                         $('#formUploadReferencias')[0].reset();
-                        $('.custom-file-label').html('Escolher arquivo...');
+                        $('.custom-file-label').text('Escolher arquivo...');
                         $('#progressUpload').addClass('d-none');
                         $('#btnUpload').prop('disabled', false).html('<i class="fa fa-upload"></i> Importar');
-                        // Recarregar página ou DataTable, se necessário
-                        if (dataTable) {
-                            location.reload(); // ou dataTable.ajax.reload()
+                        if (typeof consultarReferencias === 'function') {
+                            consultarReferencias();
                         }
                     }, 2000);
                 },
@@ -443,8 +477,14 @@
                     var errorMsg = 'Erro ao importar arquivo.';
                     if (xhr.responseJSON && xhr.responseJSON.message) {
                         errorMsg = xhr.responseJSON.message;
+                    } else if (xhr.responseJSON && xhr.responseJSON.errors) {
+                        errorMsg = Object.values(xhr.responseJSON.errors).flat().join(' ');
                     }
-                    $('#uploadStatus').html('<span class="text-danger"><i class="fa fa-exclamation-triangle"></i> ' + errorMsg + '</span>');
+                    $('#uploadStatus').empty().append(
+                        $('<span>', { class: 'text-danger' })
+                            .append($('<i>', { class: 'fa fa-exclamation-triangle' }))
+                            .append(document.createTextNode(' ' + errorMsg))
+                    );
                     Swal.fire('Erro', errorMsg, 'error');
                     $('#btnUpload').prop('disabled', false).html('<i class="fa fa-upload"></i> Importar');
                     $('#progressUpload').addClass('d-none');
@@ -453,14 +493,6 @@
         });
     });
 
-    // Função auxiliar para formatar dinheiro
-    function formatMoney(value) {
-        return new Intl.NumberFormat('pt-MZ', {
-            style: 'currency',
-            currency: 'MZN',
-            minimumFractionDigits: 2
-        }).format(value).replace('MT', '');
-    }
 </script>
 
 <style>
@@ -474,7 +506,6 @@
 
     .table-hover tbody tr:hover {
         background-color: rgba(102, 126, 234, 0.05);
-        cursor: pointer;
     }
 
     .btn-group-sm .btn {
@@ -510,5 +541,28 @@
 
     .text-success {
         color: #48bb78 !important;
+    }
+
+    @media (max-width: 767.98px) {
+        #searchReferencias {
+            min-width: 0;
+        }
+
+        .modalUploadAlunos {
+            width: 100%;
+            margin-top: 0.75rem;
+        }
+
+        #limparFiltrosMesReferencia {
+            width: 100%;
+        }
+
+        #listadosalunos {
+            font-size: 0.875rem;
+        }
+
+        #listadosalunos .btn-group {
+            margin-bottom: 0.25rem;
+        }
     }
 </style>

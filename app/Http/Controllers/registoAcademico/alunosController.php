@@ -3,13 +3,17 @@
 namespace App\Http\Controllers\registoAcademico;
 
 use App\Exports\ModeloImportacaoPagamentos;
+use App\Helpers\ReferenciaBCIHelper;
+use App\Helpers\ReferenciaBIMHelper;
 use App\Http\Controllers\Controller;
 use App\Imports\alunosImport;
 use App\Models\Admin\observadorSys;
 use App\Models\Admin\tipossaida;
 use App\Models\Admin\tranferencias_disistencias;
 use App\Models\detalhestabelavalores;
+use App\Models\metodo_pagamento;
 use App\Models\modelmpesapay;
+use App\Models\referenciasbancaria;
 use App\Models\registoAcademico\Aluno;
 use App\Models\registoAcademico\alunoClasse;
 use App\Models\registoAcademico\anolectivo;
@@ -86,10 +90,10 @@ class alunosController extends Controller
     public function saidaTran(Request $request)
     {
 
-        $tipoSaisa = tipossaida::where('id', $request["TiposaidaSelect"])->first();
+        $tipoSaisa = tipossaida::where('id', $request["Tiposaida"])->first();
 
 
-// dd($request->all(), $tipoSaisa);
+ 
 
         if ($request->TiposaidaSelect == 100) {
 
@@ -100,12 +104,13 @@ class alunosController extends Controller
         } else {
 
 
-        
+        // dd($tipoSaisa,$request["TiposaidaSelect"]);
             tranferencias_disistencias::updateOrCreate(
                 ['aluno_classe_id' => $request->idAluno],
 
                 ['aluno_classe_id' => $request->idAluno,
-                 'tipo_id' => $tipoSaisa->id, 'mes_id' => $request->mes_id]
+                 'tipo_id' => $tipoSaisa->id, 
+                 'mes_id' => $request->mes_id]
 
             );
             alunoClasse::where('id', $request->idAluno)->update(
@@ -162,13 +167,28 @@ class alunosController extends Controller
             $doencasCronicas = $this->doencas->all();
             $classes = $this->classes->all();
             $grauparentesco = $this->grauparentesco->all();
-            $anolelctivo = DB::select('SELECT * FROM anolectivos ORDER BY id DESC ');
+            $anolelctivo = anolectivo::with('modalidadeDivisao')->orderByDesc('id')->get();
             $metodo = DB::table('metodo_pagamento')->get();
 
             $tabelavaloresano = DB::table('tabelavaloresano')->get();
+            $mesesNomes = DB::table('meses')->pluck('Descricao', 'id');
+            $modalidadesAnoLectivo = $anolelctivo->mapWithKeys(function ($ano) {
+                return [
+                    $ano->id => [
+                        'modalidade' => (int) $ano->modalidade,
+                        'divisoes' => $ano->modalidadeDivisao->map(function ($divisao) {
+                            return [
+                                'numero' => $divisao->divisao,
+                                'inicio' => $divisao->Inicio,
+                                'fim' => $divisao->Fim,
+                            ];
+                        })->values(),
+                    ],
+                ];
+            });
 
             return view('registoAcademico.aluno-matricula',
-                compact('religiao', 'profissao', 'doencasCronicas', 'classes', 'grauparentesco', 'anolelctivo', 'metodo', 'tabelavaloresano'));
+                compact('religiao', 'profissao', 'doencasCronicas', 'classes', 'grauparentesco', 'anolelctivo', 'metodo', 'tabelavaloresano', 'mesesNomes', 'modalidadesAnoLectivo'));
         } else {
             $mensagem = 'nao possue a permissao de Realizar Matricula';
 
@@ -183,11 +203,50 @@ class alunosController extends Controller
      */
     public function store(request $request)
     {
-
         $resul = '';
 
+        //  dd($request->input('tipospagamento', []),$request->all(0));
 
-        // dd($request->all());
+        $tiposPagamento = $request->input('tipospagamento', []);
+        if (! is_array($tiposPagamento)) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'tipospagamento' => 'A lista de tipos de pagamento é inválida.',
+            ]);
+        }
+
+        $parcelasPreModal = $request->input('parcelasPreModal', []);
+        if (! is_array($parcelasPreModal)) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'parcelasPreModal' => 'A lista de parcelas selecionadas antes do modal é inválida.',
+            ]);
+        }
+
+        foreach ($parcelasPreModal as $parcela) {
+            if (! is_array($parcela)
+                || ! isset($parcela['tipo'], $parcela['mes'])
+                || ! is_numeric($parcela['tipo'])
+                || ! is_numeric($parcela['mes'])) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'parcelasPreModal' => 'Cada parcela selecionada antes do modal deve incluir o tipo e o mês.',
+                ]);
+            }
+        }
+
+        foreach ($tiposPagamento as $pagamento) {
+            if (is_array($pagamento)) {
+                if (! isset($pagamento['tipo'], $pagamento['mes'])
+                    || ! is_numeric($pagamento['tipo'])
+                    || ! is_numeric($pagamento['mes'])) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'tipospagamento' => 'Cada tipo de pagamento deve incluir o identificador da parcela e do mês.',
+                    ]);
+                }
+            } elseif (! is_numeric($pagamento)) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'tipospagamento' => 'O identificador do tipo de pagamento é inválido.',
+                ]);
+            }
+        }
         $talaoNumero = $this->talao($request->tipopagamento, $request->ano_lectivo);
 
         $multa = $request->input('multaAct', 0);
@@ -297,26 +356,39 @@ class alunosController extends Controller
             // matrucula
             $mentodoPagaento = DB::table('metodo_pagamento')->where('id', $request->tipopagamento)->first();
 
-            $matricula = $this->matricular($dadosAlunos->id, $request->classe, $request->ano_lectivo, $Referenciadepagamento, $mentodoPagaento, $request->idtipopagamento, $request->multaActiva ?? 0, $talaoNumero);
 
-            // dd($mentodoPagaento,$request->idtipopagamento);
-            // registar pagamento
-  $tipospagamento=$request->tipospagamento??[];
+            // $metodo = DB::table('metodo_pagamento')->where('id', $request->tipopagamento)->first();
+            $metodo=metodo_pagamento::where("id", $request->tipopagamento)->with('banco')->first();
+           
+         
 
-            $this->registar_pagamentos($matricula->id, $tipospagamento);
-            // dd($request->all());
-            $this->setpagamentos($matricula, $request->meses ?? null, $request->mesesMulta ?? null, $request->tipopagamento, $Referenciadepagamento, $talaoNumero);
+            $matricula = $this->matricular($dadosAlunos->id, $request->classe, $request->ano_lectivo,
+             $Referenciadepagamento, $mentodoPagaento, $request->idtipopagamento, $request->multaActiva ?? 0, $talaoNumero);
+
+               if(  $metodo->banco?->id??false ){
+            
+                $this->gerarReferenciasBancarias(  $matricula, $request->totalApagar);
+
+            }
+          
+           $this->registar_pagamentos($matricula->id, $request->input('parcelasPreModal', []));
+             
+            $this->setpagamentos($matricula, $request->meses ?? null, $request->mesesMulta ?? null,
+             $request->tipopagamento, $Referenciadepagamento, $talaoNumero,$request->totalApagar);
             // adicionar pagamentos
             $idaluno = $matricula->id;
             $anolectivo = $matricula->anolectivo_id;
+
+
+            
             if ($mentodoPagaento->tipo > 0) {
-                // $idaluno = $matricula->id;
-                // $anolectivo = $matricula->anolectivo_id;
+               
                 $requestDADOS = new Request;
                 $requestDADOS->merge([
                     'Tiposaida' => 101,
                     'idAluno' => $idaluno]);
-                //  dd($requestDADOS->all(),$mentodoPagaento->tipo);
+
+               
 
                 $this->saidaTran($requestDADOS);
             }
@@ -382,17 +454,20 @@ if (
     {
         if (auth()->user()->can('Efetuar-MATRICULA INTERNOS')) {
 
-            $aluno = $this->alunosInscritos->where('id', $id)->first();
+            $aluno = $this->alunosInscritos
+                ->with(['encaregado.contacto', 'morada'])
+                ->where('id', $id)
+                ->firstOrFail();
 
             $classeDescricao = $aluno->AlunoClasse->last();
             $class = $aluno->classefrequentada->last();
-            $classesshow = '';
-            $anolectivo = anolectivo::all()->last();
-            if ($classeDescricao->Descricao == 'Aprovado') {
-
+            $anolectivo = anolectivo::orderByDesc('id')->first();
+            if ($class && $classeDescricao?->Descricao === 'Aprovado') {
                 $classesshow = $this->classes->where('id', '>', $class->id)->get();
-            } else {
+            } elseif ($class) {
                 $classesshow = $this->classes->where('id', '>=', $class->id)->get();
+            } else {
+                $classesshow = $this->classes->all();
             }
             $metodos = DB::table('metodo_pagamento')->get();
             $tabelavaloresano = DB::table('tabelavaloresano')->get();
@@ -433,95 +508,224 @@ if (
     //
     public function atrualizacaoMatricula($id, Request $request)
     {
-
-        $ano = anolectivo::where('id', $request->anolectivo)->first();
-
-        $Referenciadepafamento = null;
-
-        $talaoNumero = $this->talao($request->tipopagamento, $request->anolectivo);
-
-        if (auth()->user()->can('Efetuar-MATRICULA INTERNOS')) {
-
-            //  dd( $request->all());
-
-            $multa = $request->input('multaAct', 0);
-            if ($multa == 'undefined') {
-                $multa = 0;
-            }
-
-            $Referenciadepagamento = null;
-
-            if (auth()->user()->can('Efetuar-MATRICULA INTERNOS')) {
-
-                if ($request->tipopagamento == 2) {
-
-                    //  $resultDO =$this->MpesaService->sendPaymentRequest("matricula","258".$request->numero,(float)$request->totalApagar,"matricula");
-                    $resultDO = new mpesaController;
-                    $resul = $resultDO->Mpesapagamento('matricula', $request->numero, $request->totalApagar, $talaoNumero);
-
-                    if ($resul['INS'] != 'INS-0') {
-
-                        return ['estado' => $resul['INS'], 'messagem' => $resul['Descricao']];
-                    }
-                    $Referenciadepagamento = $resul['Referencia'];
-                }
-
-                if (isset($request->Referencia)) {
-                    $Referenciadepagamento = $request->Referencia;
-
-                }
-
-                $dadosAlunos = Aluno::where('id', $id)->first();
-
-                // dd($dadosAlunos);
-
-                $this->guardaAvatar($dadosAlunos, $request);
-
-                // matrucula
-                $mentodoPagaento = DB::table('metodo_pagamento')->where('id', $request->tipopagamento)->first();
-
-                $matricula = $this->matricular($dadosAlunos->id, $request->ClassedeAtualizacao, $request->anolectivo, $Referenciadepagamento,
-                    $mentodoPagaento, $request->idtipopagamento, $request->multaActiva ?? 0, $talaoNumero);
-                    $tipospagamento=$request->tipospagamento??[];
-
-                $this->registar_pagamentos($matricula->id, $tipospagamento);
-
-                $this->setpagamentos($matricula, $request->meses ?? null, $request->mesesMulta ?? null, $request->tipopagamento, $Referenciadepagamento, $talaoNumero);
-
-                // dd($dadosAlunos,$mentodoPagaento);
-                $mes = meses::where('id', Carbon::now()->month)->first()->Descricao;
-                $data = 'Quelimane   aos     ,'.Carbon::now()->day.'   de        '.$mes.'       de        '.Carbon::now()->year;
-
-                // dados de valores
-                $dadosMatriculaValores = DB::table('tabelavaloresano')->where('classId', $request->classe)
-                    ->where('finalidade', 'Matriculas')->where('idanolectivo', $request->anolectivo)->get();
-
-                // return $this->imprimir_reciboMatriculaInicial($matricula->aluno_id, $matricula->anolectivo_id);
-
-                $idaluno = $matricula->id;
-                $anolectivo = $matricula->anolectivo_id;
-
-
-
-                return ['estado' => 'INS-0', 'messagem' => 'Matricula Realisada Com sucesso', 'idaluno' => $idaluno,
-                    'anolectivo' => $anolectivo, 'talao' => $talaoNumero, 'metodo' => $request->tipopagamento];
-            } else {
-                $mensagem = 'nao possue a permissao de Realizar Matricula';
-
-                return ['estado' => 'INS-897', 'messagem' => $mensagem];
-            }
-
-        } else {
-            $mensagem = 'nao possue a permisao de atualizar dados do Aluno ';
-
-            return view('Componetes.alerta-Falha', compact('mensagem'));
+        if (! auth()->user()->can('Efetuar-MATRICULA INTERNOS')) {
+            abort(403, 'Não tem permissão para atualizar matrículas.');
         }
+
+        $validated = $request->validate([
+            'anolectivo' => ['required', 'integer', 'exists:anolectivos,id'],
+            'ClassedeAtualizacao' => ['required', 'integer', 'exists:classes,id'],
+            'idtipopagamento' => ['required', 'integer'],
+            'tipopagamento' => ['required', 'integer', 'exists:metodo_pagamento,id'],
+            'multaActiva' => ['nullable', 'numeric', 'min:0'],
+            'Referencia' => ['nullable', 'string', 'max:255'],
+            'numero' => ['required_if:tipopagamento,2', 'nullable', 'string', 'regex:/^[0-9]{9}$/'],
+            'meses' => ['sometimes', 'array'],
+            'meses.*' => ['string'],
+            'mesesMulta' => ['sometimes', 'array'],
+            'mesesMulta.*' => ['string'],
+            'parcelasPreModal' => ['sometimes', 'array'],
+            'parcelasPreModal.*.tipo' => ['required', 'integer'],
+            'parcelasPreModal.*.mes' => ['required', 'integer'],
+        ]);
+
+        $aluno = Aluno::findOrFail($id);
+        $matriculaValor = DB::table('detalhestabelavaores')
+            ->where('id', $validated['idtipopagamento'])
+            ->where('classe_id', $validated['ClassedeAtualizacao'])
+            ->where('anolectivo_id', $validated['anolectivo'])
+            ->where('tipo', 2)
+            ->first();
+
+        if (! $matriculaValor) {
+            abort(422, 'Não existe valor de matrícula configurado para a classe e o ano lectivo selecionados.');
+        }
+
+        $parcelas = collect($validated['parcelasPreModal'] ?? []);
+        foreach ($parcelas as $parcela) {
+            $existe = DB::table('detalhestabelavaores')
+                ->where('classe_id', $validated['ClassedeAtualizacao'])
+                ->where('anolectivo_id', $validated['anolectivo'])
+                ->where('tipo', $parcela['tipo'])
+                ->where('mes', $parcela['mes'])
+                ->exists();
+
+            if (! $existe) {
+                abort(422, 'Uma das parcelas selecionadas não pertence à classe e ao ano lectivo indicados.');
+            }
+        }
+
+        $mesesSelecionados = [];
+        $multaSelecionada = [];
+        $totalApagar = (float) $matriculaValor->valorDescricao;
+        $valorMatriculaComMulta = 0;
+        if ((float) ($validated['multaActiva'] ?? 0) > 0) {
+            if (Carbon::parse($matriculaValor->limite)->isFuture()) {
+                abort(422, 'Não é possível aplicar multa antes da data limite da matrícula.');
+            }
+            $valorMatriculaComMulta = (float) $matriculaValor->valorDescricao
+                * ((float) $matriculaValor->multa / 100);
+            $totalApagar += $valorMatriculaComMulta;
+        }
+
+        foreach ($validated['meses'] ?? [] as $mesJson) {
+            $mes = json_decode($mesJson, true);
+            if (! is_array($mes) || empty($mes['tipo']) || empty($mes['mes'])) {
+                abort(422, 'Uma das parcelas de pagamento é inválida.');
+            }
+
+            $valorParcela = DB::table('detalhestabelavaores')
+                ->where('id', $mes['tipo'])
+                ->where('classe_id', $validated['ClassedeAtualizacao'])
+                ->where('anolectivo_id', $validated['anolectivo'])
+                ->where('mes', $mes['mes'])
+                ->first();
+
+            if (! $valorParcela) {
+                abort(422, 'Uma das parcelas selecionadas não está configurada para esta matrícula.');
+            }
+
+            $mesesSelecionados[] = $mesJson;
+            $totalApagar += (float) $valorParcela->valorDescricao;
+        }
+
+        foreach ($validated['mesesMulta'] ?? [] as $multaJson) {
+            $multa = json_decode($multaJson, true);
+            if (! is_array($multa) || empty($multa['tipo']) || empty($multa['mes'])) {
+                abort(422, 'Uma das multas selecionadas é inválida.');
+            }
+
+            $valorParcela = DB::table('detalhestabelavaores')
+                ->where('id', $multa['tipo'])
+                ->where('classe_id', $validated['ClassedeAtualizacao'])
+                ->where('anolectivo_id', $validated['anolectivo'])
+                ->where('mes', $multa['mes'])
+                ->first();
+
+            if (! $valorParcela || Carbon::parse($valorParcela->limite)->isFuture()) {
+                abort(422, 'A multa selecionada não é válida para a parcela indicada.');
+            }
+
+            $mesCorrespondente = collect($validated['meses'] ?? [])
+                ->contains(function ($mesJson) use ($multa) {
+                    $mes = json_decode($mesJson, true);
+
+                    return is_array($mes)
+                        && (int) $mes['tipo'] === (int) $multa['tipo']
+                        && (int) $mes['mes'] === (int) $multa['mes'];
+                });
+
+            if (! $mesCorrespondente) {
+                abort(422, 'A multa seleccionada não corresponde a uma parcela seleccionada.');
+            }
+
+            $valorMulta = (float) $valorParcela->valorDescricao * ((float) $valorParcela->multa / 100);
+            $multa['valor'] = $valorMulta;
+            $multaSelecionada[] = json_encode($multa);
+            $totalApagar += $valorMulta;
+        }
+
+        $metodo = metodo_pagamento::with('banco')->findOrFail($validated['tipopagamento']);
+        $referenciaPagamento = $validated['Referencia'] ?? null;
+        $talaoNumero = $this->talao($metodo->id, $validated['anolectivo']);
+
+        if ((int) $metodo->id === 2) {
+            $resultadoMpesa = (new mpesaController)->Mpesapagamento(
+                'matricula',
+                $validated['numero'],
+                $totalApagar,
+                $talaoNumero
+            );
+
+            if (($resultadoMpesa['INS'] ?? null) !== 'INS-0') {
+                return [
+                    'estado' => $resultadoMpesa['INS'] ?? 'INS-1',
+                    'messagem' => $resultadoMpesa['Descricao'] ?? 'Não foi possível iniciar o pagamento M-Pesa.',
+                ];
+            }
+
+            $referenciaPagamento = $resultadoMpesa['Referencia'] ?? null;
+        }
+
+        $this->guardaAvatar($aluno, $request);
+
+        $matricula = DB::transaction(function () use (
+            $aluno,
+            $validated,
+            $metodo,
+            $referenciaPagamento,
+            $valorMatriculaComMulta,
+            $talaoNumero,
+            $parcelas,
+            $mesesSelecionados,
+            $multaSelecionada,
+            $totalApagar
+        ) {
+            $matricula = $this->matricular(
+                $aluno->id,
+                $validated['ClassedeAtualizacao'],
+                $validated['anolectivo'],
+                $referenciaPagamento,
+                $metodo,
+                $validated['idtipopagamento'],
+                $valorMatriculaComMulta,
+                $talaoNumero
+            );
+
+            if ($metodo->banco) {
+                $this->gerarReferenciasBancarias($matricula, $totalApagar);
+            }
+
+            $this->registar_pagamentos($matricula->id, $parcelas->all());
+            $this->setpagamentos(
+                $matricula,
+                $mesesSelecionados ?: null,
+                $multaSelecionada ?: null,
+                $metodo->id,
+                $referenciaPagamento,
+                $talaoNumero
+            );
+
+            return $matricula;
+        });
+
+        return [
+            'estado' => 'INS-0',
+            'message' => 'Matrícula atualizada com sucesso.',
+            'messagem' => 'Matrícula atualizada com sucesso.',
+            'idaluno' => $matricula->id,
+            'anolectivo' => $matricula->anolectivo_id,
+            'talao' => $talaoNumero,
+            'metodo' => $metodo->id,
+            'meses' => $mesesSelecionados,
+        ];
     }
 
     public function update(Request $request, $id)
     {
 
         if (auth()->user()->can('Editar-Aluno')) {
+            $parcelasPreModal = null;
+            if ($request->has('parcelasPreModal')) {
+                $parcelasPreModal = $request->validate([
+                    'parcelasPreModal' => ['array'],
+                    'parcelasPreModal.*.tipo' => ['required', 'integer'],
+                    'parcelasPreModal.*.mes' => ['required', 'integer'],
+                ])['parcelasPreModal'];
+
+                foreach ($parcelasPreModal as $parcela) {
+                    $parcelaExiste = DB::table('detalhestabelavaores')
+                        ->where('anolectivo_id', $request->ano_lectivo)
+                        ->where('classe_id', $request->classe)
+                        ->where('tipo', $parcela['tipo'])
+                        ->where('mes', $parcela['mes'])
+                        ->exists();
+
+                    if (! $parcelaExiste) {
+                        abort(422, 'Uma das parcelas selecionadas não pertence à classe e ao ano lectivo indicados.');
+                    }
+                }
+            }
 
             // fim
 
@@ -602,7 +806,9 @@ if (
 
             // dd($request->all(),$dadosAlunos);
 
-            if (! empty($request->tipospagamento)) {
+            if ($parcelasPreModal !== null) {
+                $this->registar_pagamentos($alunoid->id, $parcelasPreModal);
+            } elseif (! empty($request->tipospagamento)) {
                 $table = array_unique(DB::table('detalhestabelavaores')
                     ->where('anolectivo_id', $request->ano_lectivo)
                     ->where('classe_id', $request->classe)
@@ -739,14 +945,18 @@ if (
             $doenca = Doenca::all();
 
             $tipoPagamento = DB::table('outros_pagamentosview')
-                ->where('aluno_classe_id', $id)
-                ->select('tipo_pagamento_id')
+                ->join('detalhestabelavaores', 'outros_pagamentosview.tipo_pagamento_id', '=', 'detalhestabelavaores.id')
+                ->where('outros_pagamentosview.aluno_classe_id', $dados->idAlunoclasse)
+                ->select('detalhestabelavaores.tipo', 'outros_pagamentosview.mes_id')
                 ->distinct()
                 ->get();
+            $mesesNomes = DB::table('meses')->pluck('Descricao', 'id');
             //  dd($tipoPagamento);
 
+            
+
             return view('registoAcademico.matricular-atualizar-dados',
-                compact('religiao', 'profissao', 'doencasCronicas', 'classes', 'grauparentesco', 'dados', 'classeAluno', 'anolectivo', 'ano', 'tabelavaloresano', 'doenca', 'tipoPagamento','contactos'));
+                compact('religiao', 'profissao', 'doencasCronicas', 'classes', 'grauparentesco', 'dados', 'classeAluno', 'anolectivo', 'ano', 'tabelavaloresano', 'doenca', 'tipoPagamento', 'mesesNomes', 'contactos'));
 
         } else {
             $mensagem = 'nao possue a permissao de Atualizar dados do aluno';
@@ -985,224 +1195,44 @@ if (
     {
         // Buscar método de pagamento
 
-$nomeDoc="Recibo";
+        $nomeDoc="Recibo";
+        $aluno = alunoClasse::where('id', $id)->first();
 
-        $metodo = DB::table('metodo_pagamento')->where('id', $metodoId)->first();
-        $banco=DB::table("bancos")->where("id",$metodo->tipo)->first();
+       
+// 2º - Carrega as relações com o filtro correto
+$aluno->load([
+    "TBdetalhes",
+    "Aluno",
+    "classe",
+    "mensalidades"=> function ($query) use($talao) {
+        $query->withTrashed()
+            ->where('Ntalao', $talao);
 
-//  dd($metodo,$banco);
-        // Buscar matrícula
-        $matricula = DB::table('alunosescritos')
-             ->where("anolectivo_id", $anolectivo)
-            ->where('idAlunoclasse', $id)
-            ->first();
+    },
+    "referencias",
+    
+]);
+// dd($flag,$talao,$aluno);
 
 
+        $metodo=metodo_pagamento::where('id',$metodoId)->with('banco')->first();
 
-        if (! $matricula) {
-            abort(404, 'Matrícula não encontrada');
+        if($aluno->estado=="Pendente"){
+$nomeDoc="Comprovativo de Pre inscrição";
         }
 
-        //  dd( $dadosJson,  $metodo,$metodoId,$flag);
-
-        // Montar data formatada
-        $mesDescricao = meses::where('id', Carbon::parse($matricula->datainscricao)->month)
-            ->first()->Descricao ?? '';
-        $data = 'Quelimane, '.Carbon::parse($matricula->datainscricao)->day.
-            ' de '.$mesDescricao.' de '.Carbon::parse($matricula->datainscricao)->year;
-
-        // Valores da matrícula
-$dadosMatriculaValores = DB::table('detalhestabelavaores')
-    ->where('classe_id', $matricula->Classe_id)
-    ->where('id', $matricula->tipo_Pagamento_id)
-    ->where('anolectivo_id', $anolectivo)
-    ->first();
-
-$dadosTabela = collect();
-$dadosArray = collect();
-
-// $array = DB::table('relatoriograficoview')
-//     ->where('aluno_classe_id', $matricula->idAlunoclasse)
-//     ->where('tipo_pagamento_id', '>', 2)
-//     ->where('Ntalao', $talao)
-//     ->get();
-
- $array=outros_pagamentos::where("aluno_classe_id", $matricula->idAlunoclasse)->where('Ntalao', $talao)
-    ->get();
-
-// dd( $array);
-foreach ($array as $itemArray) {
-
-    $dadosArray->push([
-        'tipo' => $itemArray->tipo_pagamento_id,
-        'mes' => $itemArray->mes_id
-    ]);
-}
-
-       // dd($dadosArray);
-
-        if (! empty($dadosArray)) {
-
-            foreach ($dadosArray as $item) {
-                //   dd($dadosArray);
-                if (! isset($item['mes'], $item['tipo'])) {
-                    continue;
-                }
-
-                // dd($dadosArray);
-
-                $aluno = alunoClasse::find($matricula->idAlunoclasse);
-                if (! $aluno) {
-                    continue;
-                }
-
-                $dadosV = collect();
-                $dadocolect = null;
-
-                // Buscar detalhe do pagamento
-                $detalhe = DB::table('detalhestabelavaores')
-                    ->where('id', $item['tipo'])
-                    ->where('anolectivo_id', $aluno->anolectivo_id)
-                    ->where('mes', $item['mes'])
-                    ->first();
-                    // print_r($detalhe);
-
-                if (! $detalhe) {
-                    continue;
-                }
-
-// dd($metodo);
-                if ($metodo->tipo == 1) {
-                    $multaflag = Carbon::parse($detalhe->limite)->isPast() ? 1 : 0;
-                    $dadocolect = DB::table('referenciasbancariasview')
-    ->where('id', $matricula->idAlunoclasse)
-    ->where('tipo_pagamento_id', $detalhe->id)
-    ->where('mes_id', $detalhe->mes)
-    ->where(function ($query) use ($multaflag) {
-        $query->where('multaflag', $multaflag)
-              ->orWhereNull('multaflag');
-    })
-    ->first();
-    // dd($dadocolect, $matricula->idAlunoclasse);
-   $nomeDoc = "Cotação";
-   $outro=DB::table('outros_pagamentosview')
-->where("aluno_classe_id", $matricula->idAlunoclasse)
-->where("mes_id", $detalhe->mes)
-->where("tipoPagamento_id",$detalhe->id)
-->first();
-  $nomeDoc = "Cotação";
-//   dd($banco);
-
-  if(empty($dadocolect)){
-   $dadocolect = (object) [
-                            'id' => $outro->id,
-                            'nome' => $outro->nome,
-                            'tipo' => $outro->tipo_pagamento_id,
-                            'referencia' => "Por Gerar",
-                            'limite' => $outro->limite,
-                            'mes' => $outro->mes,
-                            'classe_id' => $outro->classe_id,
-                            'classe' => $outro->classe,
-                          'tipo_pagamento_id' => $outro->tipoPagamento_id,
-                            'tipo_pagamento' => $outro->tipoPagamento,
-                            'valorDescricao' =>0,
-                            'multa' => 0,
-                            'Banco' =>  $banco->descricao ,
-                            'Entidade' =>  $banco->Entidade,
-                            'Banco_id' =>  $banco->id,
-                            'anolectivo_id' => $outro->anolectivo_id,
-                            'anolectivo' => $outro->nomeano,
-                            'Estado' => $outro->Estado,
-                            'Ntalao' => null,
-                            'multaflag' => 0,
-
-                        ];
-  }
-
- if($outro->Estado=="Pago"||$outro->Estado=="activo"){
-                    $nomeDoc = "Recibo";
-                }
+        
+     
 
 
 
-                } else {
 
-                    $outro = DB::table('outros_pagamentosview')
-                        ->where('id', $matricula->idAlunoclasse)
-                        ->where('tipoPagamento_id', $detalhe->id)
-                        ->where('mes_id', $detalhe->mes)
-                        ->first();
-  echo $dadocolect->tipo_pagamento??"null"."-".$detalhe->mes."-". $matricula->idAlunoclasse."-";
-                       echo $detalhe->id."</br>";
 
-                    if ($outro) {
-                        $dadocolect = (object) [
-                            'id' => $outro->id,
-                            'nome' => $outro->nome,
-                            'tipo' => $outro->tipo_pagamento_id,
-                            'referencia' => $outro->referencia,
-                            'limite' => $outro->limite,
-                            'mes' => $outro->mes,
-                            'classe_id' => $outro->classe_id,
-                            'classe' => $outro->classe,
-                            'tipo_pagamento_id' => $outro->tipoPagamento_id,
-                            'tipo_pagamento' => $outro->tipoPagamento,
-                            'valorDescricao' => $outro->valorDescricao + ($outro->Multa),
-                            'multa' => $outro->multaP,
-                            'Banco' => $outro->metodo_pagamento,
-                            'Entidade' => $outro->metodo_pagamento,
-                            'Banco_id' => $outro->metodo_pagamento_id,
-                            'anolectivo_id' => $outro->anolectivo_id,
-                            'anolectivo' => $outro->nomeano,
-                            'Estado' => $outro->Estado,
-                            'Ntalao' => $outro->Ntalao,
-                            'multaflag' => 0,
-
-                        ];
-                    }
-                }
-
-                if ($dadocolect) {
-                    $dadosV->push($dadocolect);
-
-                    $tipo = optional($dadocolect)->tipo_pagamento ?? 'Tipo desconhecido';
-
-                    if ($tipo !== 'Tipo desconhecido') {
-                        $dadosTabela->push([
-                            'Tipo' => $tipo,
-                            'meses' => $dadosV,
-                        ]);
-                    }
-                }
-            }
-        }
-
-        // Garantir que não dê erro no Blade
-        $primeiroItem = $dadosTabela->first();
-
-        $primeiroMes = null;
-        if ($primeiroItem && isset($primeiroItem['meses'])) {
-            $primeiroMes = $primeiroItem['meses']->first() ?? null;
-        }
-        // $numero=DB::table("")
-        $talao = $flag > 0 ? $talao : $matricula->Ntalao;
-        // dd($anolectivo, $id, $dadosJson, $metodoId,$flag=null);
-
-        // Gerar PDF
+        
 
         // $pdf = Pdf::load
-      return  View('registoAcademico.recibo-matricula-Remprimir', [
-            'matricula' => $matricula,
-            'data' => $data,
-            'dadosMatriculaValores' => $dadosMatriculaValores,
-            'dadosTabela' => $dadosTabela,
-            'metodo' => $metodo,
-            'primeiroMes' => $primeiroMes,
-            'flag' => $flag,
-            'talao' => $talao,
-            "nomeDoc"=> $nomeDoc
-
-        ]);
+      return  View('registoAcademico.recibo-matricula-Remprimir',
+      compact('aluno','nomeDoc','aluno','metodo','flag'));
 
         $pdf->setPaper('A5', 'portrait');
 
@@ -1270,6 +1300,8 @@ if (
                 ->where('anolectivo_id', $ano)
                 ->where('classe_id', $classe)
                 ->get();
+
+               
         } else {
             $retornoAlunos = DB::table('alunosescritos')->where('anolectivo_id', $ano)->get();
         }
@@ -1330,12 +1362,27 @@ if (
             ->distinct()
             ->pluck('aluno_id')
             ->toArray();
-        $anolectivo = Anolectivo::orderBy('id', 'desc')->get();
+        $anolectivo = anolectivo::with('modalidadeDivisao')->orderBy('id', 'desc')->get();
         $alunos = Aluno::whereIn('Id', $alunoIds)->get();
         $tabelavaloresano = DB::table('tabelavaloresano')->get();
+        $mesesNomes = DB::table('meses')->pluck('Descricao', 'id');
+        $modalidadesAnoLectivo = $anolectivo->mapWithKeys(function ($ano) {
+            return [
+                $ano->id => [
+                    'modalidade' => (int) $ano->modalidade,
+                    'divisoes' => $ano->modalidadeDivisao->map(function ($divisao) {
+                        return [
+                            'numero' => $divisao->divisao,
+                            'inicio' => $divisao->Inicio,
+                            'fim' => $divisao->Fim,
+                        ];
+                    })->values(),
+                ],
+            ];
+        });
 
         return view('registoAcademico.Atualizar-matricula-index',
-            compact('alunos', 'anolectivo', 'dados', 'id', 'ano', 'metodo', 'tabelavaloresano'));
+            compact('alunos', 'anolectivo', 'dados', 'id', 'ano', 'metodo', 'tabelavaloresano', 'mesesNomes', 'modalidadesAnoLectivo'));
 
     }
 
@@ -1591,14 +1638,41 @@ public function pagamentos($ano, $classe, $data1, $data2, $tipo)
     public function selecionar_tabelaValores(Request $request, $classe, $ano, $tipo)
     {
 
-    // dd($request->pagamentos);
-    $pagamentos = is_array($request->pagamentos) ? $request->pagamentos : [];
+
+    // dd($request->all());
+    $validated = $request->validate([
+        'parcelas' => ['sometimes', 'array'],
+        'parcelas.*.tipo' => ['required_with:parcelas', 'integer'],
+        'parcelas.*.mes' => ['required_with:parcelas', 'integer'],
+    ]);
+
+    $dadosanoQuery = DB::table('detalhestabelavaores')
+        ->where('classe_id', $classe)
+        ->where('anolectivo_id', $ano)
+        ->where('tipo', '>', 2);
+
+    if ($request->exists('parcelas')) {
+        $parcelas = $validated['parcelas'] ?? [];
+
+        if (empty($parcelas)) {
+            $dadosanoQuery->whereIn('id', []);
+        } else {
+            $dadosanoQuery->where(function ($query) use ($parcelas) {
+                foreach ($parcelas as $parcela) {
+                    $query->orWhere(function ($query) use ($parcela) {
+                        $query->where('tipo', $parcela['tipo'])
+                            ->where('mes', $parcela['mes']);
+                    });
+                }
+            });
+        }
+    } else {
+        $pagamentos = is_array($request->pagamentos) ? $request->pagamentos : [];
+        $dadosanoQuery->whereIn('tipo', $pagamentos);
+    }
+
         $anos = anolectivo::find($ano);
-        $dadosano = DB::table('detalhestabelavaores')
-            ->where('classe_id', $classe)
-            ->where('anolectivo_id', $ano)
-            ->whereIn('tipo', $pagamentos)
-            ->where('tipo', '>', 2)->get();
+        $dadosano = $dadosanoQuery->get();
 
         $tabela_valores = DB::table('detalhestabelavaores')
             ->where('classe_id', $classe)
@@ -1637,62 +1711,116 @@ public function pagamentos($ano, $classe, $data1, $data2, $tipo)
         ]);
     }
 
+
+
+    public function mostrarPagamento($ano, $classe)
+    {
+
+
+
+
+$tabelavalores = DB::table('detalhes2')
+    ->where('anolectivo_id', $ano)
+    ->where('classe_id', $classe)
+    ->where('tipo', '>', 2)
+    ->get()
+    ->groupBy('Descricao');
+return view("registoAcademico.pagamento-lista",compact('tabelavalores'));
+
+    }
+
+
     public function registar_pagamentos(int $alunoId, array $pagamentos)
     {
-        DB::transaction(function () use ($alunoId, $pagamentos) {
+
+    // dd($pagamentos);
+        $mesesPorTipo = [];
+        $idsTipos = [];
+    
+
+        // $idsTipos = array_values(array_unique($idsTipos));
+       
+
+        DB::transaction(function () use ($alunoId, $pagamentos, $mesesPorTipo) {
             $aluno = alunoClasse::findOrFail($alunoId);
 
+            
+                //  dd($tabelaValores, $pagamentos,$alunoId,);
+            foreach ($pagamentos as $item) {
+
+            
             $tabelaValores = DB::table('detalhestabelavaores')
                 ->where('tipo', '>', 2)
                 ->where('classe_id', $aluno->classe_id)
                 ->where('anolectivo_id', $aluno->anolectivo_id)
-                ->whereIn('id', $pagamentos)
-                ->get();
+                ->where('tipo', $item['tipo'])
+                ->where('mes', $item['mes'])
+                ->first();
 
-                //  dd($tabelaValores, $pagamentos,$alunoId,);
-            foreach ($tabelaValores as $item) {
+                if (! $tabelaValores) {
+                    abort(422, 'Uma das parcelas selecionadas não está configurada para a matrícula atual.');
+                }
+
                 outros_pagamentos::updateOrCreate(
                     [
-                        'aluno_classe_id' => $aluno->id,
-                        'mes_id' => $item->mes,
-                        'tipo_pagamento_id' => $item->id,
+                        'aluno_classe_id' => $alunoId,
+                        'mes_id' => $tabelaValores->mes,
+                        'tipo_pagamento_id' => $tabelaValores->id,
                     ],
                     [
-                        'data_inicio' => $item->inicio,
-                        'data_Fim' => $item->limite,
+                        'data_inicio' => $tabelaValores->inicio,
+                        'data_Fim' => $tabelaValores->limite,
                         'deleted_at' => null,
                     ]
                 );
             }
 
-            outros_pagamentos::where('aluno_classe_id', $aluno->id)
-                ->whereNotIn('tipo_pagamento_id', $tabelaValores->pluck('id')->toArray())
-                ->where('Estado', '!=', 'Pago')
-                ->delete();
+            
         });
     }
 
     // registar os pagamentos efetuados
-    public function setpagamentos($aluno, $meses, $mesesMulta, $metodopagamento, $referencia, $talao)
+    public function setpagamentos($aluno, $meses, $mesesMulta,
+    $metodopagamento, $referencia,
+    $talao)
     {
 
-        $dadosMulta = collect();
+
+
+       $referenciaget = null;
+       if ($aluno->estado == 'pendente') {
+           $referenciaget = DB::table('referenciasbancarias')
+               ->where('aluno_classe_id', $aluno->id)
+               ->where('tipo_Pagamento_id', $aluno->tipo_Pagamento_id)
+               ->first();
+
+           if ($referenciaget) {
+               $referencia = $referenciaget->referencia;
+           }
+
+    }
+   
+    
+  
+$dadosMulta = collect();
 
         if ($mesesMulta != null) {
             $dadosMulta = collect(array_map(fn ($v) => json_decode($v, true), $mesesMulta));
         }
-
         if ($meses != null) {
 
             foreach ($meses as $item) {
-                $dado = json_decode($item);
 
+
+                $dado = json_decode($item);
                 $tabelavalores = DB::table('detalhestabelavaores')
                     ->where('classe_id', $aluno->classe_id)
                     ->where('anolectivo_id', $aluno->anolectivo_id)
                     ->where('id', $dado->tipo)
                     ->where('mes', $dado->mes)
                     ->first();
+
+
                 // dd($tabelavalores);
                 $dadosM = $dadosMulta->where('tipo', $dado->tipo)->where('mes', $dado->mes)->first()['valor'] ?? 0;
                 $multaActiva = $dadosM != 0 ? 1 : 0;
@@ -1701,8 +1829,10 @@ public function pagamentos($ano, $classe, $data1, $data2, $tipo)
                 $mesnome = meses::where('id', $dado->mes)->first();
 
                 $mesedado = $multaActiva == 0 ? $mesnome : $mesnome->Descricao.' com Multa';
+                
+            
                 if ($dadosmetodopagamento->tipo == 0) {
-                    $saidadedado = outros_pagamentos::where('tipo_pagamento_id',
+                    $saidadedado = outros_pagamentos::withoutTrashed()-> where('tipo_pagamento_id',
                         $dado->tipo)
                         ->where('aluno_classe_id', $aluno->id)
                         ->where('mes_id', $dado->mes)
@@ -1718,6 +1848,7 @@ public function pagamentos($ano, $classe, $data1, $data2, $tipo)
 
       ]);
                 } else {
+
                     $saidadedado = outros_pagamentos::where('tipo_pagamento_id',
                         $dado->tipo)
                         ->where('aluno_classe_id', $aluno->id)
@@ -1732,6 +1863,33 @@ public function pagamentos($ano, $classe, $data1, $data2, $tipo)
                                            'data_pagamento' => Carbon::now(),
 
                                        ]);
+
+                    $dadosmatricula=referenciasbancaria
+                    ::where('aluno_classe_id', $aluno->id)
+                    ->where('flag',1)
+                    ->where('tipo_pagamento_id',$aluno->tipo_Pagamento_id)
+                    ->first();;
+
+                    ;
+                    // dd( $dadosmatricula,$dado->tipo,$aluno);
+
+
+
+
+                                       referenciasbancaria::updateOrCreate(
+                                           [
+                                               
+                                               'aluno_classe_id' => $aluno->id,
+                                               'tipo_pagamento_id' => $dado->tipo,
+                                               'mes_id' => $dado->mes,
+                                           ],
+                                           [
+                                               'referencia' => $dadosmatricula->referencia,
+                                               'flag' => $dadosmatricula->flag,
+                                               
+                                               
+                                           ]
+                                       );
 
                 }
 
@@ -1865,7 +2023,12 @@ public function pagamentos($ano, $classe, $data1, $data2, $tipo)
         ->where('id', $metodo)
         ->first();
 
-        // dd( $metodoPagamento);
+    $metodoPagamento = DB::table('metodo_pagamento')
+        ->select('id', 'tipo')
+        ->where('id', $metodo)
+        ->first();
+
+    // dd( $metodo, $ano,$metodoPagamento);
     $anoRe = Carbon::now()->format('y');
 
     /*
@@ -1873,6 +2036,7 @@ public function pagamentos($ano, $classe, $data1, $data2, $tipo)
     | CASO 1
     |--------------------------------------------------------------------------
     */
+    
 
     if ($metodoPagamento->tipo == 1) {
 
@@ -2282,5 +2446,119 @@ array_push($tipoPagamento,$tabela->id);
 }
 
 
+
+
+
+
+    public  function gerarReferenciasBancarias($alunoclasse,$valor)
+    {
+
+   
+        // Busca o tipo de pagamento padrão para a classe e ano letivo
+        $tipopagamento = DB::table('detalhestabelavaores')
+            ->where('id', $alunoclasse->tipo_Pagamento_id)
+            ->where('classe_id', $alunoclasse->classe_id)
+            ->where('anolectivo_id', $alunoclasse->anolectivo_id)
+            ->first();
+            
+
+        // Se não encontrar o tipo de pagamento, não faz nada
+        if (!$tipopagamento) {
+            return;
+        }
+
+        // Correspondência
+        $codigoBase = $alunoclasse->codigo_AC;
+
+        // Busca métodos de pagamento válidos e os bancos associados
+        $metodos = DB::table('metodo_pagamento')->where('tipo', '>', 0)->get();
+        $bancos  = DB::table('bancos')
+            ->whereIn('id', $metodos->pluck('tipo')->toArray())
+            ->get();
+
+        // Calcula o valor a pagar incluindo multa, se aplicável
+        $multaactiva = $alunoclasse->multaActiva;
+        $valorBase   = $tipopagamento->valorDescricao;
+        // dd($valorBase,$valor);
+        // $multa       = $alunoclasse->Multa;
+        $valorApagar = $valor;;
+
+        // Correspondência de meses
+        $mes1 = Carbon::parse($tipopagamento->limite)->format('m');
+        $mes2 = DB::table('corespondeciameses')
+            ->where('id', $mes1)
+            ->first()?->ccorespondente_ID;
+
+        foreach ($bancos as $banco) {
+            $entidade = $banco->Entidade;
+            $descricaoBanco = strtoupper(trim($banco->Descricao ?? $banco->descricao ?? ''));
+//  dd($alunoclasse,$valor,$tipopagamento,$banco);
+            // Formata os meses com dois dígitos
+            $mes1Fmt = str_pad($mes1, 2, '0', STR_PAD_LEFT);
+            $mes2Fmt = str_pad($mes2, 2, '0', STR_PAD_LEFT);
+
+            $codigoBase1 = $tipopagamento->tipo . $codigoBase;
+
+            $referencias = collect();
+
+            if ($descricaoBanco === 'BIM') {
+                $referencia  = ReferenciaBIMHelper::gerarReferencia(
+                    $entidade, $tipopagamento->tipo . $codigoBase, $mes2Fmt, $valor
+                );
+                $referencia2 = ReferenciaBIMHelper::gerarReferencia(
+                    $entidade, $tipopagamento->tipo . $codigoBase, $mes2Fmt, $valor
+                );
+
+                $referencias->push(["refe" => $referencia,  "multa" =>0,"mes"=>$tipopagamento->mes]);
+                $referencias->push(["refe" => $referencia2, "multa" => 1,"mes"=>$tipopagamento->mes]);
+
+                static::salvarReferencias($alunoclasse, $banco, $tipopagamento, $referencias);
+
+            } elseif ($descricaoBanco === 'BCI') {
+                $referencia  = ReferenciaBCIHelper::gerarReferencia(
+                    $entidade, $codigoBase1, $mes2Fmt, $valor
+                );
+                $referencia2 = ReferenciaBCIHelper::gerarReferencia(
+                    $entidade, $codigoBase1, $mes2Fmt, $valor
+                );
+
+                $referencias->push(["refe" => $referencia,  "multa" =>0,"mes"=>$tipopagamento->mes]);
+                $referencias->push(["refe" => $referencia2, "multa" => 1,"mes"=>$tipopagamento->mes]);
+
+                static::salvarReferencias($alunoclasse, $banco, $tipopagamento, $referencias);
+            }
+        }
+    }
+
+
+    /**
+     * Boot do Model - associa o evento saved.
+     */
+   
+     protected static function salvarReferencias($alunoclasse, $banco, $tipopagamento, $referencias)
+    {
+
+   
+        foreach ($referencias as $referenciaItem) {
+
+
+            referenciasbancaria::
+            
+            updateOrCreate(
+                [
+                    "tipo_pagamento_id" => $alunoclasse->tipo_Pagamento_id,
+                
+                    "aluno_classe_id"   => $alunoclasse->id,
+                    "mes_id"            => $referenciaItem["mes"],
+                      "Multa"    => $referenciaItem["multa"],
+                ],
+                [ "referencia"        => $referenciaItem["refe"],
+                    "banco_id" => $banco->id,
+                  
+                    "flag"=>1
+                ]
+            );
+        }
+    }
 
 }

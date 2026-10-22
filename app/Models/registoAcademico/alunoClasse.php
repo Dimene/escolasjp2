@@ -34,6 +34,7 @@ class alunoClasse extends Model
         'usuario_registou',
         'tipo_Pagamento_id',
         'referencia',
+        'data_matricula',
         'FormulaMendia',
         'codigo_AC',
         "Ntalao",
@@ -71,7 +72,7 @@ class alunoClasse extends Model
 /**
  * Get all of the comments for the alunoClasse
  *
- * @return \Illuminate\Database\Eloquent\Relations\HasMany
+
  */
 public function Alunos()
 {
@@ -94,6 +95,14 @@ public function anolectivo()
     {
         return $this->hasMany(outros_pagamentos::class, 'aluno_classe_id', 'id');
     }
+
+
+    public function mensalidadePorTalao($ntalao)
+{
+    return $this->hasOne(outros_pagamentos::class, 'aluno_classe_id', 'id')
+        ->where('Ntalao', $ntalao);
+}
+
  public function tiposaida()
     {
         return $this->hasMany(tranferencias_disistencias::class, 'aluno_classe_id', 'id');
@@ -107,6 +116,11 @@ public function anolectivo()
 public function tabelavalor()
     {
         return $this->hasOne(tabela_valore::class, 'id', 'tipo_Pagamento_id');
+    }
+
+public function referencias()
+    {
+        return $this->hasMany(referenciasbancaria::class, 'aluno_classe_id', 'id');
     }
 
 
@@ -178,6 +192,7 @@ protected static function boot()
 
         foreach ($bancos as $banco) {
             $entidade = $banco->Entidade;
+            $descricaoBanco = strtoupper(trim($banco->Descricao ?? $banco->descricao ?? ''));
     // Finaliza o código com tipo de pagamento e ano
 
             $mes1 = str_pad($mes1, 2, '0', STR_PAD_LEFT);
@@ -186,7 +201,7 @@ protected static function boot()
           // Gera a referência conforme o banco
 
           $referencias=collect();
-            if ($banco->descricao === 'BIM') {
+            if ($descricaoBanco === 'BIM') {
                 //$referencia = ReferenciaBIMHelper::gerarReferenciaComCheckDigit($entidade, $codigoBase1 . $mes1, $valorBase);
                 $referencia = ReferenciaBIMHelper::gerarReferencia($entidade,$tipopagamento->tipo.$codigoBase,$mes1,$valorBase);
                 $referencia2 = ReferenciaBIMHelper::gerarReferencia($entidade,$tipopagamento->tipo.$codigoBase,$mes2,$valorApagar);
@@ -208,7 +223,7 @@ protected static function boot()
                 endforeach;
 
 
-            } elseif ($banco->descricao === 'BCI') {
+            } elseif ($descricaoBanco === 'BCI') {
                 $referencia = ReferenciaBCIHelper::gerarReferencia($entidade, $codigoBase1, $mes1, $valorBase);
                 $referencia2 = ReferenciaBCIHelper::gerarReferencia($entidade, $codigoBase1, $mes2, $valorApagar);
 

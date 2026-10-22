@@ -1,8 +1,3 @@
-<?php
-$dados = session()->get('nomeEm');
-$avatar = session()->get('infosession')->avatar;
-?>
-
 @extends('layouts.admin-Lti')
 @section('title', 'Referências Bancárias')
 
@@ -45,6 +40,10 @@ $avatar = session()->get('infosession')->avatar;
         color: #6b7280;
         margin-bottom: 8px;
         display: block;
+    }
+
+    .filter-actions {
+        gap: 0.5rem;
     }
 
     .filter-title i {
@@ -197,20 +196,6 @@ $avatar = session()->get('infosession')->avatar;
 
     @keyframes spin {
         to { transform: rotate(360deg); }
-    }
-
-    /* Modal */
-    .modal-modern .modal-content {
-        border-radius: 20px;
-        border: none;
-        overflow: hidden;
-    }
-
-    .modal-modern .modal-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        padding: 15px 20px;
     }
 
     /* Empty State */
@@ -372,11 +357,101 @@ $avatar = session()->get('infosession')->avatar;
         padding: 6px 14px;
     }
 
+    /* ======================================== */
+    /* SELETOR DE QUANTIDADE DE REGISTROS (10/50/Todos) */
+    /* ======================================== */
+    .dataTables_length {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+
+    .dataTables_length label {
+        font-size: 0.85rem;
+        color: #6b7280;
+        font-weight: 600;
+        margin-bottom: 0;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .dataTables_length select {
+        border: 2px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 6px 30px 6px 12px;
+        background: #f9fafb;
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: #374151;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23667eea' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 8px center;
+        background-size: 14px;
+        min-width: 90px;
+    }
+
+    .dataTables_length select:focus {
+        outline: none;
+        border-color: #667eea;
+        background-color: white;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .dataTables_length select:hover {
+        border-color: #667eea;
+        background-color: white;
+    }
+
+    /* Melhorar paginação */
+    .dataTables_paginate .paginate_button {
+        border-radius: 8px !important;
+        margin: 0 2px;
+        padding: 6px 12px !important;
+        border: 1px solid #e5e7eb !important;
+        background: white !important;
+        color: #374151 !important;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+
+    .dataTables_paginate .paginate_button:hover {
+        background: #f3f4f6 !important;
+        border-color: #667eea !important;
+        color: #667eea !important;
+    }
+
+    .dataTables_paginate .paginate_button.current {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        border-color: transparent !important;
+        color: white !important;
+    }
+
+    .dataTables_paginate .paginate_button.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    /* Info */
+    .dataTables_info {
+        font-size: 0.85rem;
+        color: #6b7280;
+        padding-top: 12px;
+    }
+
     @media (max-width: 768px) {
         .filter-section .row {
             flex-direction: column;
         }
-        .filter-section .col-md-3 {
+        .filter-section .row > [class*="col-"] {
+            width: 100%;
+            max-width: 100%;
             margin-bottom: 15px;
         }
         .btn-modern, .btn-success-modern, .btn-danger-modern, .btn-warning-modern {
@@ -390,6 +465,10 @@ $avatar = session()->get('infosession')->avatar;
         .stats-panel .filter-group {
             justify-content: center;
             margin-top: 10px;
+        }
+        .dataTables_length {
+            justify-content: center;
+            margin-bottom: 12px;
         }
     }
 </style>
@@ -413,8 +492,6 @@ $avatar = session()->get('infosession')->avatar;
         <div class="">
             <div class="container-fluid fade-in">
 
-
-
                 <!-- Alerta informativo -->
                 <div class="alert alert-info-custom alert-custom mb-4">
                     <i class="fa fa-info-circle fa-2x"></i>
@@ -429,7 +506,7 @@ $avatar = session()->get('infosession')->avatar;
                 <div class="filter-section">
                     <div class="row">
                         <div class="col-md-3">
-                            <label class="filter-title">
+                            <label class="filter-title" for="selectEntidade">
                                 <i class="fa fa-university"></i> Banco
                             </label>
                             <select class="filter-select" name="Entidade" id="selectEntidade">
@@ -442,7 +519,7 @@ $avatar = session()->get('infosession')->avatar;
                         </div>
 
                         <div class="col-md-3">
-                            <label class="filter-title">
+                            <label class="filter-title" for="selectAnoLectivo">
                                 <i class="fa fa-calendar"></i> Ano Lectivo
                             </label>
                             <select class="filter-select" name="anolectivo" id="selectAnoLectivo">
@@ -455,7 +532,7 @@ $avatar = session()->get('infosession')->avatar;
                         </div>
 
                         <div class="col-md-3">
-                            <label class="filter-title">
+                            <label class="filter-title" for="selectTipoPagamento">
                                 <i class="fa fa-credit-card"></i> Tipo de Pagamento
                             </label>
                             <select class="filter-select" name="tipopagamento" id="selectTipoPagamento">
@@ -470,7 +547,7 @@ $avatar = session()->get('infosession')->avatar;
                         </div>
 
                         <div class="col-md-3">
-                            <label class="filter-title">
+                            <label class="filter-title" for="selectClasse">
                                 <i class="fa fa-graduation-cap"></i> Classe
                             </label>
                             <select class="filter-select" name="classe" id="selectClasse">
@@ -485,7 +562,7 @@ $avatar = session()->get('infosession')->avatar;
 
                     <div class="row mt-3">
                         <div class="col-md-3">
-                            <label class="filter-title">
+                            <label class="filter-title" for="selectMes">
                                 <i class="fa fa-calendar-alt"></i> Mês
                             </label>
                             <select class="filter-select" name="mes" id="selectMes">
@@ -493,17 +570,17 @@ $avatar = session()->get('infosession')->avatar;
                             </select>
                         </div>
 
-                        <div class="col-md-9 d-flex align-items-end gap-2 flex-wrap">
-                            <button class="btn-modern" id="btnConsultar" onclick="consultarReferencias()">
+                        <div class="col-md-9 d-flex align-items-end flex-wrap filter-actions">
+                            <button type="button" class="btn-modern" id="btnConsultar" onclick="consultarReferencias()">
                                 <i class="fa fa-search mr-2"></i> Consultar Referências
                             </button>
-                            <button class="btn-success-modern" id="btnGerarTodas" onclick="gerarTodasReferencias()">
+                            <button type="button" class="btn-success-modern" id="btnGerarTodas" onclick="gerarTodasReferencias()">
                                 <i class="fa fa-file-pdf-o mr-2"></i> Gerar Todas
                             </button>
-                            <button class="btn-danger-modern" onclick="verificarReferenciasMalGeradas()">
+                            <button type="button" class="btn-danger-modern" onclick="verificarReferenciasMalGeradas()">
                                 <i class="fa fa-shield"></i> Verificar Mal Geradas
                             </button>
-                            <button class="btn-warning-modern" onclick="gerarReferenciasPorGerar()">
+                            <button type="button" class="btn-warning-modern" onclick="gerarReferenciasPorGerar()">
                                 <i class="fa fa-refresh"></i> Gerar Pendentes
                             </button>
                         </div>
@@ -534,16 +611,16 @@ $avatar = session()->get('infosession')->avatar;
                         </div>
                         <div class="col-md-4 text-md-right">
                             <div class="filter-group">
-                                <button class="btn btn-outline-primary btn-sm filtro-ativo" onclick="filtrarTabela('todos')">
+                                <button type="button" data-table-filter="todos" class="btn btn-outline-primary btn-sm filtro-ativo" onclick="filtrarTabela('todos')">
                                     <i class="fa fa-list"></i> Todos
                                 </button>
-                                <button class="btn btn-outline-warning btn-sm" onclick="filtrarTabela('por-gerar')">
+                                <button type="button" data-table-filter="por-gerar" class="btn btn-outline-warning btn-sm" onclick="filtrarTabela('por-gerar')">
                                     <i class="fa fa-exclamation-triangle"></i> Por Gerar
                                 </button>
-                                <button class="btn btn-outline-danger btn-sm" onclick="filtrarTabela('mal-geradas')">
+                                <button type="button" data-table-filter="mal-geradas" class="btn btn-outline-danger btn-sm" onclick="filtrarTabela('mal-geradas')">
                                     <i class="fa fa-times-circle"></i> Mal Geradas
                                 </button>
-                                <button class="btn btn-outline-success btn-sm" onclick="filtrarTabela('com-referencia')">
+                                <button type="button" data-table-filter="com-referencia" class="btn btn-outline-success btn-sm" onclick="filtrarTabela('com-referencia')">
                                     <i class="fa fa-check-circle"></i> Com Ref.
                                 </button>
                             </div>
@@ -552,7 +629,7 @@ $avatar = session()->get('infosession')->avatar;
                 </div>
 
                 <!-- ===== RESULTADOS ===== -->
-                <div class="results-table fade-in" id="resultsContainer">
+                <div class="results-table fade-in" id="resultsContainer" aria-live="polite" aria-busy="false">
                     <div class="empty-state">
                         <i class="fa fa-chart-line"></i>
                         <p class="mt-2">Selecione os filtros e clique em "Consultar Referências"</p>
@@ -563,61 +640,32 @@ $avatar = session()->get('infosession')->avatar;
     </section>
 </div>
 
-<!-- Modal Visualizar Referências -->
-<div class="modal fade modal-modern" id="modalVisualizar" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="fa fa-file-pdf-o mr-2"></i>
-                    Referência de Pagamento
-                </h5>
-                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body" id="modalBodyReferencia" style="min-height: 500px;">
-                <div class="loading-container">
-                    <div class="loading-spinner"></div>
-                    <p class="mt-3 text-muted">A carregar referência...</p>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">
-                    <i class="fa fa-times"></i> Fechar
-                </button>
-                <button type="button" class="btn btn-success" id="btnImprimirReferencia" onclick="imprimirReferenciaAtual()">
-                    <i class="fa fa-print"></i> Imprimir
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
 @include("Componetes.frame-imprimir")
 
 @push('scripts')
-<script src="{{ asset('Admin-LTE/plugins/jquery/jquery.min.js') }}"></script>
-<script src="{{ asset('Datatable/js/jquery.dataTables.min.js') }}"></script>
-<script src="{{ asset('Admin-LTE/plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="{{ asset('MyJs/imprimirRecibo.js') }}"></script>
 
 <script>
     var meses = @json($detalhes);
-    var currentBlobUrl = null;
     var dataTableInstance = null;
+    var requestReferencias = null;
+    var filtroTabelaAtivo = 'todos';
+    var filtroTabelaInstalado = false;
 
     // ========================================
     // FUNÇÕES AUXILIARES
     // ========================================
 
     function formatMoney(value) {
+        var amount = Number(value);
         return new Intl.NumberFormat('pt-MZ', {
-            style: 'currency',
-            currency: 'MZN',
-            minimumFractionDigits: 2
-        }).format(value).replace('MT', '');
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(Number.isFinite(amount) ? amount : 0) + ' MZN';
+    }
+
+    function escaparHtml(value) {
+        return $('<div>').text(value == null ? '' : String(value)).html();
     }
 
     function isPeriodoMulta() {
@@ -653,15 +701,38 @@ $avatar = session()->get('infosession')->avatar;
             destroyDataTable();
             dataTableInstance = $('#listadosalunos').DataTable({
                 language: {
-                    url: "/Datatable/pt/Portuguese-Brasil.json"
+                    url: "/Datatable/pt/Portuguese-Brasil.json",
+                    lengthMenu: "Mostrar _MENU_ registros"
                 },
                 responsive: true,
                 pageLength: 10,
+                lengthMenu: [[10, 50, -1], [10, 50, "Todos"]],
                 dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rt<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
                 deferRender: true,
-                destroy: true
+                destroy: true,
+                footerCallback: function() {
+                    var api = this.api();
+                    var total = api.column(6, { search: 'none' }).nodes().toArray().reduce(function(sum, cell) {
+                        var amountElement = cell.querySelector('[data-value]');
+                        var amount = amountElement ? Number(amountElement.getAttribute('data-value')) : 0;
+                        return sum + (Number.isFinite(amount) ? amount : 0);
+                    }, 0);
+                    $('#totalValor').text(formatMoney(total));
+                }
             });
+            $('#searchReferencias')
+                .off('input.referencias')
+                .on('input.referencias', function() {
+                    dataTableInstance.search(this.value).draw();
+                });
+            filtrarTabela(filtroTabelaAtivo);
         }
+    }
+
+    function obterLinhasTabela() {
+        return dataTableInstance
+            ? dataTableInstance.rows({ search: 'none' }).nodes().to$()
+            : $('#listadosalunos tbody tr');
     }
 
     // ========================================
@@ -669,12 +740,14 @@ $avatar = session()->get('infosession')->avatar;
     // ========================================
 
     function carregarMeses() {
-        var ano = parseInt($("#selectAnoLectivo").val());
+        var ano = Number($("#selectAnoLectivo").val());
         var tipopagamento = $("#selectTipoPagamento").val();
-        var classe = parseInt($("#selectClasse").val());
+        var classe = Number($("#selectClasse").val());
 
         if (!ano || !tipopagamento || !classe) {
-            $("#selectMes").html('<option value="">Selecione todos os filtros primeiro</option>');
+            $("#selectMes").empty().append(
+                $('<option>', { value: '', text: 'Selecione todos os filtros primeiro' })
+            );
             return;
         }
 
@@ -684,15 +757,22 @@ $avatar = session()->get('infosession')->avatar;
                    Number(e.tipo) === Number(tipopagamento);
         });
 
-        var html = '<option value="">Todos os meses</option>';
+        var $selectMes = $("#selectMes").empty();
+        $selectMes.append($('<option>', { value: '', text: 'Todos os meses' }));
         if (mesesFiltrados.length > 0) {
             mesesFiltrados.forEach(function(element) {
-                html += '<option value="' + element.mes + '">' + element.mesNome + '</option>';
+                $selectMes.append($('<option>', {
+                    value: element.mes,
+                    text: element.mesNome
+                }));
             });
         } else {
-            html += '<option value="" disabled>Nenhum mês disponível</option>';
+            $selectMes.append($('<option>', {
+                value: '',
+                text: 'Nenhum mês disponível',
+                disabled: true
+            }));
         }
-        $("#selectMes").html(html);
     }
 
     // ========================================
@@ -706,28 +786,21 @@ $avatar = session()->get('infosession')->avatar;
         var malGeradas = 0;
         var vencidas = 0;
 
-        $('#listadosalunos tbody tr').each(function() {
+        obterLinhasTabela().each(function() {
             var linha = $(this);
             total++;
 
-            var temReferencia = linha.find('.badge').length > 0;
-            var temBotaoGerar = linha.find('.AtualizarReferencia').length > 0;
+            var temReferencia = linha.attr('data-has-reference') === '1';
+            var temBotaoGerar = linha.find('.btn-gerar-pendente').length > 0;
 
             if (temReferencia) {
                 comReferencia++;
-                var badge = linha.find('td:eq(4) .badge');
-                var texto = badge.text().trim();
-                var match = texto.match(/[0-9\-\s]+/);
-                if (match) {
-                    var referencia = match[0].trim();
-                    if (isReferenciaMalGerada(referencia)) {
-                        malGeradas++;
-                    }
+                if (linha.attr('data-is-mal-generated') === '1') {
+                    malGeradas++;
                 }
-                var statusCell = linha.find('td:eq(6)');
-                if (statusCell.find('.text-danger').length > 0) {
-                    vencidas++;
-                }
+            }
+            if (linha.attr('data-is-overdue') === '1') {
+                vencidas++;
             }
             if (temBotaoGerar) {
                 porGerar++;
@@ -740,9 +813,7 @@ $avatar = session()->get('infosession')->avatar;
         $('#totalMalGeradas').text(malGeradas);
         $('#totalVencidas').text(vencidas);
 
-        if (total > 0) {
-            $('#statsPanel').show();
-        }
+        $('#statsPanel').toggle(total > 0);
     }
 
     // ========================================
@@ -756,19 +827,25 @@ $avatar = session()->get('infosession')->avatar;
         var tipopagamento = $("#selectTipoPagamento").val();
         var classe = $("#selectClasse").val();
 
-        if (!anolectivo || !tipopagamento || !classe) {
+        if (requestReferencias) {
+            requestReferencias.abort();
+            requestReferencias = null;
+        }
+
+        if (!entidade || !anolectivo || !tipopagamento || !classe) {
             $("#resultsContainer").html(`
                 <div class="empty-state">
                     <i class="fa fa-exclamation-triangle"></i>
                     <p class="mt-2">Por favor, selecione todos os filtros necessários</p>
                 </div>
-            `);
+            `).attr('aria-busy', 'false');
             $('#statsPanel').hide();
             return;
         }
 
-        $.ajax({
-            url: "/Financas/Banco/referencas/show",
+        filtroTabelaAtivo = 'todos';
+        requestReferencias = $.ajax({
+            url: @json(url('/Financas/Banco/referencas/show')),
             type: "GET",
             data: {
                 "Entidade": entidade,
@@ -778,24 +855,21 @@ $avatar = session()->get('infosession')->avatar;
                 "classe": classe,
             },
             beforeSend: function() {
+                destroyDataTable();
                 $("#resultsContainer").html(`
                     <div class="loading-container">
                         <div class="loading-spinner"></div>
                         <p class="mt-3 text-muted">A carregar dados...</p>
                     </div>
-                `);
+                `).attr('aria-busy', 'true');
                 $('#statsPanel').hide();
             },
             success: function(data) {
-                if (data && data.trim() !== "") {
+                if (typeof data === 'string' && data.trim() !== "") {
                     $("#resultsContainer").html(data);
-                    setTimeout(function() {
-                        initDataTable();
-                        setTimeout(function() {
-                            atualizarEstatisticas();
-                            verificarReferenciasMalGeradas(false);
-                        }, 200);
-                    }, 100);
+                    initDataTable();
+                    atualizarEstatisticas();
+                    verificarReferenciasMalGeradas(false);
                 } else {
                     $("#resultsContainer").html(`
                         <div class="empty-state">
@@ -808,17 +882,29 @@ $avatar = session()->get('infosession')->avatar;
                 }
             },
             error: function(xhr) {
+                if (xhr.statusText === 'abort') {
+                    return;
+                }
                 console.error("Erro:", xhr);
+                var mensagemErro = xhr.responseJSON && xhr.responseJSON.message
+                    ? xhr.responseJSON.message
+                    : 'Erro ao carregar os dados. Tente novamente.';
                 $("#resultsContainer").html(`
                     <div class="empty-state">
                         <i class="fa fa-exclamation-triangle"></i>
-                        <p class="mt-2">Erro ao carregar os dados. Tente novamente.</p>
-                        <button class="btn btn-modern mt-3" onclick="consultarReferencias()">
+                        <p class="mt-2">${escaparHtml(mensagemErro)}</p>
+                        <button type="button" class="btn btn-modern mt-3" onclick="consultarReferencias()">
                             <i class="fa fa-refresh"></i> Tentar novamente
                         </button>
                     </div>
                 `);
                 $('#statsPanel').hide();
+            },
+            complete: function(xhr) {
+                $("#resultsContainer").attr('aria-busy', 'false');
+                if (requestReferencias === xhr) {
+                    requestReferencias = null;
+                }
             }
         });
     }
@@ -831,7 +917,7 @@ $avatar = session()->get('infosession')->avatar;
         var totalMalGeradas = 0;
         var referenciasMalGeradas = [];
 
-        $('#listadosalunos tbody tr').each(function() {
+        obterLinhasTabela().each(function() {
             var linha = $(this);
             var referenciaCell = linha.find('td:eq(4)');
             var badge = referenciaCell.find('.badge');
@@ -865,15 +951,15 @@ $avatar = session()->get('infosession')->avatar;
         if (mostrarAlerta) {
             if (totalMalGeradas > 0) {
                 var listaNomes = referenciasMalGeradas.map(function(item) {
-                    return `${item.nome}: ${item.referencia}`;
-                }).join('\n');
+                    return `${escaparHtml(item.nome)}: ${escaparHtml(item.referencia)}`;
+                }).join('<br>');
 
                 Swal.fire({
                     icon: 'warning',
                     title: `⚠️ ${totalMalGeradas} Referência(s) Mal Gerada(s)`,
                     html: `<div class="text-left">
                             <p><strong>Referências com menos de 11 dígitos:</strong></p>
-                            <pre style="max-height: 300px; overflow: auto; background: #f3f4f6; padding: 10px; border-radius: 8px;">${listaNomes}</pre>
+                            <div style="max-height: 300px; overflow: auto; background: #f3f4f6; padding: 10px; border-radius: 8px;">${listaNomes}</div>
                             <p class="mt-2 text-muted">Deseja corrigir estas referências?</p>
                            </div>`,
                     showCancelButton: true,
@@ -943,7 +1029,7 @@ $avatar = session()->get('infosession')->avatar;
                     confirmButtonColor: '#3085d6'
                 }).then(() => {
                     if (sucessos > 0) {
-                        setTimeout(() => location.reload(), 2000);
+                        consultarReferencias();
                     }
                 });
                 return;
@@ -951,10 +1037,11 @@ $avatar = session()->get('infosession')->avatar;
 
             var item = referenciasMalGeradas[index];
             var linha = item.linha;
-            var botaoGerar = linha.find('.AtualizarReferencia');
+            var botaoGerar = linha.find('.AtualizarReferencia[data-action="regenerate"]');
             var id = botaoGerar.attr('value');
 
             if (!id || botaoGerar.length === 0) {
+                falhas++;
                 index++;
                 regenerarProxima();
                 return;
@@ -965,7 +1052,7 @@ $avatar = session()->get('infosession')->avatar;
                 html: `<div class="text-center">
                         <div class="spinner-border text-primary mb-3" role="status"></div>
                         <h5>Corrigindo ${index + 1} de ${referenciasMalGeradas.length}</h5>
-                        <p class="text-muted">${item.nome}</p>
+                        <p class="text-muted">${escaparHtml(item.nome)}</p>
                         <div class="progress mt-3">
                             <div class="progress-bar progress-bar-striped progress-bar-animated bg-danger"
                                  style="width: ${percentual}%">${Math.round(percentual)}%</div>
@@ -978,7 +1065,7 @@ $avatar = session()->get('infosession')->avatar;
             botaoGerar.html('<i class="fa fa-spinner fa-spin"></i>').prop('disabled', true);
 
             $.ajax({
-                url: '/Financas/Banco/referencas/gerar/' + id + '/' + entidade,
+                url: @json(url('/Financas/Banco/gerar/referencas/aluno')) + '/' + encodeURIComponent(id) + '/' + encodeURIComponent(entidade),
                 type: 'POST',
                 dataType: 'json',
                 data: {
@@ -987,19 +1074,6 @@ $avatar = session()->get('infosession')->avatar;
                 success: function(response) {
                     if (response.referenciaBanco) {
                         sucessos++;
-                        var cell = linha.find('td:eq(4)');
-                        var badge = cell.find('.badge');
-                        badge.removeClass('referencia-mal-gerada');
-                        badge.find('.mal-gerada-label').remove();
-
-                        var novaRef = response.referenciaBanco;
-                        if (!isReferenciaMalGerada(novaRef)) {
-                            badge.text(novaRef);
-                            badge.removeClass('bg-danger bg-warning').addClass('bg-success');
-                        } else {
-                            badge.text(novaRef);
-                            badge.removeClass('bg-success').addClass('bg-warning');
-                        }
                     } else {
                         falhas++;
                     }
@@ -1028,54 +1102,12 @@ $avatar = session()->get('infosession')->avatar;
             return;
         }
 
-        $('.filter-group .btn').removeClass('filtro-ativo');
-
-        switch(tipo) {
-            case 'todos':
-                dataTableInstance.search('').draw();
-                dataTableInstance.rows().every(function() {
-                    $(this.node()).show();
-                });
-                $('.filter-group .btn-outline-primary').addClass('filtro-ativo');
-                break;
-
-            case 'por-gerar':
-                $('#listadosalunos tbody tr').each(function() {
-                    var linha = $(this);
-                    if (linha.find('.AtualizarReferencia').length > 0) {
-                        $(this).show();
-                    } else {
-                        $(this).hide();
-                    }
-                });
-                $('.filter-group .btn-outline-warning').addClass('filtro-ativo');
-                break;
-
-            case 'mal-geradas':
-                $('#listadosalunos tbody tr').each(function() {
-                    var linha = $(this);
-                    var badge = linha.find('td:eq(4) .badge');
-                    if (badge.length > 0 && badge.hasClass('referencia-mal-gerada')) {
-                        $(this).show();
-                    } else {
-                        $(this).hide();
-                    }
-                });
-                $('.filter-group .btn-outline-danger').addClass('filtro-ativo');
-                break;
-
-            case 'com-referencia':
-                $('#listadosalunos tbody tr').each(function() {
-                    var linha = $(this);
-                    if (linha.find('.badge').length > 0 && linha.find('.AtualizarReferencia').length === 0) {
-                        $(this).show();
-                    } else {
-                        $(this).hide();
-                    }
-                });
-                $('.filter-group .btn-outline-success').addClass('filtro-ativo');
-                break;
-        }
+        var filtrosValidos = ['todos', 'por-gerar', 'mal-geradas', 'com-referencia'];
+        filtroTabelaAtivo = filtrosValidos.includes(tipo) ? tipo : 'todos';
+        dataTableInstance.draw();
+        $('[data-table-filter]').removeClass('filtro-ativo')
+            .filter('[data-table-filter="' + filtroTabelaAtivo + '"]')
+            .addClass('filtro-ativo');
     }
 
     // ========================================
@@ -1083,7 +1115,7 @@ $avatar = session()->get('infosession')->avatar;
     // ========================================
 
     function gerarReferenciaIndividual(idpagamento, idaluno, nomeAluno) {
-        const url = `/Financas/Banco/referencas/alunoReferenciasPrint/${idaluno}/${idpagamento}/0`;
+        const url = @json(url('/Financas/Banco/referencas/alunoReferenciasPrint')) + `/${encodeURIComponent(idaluno)}/${encodeURIComponent(idpagamento)}/0`;
         abrirReciboPDF(url, idaluno);
     }
 
@@ -1092,7 +1124,7 @@ $avatar = session()->get('infosession')->avatar;
     // ========================================
 
     function gerarReferenciasPorGerar() {
-        var botoesGerar = $('.AtualizarReferencia');
+        var botoesGerar = $('.btn-gerar-pendente');
 
         if (botoesGerar.length === 0) {
             Swal.fire('Info', 'Nenhuma referência pendente para gerar.', 'info');
@@ -1125,7 +1157,7 @@ $avatar = session()->get('infosession')->avatar;
     // ========================================
 
     function gerarTodasReferencias() {
-        var botoesGerar = $('.AtualizarReferencia');
+        var botoesGerar = $('.btn-gerar-pendente');
 
         if (botoesGerar.length === 0) {
             Swal.fire({
@@ -1179,7 +1211,7 @@ $avatar = session()->get('infosession')->avatar;
                             confirmButtonColor: '#3085d6'
                         }).then(() => {
                             if (sucessos > 0) {
-                                setTimeout(() => location.reload(), 2000);
+                                consultarReferencias();
                             }
                         });
                         return;
@@ -1190,12 +1222,19 @@ $avatar = session()->get('infosession')->avatar;
                     var linhaTabela = btn.closest('tr');
                     var originalHtml = btn.html();
 
+                    if (!id) {
+                        falhas++;
+                        index++;
+                        gerarProxima();
+                        return;
+                    }
+
                     var percentual = ((index) / botoes.length) * 100;
                     Swal.update({
                         html: `<div class="text-center">
                                 <div class="spinner-border text-primary mb-3" role="status"></div>
                                 <h5>Processando referência ${index + 1} de ${botoes.length}</h5>
-                                <p class="text-muted">Aluno: ${linhaTabela.find('td:eq(1)').find('strong').text() || 'Carregando...'}</p>
+                                <p class="text-muted">Aluno: ${escaparHtml(linhaTabela.find('td:eq(1)').find('strong').text() || 'Carregando...')}</p>
                                 ${comMulta ? '<p class="text-danger"><small>⚠️ Período com multa</small></p>' : ''}
                                 <div class="progress mt-3">
                                     <div class="progress-bar progress-bar-striped progress-bar-animated bg-success"
@@ -1212,7 +1251,7 @@ $avatar = session()->get('infosession')->avatar;
                     btn.html('<i class="fa fa-spinner fa-spin"></i>').prop('disabled', true);
 
                     $.ajax({
-                        url: '/Financas/Banco/referencas/gerar/' + id + '/' + entidade,
+                        url: @json(url('/Financas/Banco/gerar/referencas/aluno')) + '/' + encodeURIComponent(id) + '/' + encodeURIComponent(entidade),
                         type: 'POST',
                         dataType: 'json',
                         data: {
@@ -1221,86 +1260,11 @@ $avatar = session()->get('infosession')->avatar;
                         success: function(response) {
                             if (response.referenciaBanco) {
                                 sucessos++;
-
-                                var badgeClass = 'badge bg-success';
-                                var badgeIcon = 'fa fa-check-circle';
-
-                                if (response.multaflagrefe > 0) {
-                                    badgeClass = 'badge bg-danger';
-                                    badgeIcon = 'fa fa-exclamation-circle';
-                                } else if (response.Estado === "Pago") {
-                                    badgeClass = 'badge bg-success';
-                                    badgeIcon = 'fa fa-check-circle';
-                                } else {
-                                    badgeClass = 'badge bg-warning';
-                                    badgeIcon = 'fa fa-clock-o';
-                                }
-
-                                var cell = linhaTabela.find('td:eq(4)');
-                                var referenciaHtml = '<span class="' + badgeClass + '" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;">';
-                                referenciaHtml += '<i class="' + badgeIcon + '"></i> ' + (response.referenciaBanco || response.referencia);
-
-                                if (response.multaflagrefe > 0) {
-                                    referenciaHtml += '<small class="d-block text-danger"><i class="fa fa-exclamation-circle"></i> Com multa</small>';
-                                }
-
-                                referenciaHtml += '</span>';
-                                cell.html(referenciaHtml);
-
-                                // Atualizar valor
-                                if (response.valorDescricao) {
-                                    var valorFinal = response.valorDescricao;
-                                    if (response.multaflagrefe > 0 && response.multaP > 0) {
-                                        var multaValor = (response.multaP / 100) * valorFinal;
-                                        valorFinal = valorFinal + multaValor;
-                                    }
-                                    var valorCell = linhaTabela.find('td:eq(5)');
-                                    var valorClass = (response.multaflagrefe > 0) ? 'text-danger' : 'text-primary';
-                                    var valorHtml = '<strong class="' + valorClass + '">' + formatMoney(valorFinal) + ' MZN</strong>';
-                                    if (response.multaflagrefe > 0 && response.multaP > 0) {
-                                        valorHtml += '<small class="d-block text-danger">Multa: ' + formatMoney(multaValor) + ' (' + response.multaP + '%)</small>';
-                                    }
-                                    valorCell.html(valorHtml);
-                                }
-
-                                // Atualizar estado
-                                var estadoCell = linhaTabela.find('td:eq(6)');
-                                if (response.multaflagrefe > 0) {
-                                    estadoCell.html('<span class="text-danger"><i class="fa fa-exclamation-triangle"></i> VENCIDO COM MULTA</span>');
-                                } else if (response.Estado === "Pago") {
-                                    estadoCell.html('<span class="text-success"><i class="fa fa-check-circle"></i> Pago</span>');
-                                } else {
-                                    estadoCell.html('<span class="text-warning"><i class="fa fa-clock-o"></i> Pendente</span>');
-                                }
-
-                                // Adicionar botão de impressão
-                                var acoesCell = linhaTabela.find('td:eq(7)');
-                                if (acoesCell.find('.btn-secondary').length === 0 && response.id) {
-                                    var tipoPagamentoId = response.tipo_pagamento_id || response.tipoPagamento_id || response.idpagamento;
-                                    var printBtn = '<a class="btn btn-secondary btn-sm" href="/Financas/Banco/referencas/alunoReferenciasPrint/' + response.id + '/' + tipoPagamentoId + '/0" target="_blank" title="Imprimir Referência"><i class="fa fa-print"></i></a>';
-                                    acoesCell.find('.btn-group').append(printBtn);
-                                }
                             } else {
                                 falhas++;
-                                btn.html(originalHtml).prop('disabled', false);
                             }
 
-                            var percentual = ((index + 1) / botoes.length) * 100;
-                            Swal.update({
-                                html: `<div class="text-center">
-                                        <div class="spinner-border text-primary mb-3" role="status"></div>
-                                        <h5>Processando referência ${index + 1} de ${botoes.length}</h5>
-                                        <p class="text-muted">✅ ${sucessos} geradas | ❌ ${falhas} falhas</p>
-                                        <div class="progress mt-3">
-                                            <div class="progress-bar progress-bar-striped progress-bar-animated bg-success"
-                                                 style="width: ${percentual}%">
-                                                ${Math.round(percentual)}%
-                                            </div>
-                                        </div>
-                                        <small class="text-muted mt-2 d-block">Continuando...</small>
-                                    </div>`
-                            });
-
+                            btn.html(originalHtml).prop('disabled', false);
                             index++;
                             gerarProxima();
                         },
@@ -1320,34 +1284,52 @@ $avatar = session()->get('infosession')->avatar;
     }
 
     // ========================================
-    // IMPRIMIR REFERÊNCIA
-    // ========================================
-
-    function imprimirReferenciaAtual() {
-        if (currentBlobUrl) {
-            window.open(currentBlobUrl, '_blank');
-        } else {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Atenção',
-                text: 'Nenhuma referência carregada para impressão.'
-            });
-        }
-    }
-
-    // ========================================
     // EVENTOS
     // ========================================
 
     $(document).ready(function() {
+        if (!filtroTabelaInstalado) {
+            $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+                if (settings.nTable.id !== 'listadosalunos') {
+                    return true;
+                }
+
+                var row = settings.aoData[dataIndex] && settings.aoData[dataIndex].nTr;
+                if (!row) {
+                    return true;
+                }
+
+                if (filtroTabelaAtivo === 'por-gerar' && row.querySelector('.btn-gerar-pendente') === null) {
+                    return false;
+                }
+                if (filtroTabelaAtivo === 'mal-geradas' && row.getAttribute('data-is-mal-generated') !== '1') {
+                    return false;
+                }
+                if (filtroTabelaAtivo === 'com-referencia' && row.getAttribute('data-has-reference') !== '1') {
+                    return false;
+                }
+
+                var mesSelecionado = document.getElementById('filtroMesReferencia');
+                var estadoSelecionado = document.getElementById('filtroEstadoMesReferencia');
+                var mesId = mesSelecionado ? mesSelecionado.value : '';
+                var estado = estadoSelecionado ? estadoSelecionado.value : '';
+
+                return (!mesId || row.getAttribute('data-mes-id') === mesId) &&
+                    (!estado || row.getAttribute('data-estado-mes') === estado);
+            });
+            filtroTabelaInstalado = true;
+        }
+
         carregarMeses();
         consultarReferencias();
 
         $("#selectAnoLectivo, #selectTipoPagamento, #selectClasse").on("change", function() {
             carregarMeses();
+            $("#selectMes").val('');
+            consultarReferencias();
         });
 
-        $("#selectAnoLectivo, #selectTipoPagamento, #selectClasse, #selectEntidade, #selectMes").on("change", function() {
+        $("#selectEntidade, #selectMes").on("change", function() {
             consultarReferencias();
         });
 

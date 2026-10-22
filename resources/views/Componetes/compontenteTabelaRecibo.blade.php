@@ -24,44 +24,72 @@
             @endphp
         @endif
 
-        @foreach($grupo['meses'] as $item)
-            @php
+        @php
+            $linhas = collect();
 
-
-
-$dadoscaregado=DB::table('outros_pagamentosview')
-->where("aluno_classe_id",$item->id??null)
-->where("mes_id",$item->mes_id??null)
-->where("tipoPagamento_id",$item->tipo_pagamento_id??null)
-->first();
-
-//  dd($dadoscaregado,$item);
+            foreach ($grupo['meses'] as $item) {
+                $dadosCarregado = DB::table('outros_pagamentosview')
+                    ->where('aluno_classe_id', $item->id ?? null)
+                    ->where('mes_id', $item->mes_id ?? null)
+                    ->where('tipoPagamento_id', $item->tipo_pagamento_id ?? null)
+                    ->first();
 
                 $valor = $item->valorDescricao;
                 $estado = $item->Estado ?? 'Data limite: '.$item->limite;
+                $estadoValor = $dadosCarregado->Estado ?? '';
 
-               $estadoValor = $dadoscaregado->Estado ?? '';
-
-if ($estadoValor == "Pago" || $estadoValor == "activo") {
-    $estado = "pago";
-}
-                else{
-
-
-                if($item->multaflag){
+                if ($estadoValor == 'Pago' || $estadoValor == 'activo') {
+                    $estado = 'pago';
+                } elseif ($item->multaflag) {
                     $valor += ($item->multa / 100) * $valor;
-                    $estado = $dadoscaregado->estado ?? 'Vencido';
-                }}
+                    $estado = $dadosCarregado->estado ?? 'Vencido';
+                }
 
-                  $total=$total+$valor;
+                $total += $valor;
+                $linhas->push([
+                    'item' => $item,
+                    'valor' => $valor,
+                    'estado' => $estado,
+                ]);
+            }
 
+            $contagemReferencias = [];
+            $somasReferencias = [];
+            $ultimosIndicesReferencias = [];
+
+            foreach ($linhas as $indice => $linha) {
+                $referencia = $linha['item']->referencia ?? null;
+                if ($referencia === null || $referencia === '') {
+                    continue;
+                }
+
+                $contagemReferencias[$referencia] = ($contagemReferencias[$referencia] ?? 0) + 1;
+                $somasReferencias[$referencia] = ($somasReferencias[$referencia] ?? 0) + $linha['valor'];
+                $ultimosIndicesReferencias[$referencia] = $indice;
+            }
+        @endphp
+
+        @foreach($linhas as $indice => $linha)
+            @php
+                $item = $linha['item'];
+                $referencia = $item->referencia ?? null;
+                $referenciaRepetida = $referencia !== null
+                    && $referencia !== ''
+                    && ($contagemReferencias[$referencia] ?? 0) > 1;
+                $ultimaOcorrenciaReferencia = $referenciaRepetida
+                    && $ultimosIndicesReferencias[$referencia] === $indice;
             @endphp
             <tr>
                 <td>{{ $item->mes }}</td>
-                <td>{{ number_format($valor,2,',','.') }} MT</td>
-                <td>{{ $item->Entidade }}</td>
-                <td>{{ $item->referencia }}</td>
-                <td>{{ $estado }}</td>
+                <td>
+                    {{ number_format($linha['valor'], 2, ',', '.') }} MT
+                    @if($ultimaOcorrenciaReferencia)
+                        <br><strong>Total da referência: {{ number_format($somasReferencias[$referencia], 2, ',', '.') }} MT</strong>
+                    @endif
+                </td>
+                <td>{{ !$referenciaRepetida || $ultimaOcorrenciaReferencia ? $item->Entidade : '' }}</td>
+                <td>{{ !$referenciaRepetida || $ultimaOcorrenciaReferencia ? $referencia : '' }}</td>
+                <td>{{ $linha['estado'] }}</td>
             </tr>
         @endforeach
 

@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\aclController;
 use App\Http\Controllers\Admin\configuracoesController;
 use App\Http\Controllers\Admin\usuario\usuarioController;
 use App\Http\Controllers\bancosControler;
+use App\Http\Controllers\MenuController;
 use App\Http\Controllers\NotificacaoController;
 use App\Http\Controllers\refrenciacController;
 use App\Http\Controllers\registoAcademico\alunosController;
@@ -129,7 +130,12 @@ Route::get(
      Route::get(
             '/matricula/selecionar_tabelaValores/{classe}/{ano}/{tipo}',
             [alunosController::class, 'selecionar_tabelaValores']
-        )->name('aluno.selecionar_tabelaValores');
+        )->name('aluno.selecionar_tabelaValores'); 
+        
+        Route::get(
+            '/matricula/mostrarPagamento/dados/{ano}/{classe}',
+            [alunosController::class, 'mostrarPagamento']
+        )->name('aluno.mostrarPagamento');
 
 
         Route::resource("pagament",efetuarPagamentoController::class);
@@ -553,7 +559,7 @@ Route::get('Financas/Banco/referencas/alunoReferencias', [bancosControler::class
     'alunoReferealunoReferenciasPrintncias'])
     ->name('Financas.alunoReferencias')->middleware('auth');
 
-    Route::post('Financas/Banco/referencas/gerar/{id}/{entidade}', [bancosControler::class,
+    Route::post('Financas/Banco/gerar/referencas/aluno/{id}/{entidade}', [bancosControler::class,
     'gerarReferenciainnline'])
     ->name('Financas.gerarReferenciainnline')->middleware('auth');
 
@@ -578,7 +584,7 @@ Route::get('Financas/Banco/referencas/alunoReferenciasPrint/{id}/{idtipo}/{mesid
 });
   Route::get('/enviar-pagamento', [mpesaController::class, 'makePayment'])->name('enviar-pagamento');
 Route::prefix('mpesa/test')->group(function () {
-    Route::get('/config', [MpesaController::class, 'testConfig']);
+    Route::get('/config', [mpesaControllerr::class, 'testConfig']);
     Route::get('/token', [MpesaController::class, 'testToken']);
 });
 

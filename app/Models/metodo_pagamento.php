@@ -11,4 +11,9 @@ class metodo_pagamento extends Model
     protected $table="metodo_pagamento";
     protected $fillable = ["Descricao","tipo","ReferenciaFlag"];
 
+
+    public function banco(){
+        return $this->hasOne(banco::class,"id","tipo");
+    }
+
 }

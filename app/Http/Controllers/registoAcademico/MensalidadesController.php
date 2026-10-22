@@ -253,12 +253,16 @@ return view("Componetes.alerta-Falha",compact('mensagem'));
    public function atualizarMensalidade(Request $request, $id)
 {$x=0;
 
+
+// dd($request->all());
  $dadosmese = collect($request->meses);
  $ano = anolectivo::where("anolectivo", $dadosmese[0]["ano"])->first();
 
 
  $talaoNumero=$this->talao($request->metodo, $ano->id);
   $alunoid = DB::table("alunosescritos")->where("idAlunoclasse", $id)->first();
+
+
 
 if($dadosmese->contains(fn($e) => $e['valor'] == 'Reverter')){
     foreach($dadosmese as $Item ):

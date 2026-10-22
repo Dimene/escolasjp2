@@ -62,11 +62,11 @@ class outrospagamentoController extends Controller
     public function tipospagamentosShow($ano,$classe){
 
  $tipospagamento = DB::table('detalhestabelavaores')
-->where("tipo",">",2)
-        ->where("anolectivo_id",$ano)
-        ->where("classe_id",$classe)
-        ->get();
-
+    ->where('tipo', '>', 2)
+    ->where('anolectivo_id', $ano)
+    ->where('classe_id', $classe)
+    ->orderBy('tipo', 'asc')
+    ->get();
     return  view("Componetes.componete-menum-pagamentosMeses", ["tipo"=>$tipospagamento]);
 
     }
@@ -227,6 +227,10 @@ $today = now()->toDateString(); // Gets current date in Y-m-d format
     ->get();
     $datas = collect();
 
+
+   
+    
+
     foreach ($alunos as $key=>$dadosId) {
 $descricao= $dadosId->tipoPagamento;
         $buttons ="" ;
@@ -333,20 +337,16 @@ $mensagem="Outros pagamentos NÃO estao desponiveis ";
     {
 
 
-//  dd($id, $idmes, $tipopagamento);
+
         $mesid = $idmes;
-        $mes = 1;
         $datalimite2 = [];
-
-            $mes = meses::where('id', $mesid)->first()->Descricao;
-$dadosTable= DB::table("outros_pagamentosview")->where("aluno_classe_id",$id)
-->where("tipo_pagamento_id",">",2)
-->get();
-$alunoEscrito=alunoClasse::where("id",$id)->get();
-
-        $messes = collect();
-        $aluno = DB::table('outros_pagamentosview')
-        ->where('Aluno_classe_id', $id)->first();
+        $pagamentosAluno = DB::table('outros_pagamentosview')
+            ->where('aluno_classe_id', $id)
+            ->get();
+        $dadosTable = $pagamentosAluno
+            ->where('tipo_pagamento_id', '>', 2)
+            ->values();
+        $aluno = $pagamentosAluno->first();
 
 // dd( $aluno,$dadosTable, $id, $idmes, $tipopagamento,$alunoEscrito);
 
@@ -354,10 +354,14 @@ $alunoEscrito=alunoClasse::where("id",$id)->get();
     $mensagem='Ocorreu um problema com esta operacao ,por favor consulte a equipe tecnica Reporte este Codigo-'.$id.'-Pagameto-'.$tipopagamento.'';
     return view('include.mensage-alerta',compact('mensagem'));
    }
-        $alunoMesalidade = DB::table('outros_pagamentosview')->where('id', $id)->where('idtabelavalores', $tipopagamento)->get();
-
-
-
+        $alunoMesalidade = $pagamentosAluno
+            ->where('id', $id)
+            ->where('idtabelavalores', $tipopagamento)
+            ->values();
+        if ($alunoMesalidade->isEmpty()) {
+            $mensagem = 'Não foram encontradas parcelas para este tipo de pagamento.';
+            return view('include.mensage-alerta', compact('mensagem'));
+        }
 
         $valorMensalidade = DB::table('tabelavaloresano')
             ->where('classId', $aluno->classe_id)
@@ -365,9 +369,13 @@ $alunoEscrito=alunoClasse::where("id",$id)->get();
             ->where('idanolectivo', $aluno->anolectivo_id)
             ->first();
 
+        if (!$valorMensalidade || empty($valorMensalidade->idtabelavalores)) {
+            $mensagem = 'Adiciona a tabela de valores';
+            return view('include.mensage-alerta', compact('mensagem'));
+        }
 
 
-
+        $messes = collect();
         $alunoMesalidades2 = collect();
         foreach ($alunoMesalidade as $alunoMesalidadeItem) {
 
@@ -377,10 +385,6 @@ $alunoEscrito=alunoClasse::where("id",$id)->get();
 
 
 
-            $mensagem="Adiciona a tabela de valores";
-            if(empty($valorMensalidade->idtabelavalores)){
-return view('include.mensage-alerta',compact('mensagem'));
-            }
             $alunoMesalidades2->push([
                 'mes_id' => $alunoMesalidadeItem->mes_id,
                 "Aluno_classe_id" => $id,
@@ -418,7 +422,6 @@ if (auth()->user()->can("reverter-pagamento") || auth()->user()->can("Reverter-"
             'tipoPagamento',
             'aluno',
             'mesid',
-            'mes',
             'messes',
             'flag',
             'alunoMesalidade',
@@ -436,6 +439,7 @@ if (auth()->user()->can("reverter-pagamento") || auth()->user()->can("Reverter-"
     public function atualizarMensalidade(Request $request, $id)
     {
 
+    DD($request->$id);
         $dadoTabelavalores = 0;
         $data_incio = "";
         $data_fim = "";

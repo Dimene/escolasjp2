@@ -118,80 +118,61 @@ function inicializarDataTables() {
         ],
 
         initComplete: function () {
-            const api = this.api();
-
-            criarFiltroSelect(api, 2, 'filter-turma', 'Todas as Turmas');
-            criarFiltroSelect(api, 3, 'filter-estado', 'Todos os Estados');
-            criarFiltroData(api, 4);
-
+            atualizarFiltrosDataTable(this.api());
         }
     });
 }
-function criarFiltroSelect(api, colIndex, className, label) {
 
-    const col = api.column(colIndex);
-    const footer = $(col.footer());
-
-    footer.empty();
-
-    const select = $(`
-        <select class="form-select form-select-sm ${className}">
-            <option value="">${label}</option>
-        </select>
-    `);
-
-    footer.append(select);
-
-    // valores únicos limpos
-    col.data().unique().sort().each(function (d) {
-        d = limparValor(d);
-        if (d) {
-            select.append(`<option value="${d}">${d}</option>`);
-        }
-    });
-
-    // filtro correto
-    select.on('change', function () {
-        const val = $(this).val();
-        col.search(val ? '^' + escapeRegex(val) + '$' : '', true, false).draw();
-    });
+function atualizarFiltrosDataTable(api) {
+    const linhas = api.rows().data().toArray();
+    atualizarFiltroColuna(api, linhas, 2, 'turma', 'filter-turma', 'Todas as Turmas');
+    atualizarFiltroColuna(api, linhas, 3, 'estado', 'filter-estado', 'Todos os Estados');
+    atualizarFiltroColuna(api, linhas, 4, 'data_pagamento', 'filter-data', 'Todas as Datas', formatarData);
 }
-function criarFiltroData(api, colIndex) {
 
+function atualizarFiltroColuna(api, linhas, colIndex, campo, className, label, formatarOpcao) {
     const col = api.column(colIndex);
     const footer = $(col.footer());
+    if (!footer.length) {
+        throw new Error(`Não foi encontrado o footer da coluna ${colIndex} da tabela de pagamentos.`);
+    }
 
-    footer.empty();
+    let select = footer.find(`select.${className}`);
+    const valorSelecionado = select.val() || '';
 
-    const select = $(`
-        <select class="form-select form-select-sm filter-data">
-            <option value="">Todas as Datas</option>
-        </select>
-    `);
+    if (!select.length) {
+        select = $('<select>')
+            .addClass(`form-select form-select-sm ${className}`);
+        footer.empty().append(select);
+    }
 
-    footer.append(select);
+    select.empty().append($('<option>').val('').text(label));
 
-    let datas = new Set();
-
-    col.data().each(function (d) {
-        d = limparValor(d);
-        if (d) datas.add(d);
+    const valores = new Set();
+    linhas.forEach(function (linha) {
+        const valor = limparValor(linha[campo]);
+        if (valor) valores.add(valor);
     });
 
-    const ordenado = Array.from(datas).sort((a, b) => new Date(b) - new Date(a));
-
-    ordenado.forEach(d => {
-        select.append(`<option value="${d}">${formatarData(d)}</option>`);
+    Array.from(valores).sort().forEach(function (valor) {
+        const texto = formatarOpcao ? formatarOpcao(valor) : valor;
+        select.append($('<option>').val(valor).text(texto));
     });
 
-    select.on('change', function () {
+    const selecaoValida = valores.has(valorSelecionado);
+    select.val(selecaoValida ? valorSelecionado : '');
+    select.off('change.filtroTabela').on('change.filtroTabela', function () {
         const val = $(this).val();
-        col.search(val || '').draw();
+        col.search(val ? `^${escapeRegex(val)}$` : '', true, false).draw();
     });
+
+    if (!selecaoValida && valorSelecionado) {
+        col.search('').draw();
+    }
 }
 function limparValor(d) {
     if (!d) return '';
-    return $('<div>').html(d).text().trim();
+    return $('<div>').html(String(d)).text().trim();
 }
 
 function escapeRegex(text) {
@@ -246,17 +227,38 @@ $(document).ready(function() {
         .appendTo('head');
 });
 
+let requisicaoDadosTabela;
+let sequenciaDadosTabela = 0;
+
 function atualizarDadosTabela(idtipo, idmes, idano, idclasse) {
-    $.ajax({
+    const sequenciaAtual = ++sequenciaDadosTabela;
+    const $indicador = $('#tabelaCarregamento');
+
+    $indicador.prop('hidden', false);
+
+    if (requisicaoDadosTabela) {
+        requisicaoDadosTabela.abort();
+    }
+
+    requisicaoDadosTabela = $.ajax({
         url: `/RegistoAcademico/outrosPagamento/show/${idano}/${idclasse}/${idtipo}/${idmes}`,
         method: "GET",
         success: function (data) {
             if (window.tabela) {
                 window.tabela.clear().rows.add(data).draw();
+                atualizarFiltrosDataTable(window.tabela);
             }
         },
         error: function (xhr, status, error) {
-            console.error("Erro ao carregar dados da tabela:", error);
+            if (status !== 'abort') {
+                console.error("Erro ao carregar dados da tabela:", error);
+            }
+        },
+        complete: function () {
+            if (sequenciaAtual === sequenciaDadosTabela) {
+                $indicador.prop('hidden', true);
+                requisicaoDadosTabela = null;
+            }
         }
     });
 }

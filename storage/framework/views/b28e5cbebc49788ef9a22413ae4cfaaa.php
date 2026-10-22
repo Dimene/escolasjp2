@@ -2,9 +2,7 @@
 
 <?php $__env->startSection('content'); ?>
 <style>
-
-
-        /* Popup PDF */
+/* Popup PDF */
 .pdf-popup {
   display: none;
   position: fixed;
@@ -44,9 +42,7 @@
   transition: background 0.3s;
 }
 
-.pdf-close-btn:hover {
-  background: #c82333;
-}
+.pdf-close-btn:hover { background: #c82333; }
 
 .pdf-controls {
   position: absolute;
@@ -68,9 +64,7 @@
   transition: background 0.3s;
 }
 
-.pdf-control-btn:hover {
-  background: #0056b3;
-}
+.pdf-control-btn:hover { background: #0056b3; }
 
 .pdf-container {
   width: 100%;
@@ -95,102 +89,73 @@
   z-index: 100;
 }
 
-.pdf-loading p {
-  margin-top: 15px;
-  color: #666;
-  font-size: 16px;
-}
+.pdf-loading p { margin-top: 15px; color: #666; font-size: 16px; }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideIn { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-@keyframes slideIn {
-  from { transform: translateY(-30px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
-/* Para impressão do popup */
 @media print {
-  .pdf-popup {
-    position: static;
-    background: #fff;
-  }
+  .pdf-popup { position: static; background: #fff; }
+  .pdf-popup-content { margin: 0; width: 100%; height: 100%; box-shadow: none; }
+  .pdf-close-btn, .pdf-controls { display: none !important; }
+  .pdf-container { padding: 0; }
+  #pdfFrame { box-shadow: none; }
+}
 
-  .pdf-popup-content {
-    margin: 0;
+.avatar-container, #camera-preview {
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin: auto;
+    background: #f4f4f4;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 3px solid #dee2e6;
+}
+.avatar-container img, #camera-preview video {
     width: 100%;
     height: 100%;
-    box-shadow: none;
-  }
-
-  .pdf-close-btn,
-  .pdf-controls {
-    display: none !important;
-  }
-
-  .pdf-container {
-    padding: 0;
-  }
-
-  #pdfFrame {
-    box-shadow: none;
-  }
-}
-.avatar-container, #camera-preview {
-    width:200px;
-    height:200px;
-    border-radius:50%;
-    overflow:hidden;
-    margin:auto;
-    background:#f4f4f4;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    border:2px solid #dee2e6;
-}
-.avatar-container img {
-    width:100%;
-    height:100%;
-    object-fit:cover;
+    object-fit: cover;
+    border-radius: 50%;
 }
 .btn-foto button {
-    width:100%;
-    margin-top:5px;
+    width: 100%;
+    margin-top: 5px;
 }
-#listadosalunos_filter { display:none; }
-.loading-spinner {
-    display: none;
-}
-.loading .loading-spinner {
-    display: inline-block;
-}
+#listadosalunos_filter { display: none; }
+.loading-spinner { display: none; }
+.loading .loading-spinner { display: inline-block; }
 .referencia-status {
     font-size: 0.875rem;
     margin-top: 0.25rem;
+    display: none;
 }
-.referencia-status.valida {
-    color: #28a745;
-}
-.referencia-status.invalida {
-    color: #dc3545;
-}
+.referencia-status.valida { color: #28a745; display: block; }
+.referencia-status.invalida { color: #dc3545; display: block; }
+.imgprocessar { display: none; }
+.imgprocessar.ativo { display: inline-block; }
+.modal-body { max-height: 70vh; overflow-y: auto; }
+.campo-erro { border: 2px solid #dc3545 !important; background-color: #fff3f3; }
+.campo-valido { border: 2px solid #28a745 !important; }
+.is-invalid { border-color: #dc3545 !important; }
+.is-valid { border-color: #28a745 !important; }
 </style>
 
 <div class="breadcrumb-modern animate-fadeInUp">
-        <ol class="breadcrumb" style="background: transparent; margin: 0; padding: 0;">
-            <li class="breadcrumb-item">
-                <a href="#"><i class="fa fa-graduation-cap"></i> Registo Académico</a>
-            </li>
-            <li class="breadcrumb-item">
-                <a href="#"><i class="fa fa-users"></i>Matricula</a>
-            </li>
-            <li class="breadcrumb-item active">
-                <i class="fa fa-refresh"></i> <b>Matricula Internos</b>
-            </li>
-        </ol>
-    </div>
+    <ol class="breadcrumb" style="background: transparent; margin: 0; padding: 0;">
+        <li class="breadcrumb-item">
+            <a href="#"><i class="fa fa-graduation-cap"></i> Registo Académico</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="#"><i class="fa fa-users"></i> Matricula</a>
+        </li>
+        <li class="breadcrumb-item active">
+            <i class="fa fa-refresh"></i> <b>Matricula Internos</b>
+        </li>
+    </ol>
+</div>
 
 <div class="">
     <section class="content">
@@ -232,7 +197,7 @@
                 <div class="col-md-8">
                     <div class="form-group">
                         <label>Selecione o ano lectivo</label>
-                        <select class="form-control mb-2 anolectivo" id="anolectivo" name="anolectivo">
+                        <select class="form-control mb-2 anolectivo select-class-ano" id="anolectivo" name="anolectivo">
                             <?php $__currentLoopData = $anolectivo; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $ano): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                             <option value="<?php echo e($ano->id); ?>"><?php echo e($ano->anolectivo); ?></option>
                             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
@@ -257,19 +222,27 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Confirmação de Pagamento</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
-            <div class="modal-body corpoConteudo">
-                <div class="text-center py-4">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Carregando...</span>
+            <div class="modal-body">
+                <div class="corpoConteudo">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Carregando...</span>
+                        </div>
+                        <p class="mt-2">Carregando informações de pagamento...</p>
                     </div>
-                    <p class="mt-2">Carregando informações de pagamento...</p>
+                </div>
+                <!-- Loading -->
+                <div class="text-center">
+                    <img src="<?php echo e(asset('imageproceaament/loading.gif')); ?>" class="imgprocessar" style="width:100px; height:100px;">
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary btn-matricula">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary btn-matricula" id="btnConfirmarPagamento">
                     <i class="fas fa-check"></i> Confirmar Pagamento
                 </button>
             </div>
@@ -280,27 +253,20 @@
 <!-- Popup para PDF -->
 <div id="pdfPopup" class="pdf-popup">
   <div class="pdf-popup-content">
-    <!-- Botão de fechar -->
-    <button id="closeBtn" class="pdf-close-btn">
+    <button type="button" id="closeBtn" class="pdf-close-btn">
       <i class="fas fa-times"></i> Fechar
     </button>
-
-    <!-- Botões de controle -->
     <div class="pdf-controls">
-      <button id="printBtn" class="pdf-control-btn">
+      <button type="button" id="printBtn" class="pdf-control-btn">
         <i class="fas fa-print"></i> Imprimir
       </button>
-      <button id="downloadBtn" class="pdf-control-btn">
+      <button type="button" id="downloadBtn" class="pdf-control-btn">
         <i class="fas fa-download"></i> Baixar
       </button>
     </div>
-
-    <!-- Container do PDF -->
     <div class="pdf-container">
       <iframe id="pdfFrame" frameborder="0"></iframe>
     </div>
-
-    <!-- Loading -->
     <div id="pdfLoading" class="pdf-loading">
       <div class="spinner-border text-primary" role="status">
         <span class="visually-hidden">Carregando PDF...</span>
@@ -318,240 +284,508 @@
 <script src="<?php echo e(asset('MyJs/imprimirRecibo.js')); ?>"></script>
 
 <script>
-// Sistema de Atualização de Matrícula
-let pagamentosFiltrados =[];
-class SistemaAtualizacaoMatricula {
-    constructor() {
-        this.urls = {
-            atualizarAluno: "/aluno/matricula/atualizar/",
-            atualizarM: "/aluno/matricula/atualizarM/",
-            selecionarValores: "/aluno/matricula/selecionar_tabelaValores/",
-            validarReferencia: "/aluno/matricula/validarReferencia/",
-            imprimirRecibo: "/aluno/matricula/imprimir/recibo/"
-        };
-        this.estado = {
-            alunoSelecionado: null,
-            cameraAtiva: false,
-            dadosPagamento: null,
-            tabelaValoresAno: <?php echo json_encode($tabelavaloresano, 15, 512) ?>
-        };
-        this.inicializar();
-    }
+$(document).ready(function() {
+    // ============ VARIÁVEIS GLOBAIS ============
+    const URLS = {
+        atualizarAluno: "/aluno/matricula/atualizar/",
+        atualizarM: "/aluno/matricula/atualizarM/",
+        selecionarValores: "/aluno/matricula/selecionar_tabelaValores/",
+        validarReferencia: "/aluno/matricula/validarReferencia/",
+        imprimirRecibo: "/aluno/matricula/imprimir/recibo/"
 
-    inicializar() {
-        this.inicializarDataTable();
-        this.configurarEventos();
-        this.configurarCSRF();
-    }
 
-    configurarCSRF() {
-        // Configurar CSRF globalmente para todas as requisições AJAX
-        $.ajaxSetup({
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        });
-    }
+    };
 
-    inicializarDataTable() {
-        $('#listadosalunos').DataTable({
-            pageLength: 10,
-            searching: true,
-            ordering: true,
-            info: false,
-            lengthChange: false,
-            language: {
-                search: "Pesquisar:",
-                zeroRecords: "Nenhum aluno encontrado"
-            }
-        });
+    const tabelaValoresAno = <?php echo json_encode($tabelavaloresano, 15, 512) ?>;
+    const mesesNomes = <?php echo json_encode($mesesNomes, 15, 512) ?>;
+    const modalidadesAnoLectivo = <?php echo json_encode($modalidadesAnoLectivo, 15, 512) ?>;
+    const CSRF_TOKEN = '<?php echo e(csrf_token()); ?>';
 
-        $('#searchAlunos').on('keyup', function() {
-            $('#listadosalunos').DataTable().search(this.value).draw();
-        });
-    }
+    let alunoSelecionado = null;
+    let cameraAtiva = false;
+    let dadosPagamento = null;
+    let statusValidacaoReferencia = "";
+    let processandoPagamento = false;
+    let parcelasSelecionadasAntesModal = [];
 
-    configurarEventos() {
-        $(document).on('click', '.AtualizarMatricula', (e) => this.carregarAluno(e));
-        $(document).on('click', '.botaoAtualizacaoAlunoId', (e) => this.prepararAtualizacao(e));
-        $(document).on('click', '.btn-matricula', (e) => this.confirmarPagamento(e));
+    // Configurar CSRF globalmente
+    $.ajaxSetup({
+        headers: {
+            'X-CSRF-TOKEN': CSRF_TOKEN,
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    });
 
-        // Eventos da câmera
-        $(document).on('click', '#startCamera', () => this.ativarCamera());
-        $(document).on('click', '#stopCamera', () => this.desativarCamera());
-        $(document).on('click', '#takeSnapshot', () => this.tirarFoto());
-        $(document).on('change', '#fileexplorer', (e) => this.previewUpload(e));
+    // ============ DATATABLE ============
+    $('#listadosalunos').DataTable({
+        pageLength: 10,
+        searching: true,
+        ordering: true,
+        info: false,
+        lengthChange: false,
+        language: {
+            search: "Pesquisar:",
+            zeroRecords: "Nenhum aluno encontrado"
+        }
+    });
 
-        // Evento para mudança de classe
-        $(document).on('change', '.select-class-ano', () => this.atualizarPagamentos());
-    }
+    $('#searchAlunos').on('keyup', function() {
+        $('#listadosalunos').DataTable().search(this.value).draw();
+    });
 
-    async carregarAluno(event) {
-        const botao = $(event.currentTarget);
+    // ============ CARREGAR ALUNO ============
+    $(document).on('click', '.AtualizarMatricula', async function() {
+        const botao = $(this);
         const alunoId = botao.data('id');
 
         try {
             botao.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
-            const response = await $.get(this.urls.atualizarAluno + alunoId);
+            const response = await $.get(URLS.atualizarAluno + alunoId);
 
             $('.ConteudoDeAtualizacao').html(response);
-            this.estado.alunoSelecionado = alunoId;
+            alunoSelecionado = alunoId;
 
             // Destacar linha selecionada
             $('#listadosalunos tr').removeClass('table-primary');
             botao.closest('tr').addClass('table-primary');
 
             // Atualizar pagamentos inicialmente
-            this.atualizarPagamentos();
+          
+            atualizarPagamentos();
 
         } catch (error) {
-            this.mostrarAlerta('Erro', 'Falha ao carregar dados do aluno', 'error');
+            mostrarAlerta('Erro', 'Falha ao carregar dados do aluno', 'error');
             console.error('Erro:', error);
         } finally {
             botao.prop('disabled', false).html('<i class="fa fa-upload"></i>');
         }
-    }
+    });
 
-    atualizarPagamentos() {
-        if (!this.estado.alunoSelecionado) return;
+    // ============ PAGAMENTOS ============
+    function atualizarPagamentos() {
+
+      
+        if (!alunoSelecionado) return;
 
         const ano = $('#anolectivo').val();
         const classe = $('[name="ClassedeAtualizacao"]').val();
+        const $lista = $('.ConteudoDeAtualizacao #listaPagamentosTab');
+ 
+        if (!ano || !classe) {
+            $lista.html(
+                '<li class="list-group-item text-center text-muted">' +
+                'Selecione uma classe para consultar os pagamentos e parcelas.</li>'
+            );
+            return;
+        }
+   
 
-        if (!ano || !classe) return;
-
-        this.atualizarPagamentosPorAno(ano, classe);
+        atualizarPagamentosPorAno(ano, classe);
     }
 
-    atualizarPagamentosPorAno(anoId, classeId) {
-        const $lista = $('#listaPagamentosTab');
-        if ($lista.length === 0) return;
+    function atualizarPagamentosPorAno(anoId, classeId) {
+        const $lista = $('.ConteudoDeAtualizacao #listaPagamentosTab');
+        if (!$lista.length) return;
 
-        $lista.empty();
+        const modalidade = modalidadesAnoLectivo[anoId];
+        const modalidadeNome = obterNomeModalidade(modalidade?.modalidade);
+        $('.ConteudoDeAtualizacao #modalidadeAnoLectivo').text(modalidadeNome
+            ? `Modalidade: ${modalidadeNome}`
+            : 'Modalidade do ano lectivo não definida');
 
-        const pagamentosFiltrados = this.estado.tabelaValoresAno.filter(item => {
-            return item.idanolectivo == anoId && item.classId == classeId;
+        const pagamentos = tabelaValoresAno.filter(item =>
+            item.idanolectivo == anoId && item.classId == classeId && Number(item.id) > 2
+        );
+
+        const html = pagamentos.map(item => {
+            let parcelas = item.detalhes;
+            if (typeof parcelas === 'string') {
+                try {
+                    parcelas = JSON.parse(parcelas);
+                } catch (error) {
+                    console.error(`Parcelas inválidas no tipo de pagamento ${item.id}`, error);
+                    return '';
+                }
+            }
+
+            parcelas = Array.isArray(parcelas) ? parcelas : [];
+            const parcelasHtml = parcelas.map((parcela, index) => {
+                const idParcela = `atualizar-parcela-${item.id}-${index}`;
+                const nomeParcela = mesesNomes[parcela.mes] || `Parcela ${index + 1}`;
+                const inicio = formatarData(parcela.inicio);
+                const limite = formatarData(parcela.limite);
+                const periodo = inicio && limite
+                    ? `${inicio} a ${limite}`
+                    : limite ? `Vencimento: ${limite}` : '';
+                const periodoModalidade = obterPeriodoModalidade(parcela, modalidade);
+
+                return `
+                    <div class="custom-control custom-checkbox mb-1">
+                        <input type="checkbox" class="custom-control-input checkbox-parcela"
+                               id="${idParcela}"
+                               data-tipo="${escapeHtml(item.id)}"
+                               data-mes="${escapeHtml(parcela.mes)}"
+                               data-valor="${Number(item.valorDescricao) || 0}" checked>
+                        <label class="custom-control-label" for="${idParcela}">
+                            ${escapeHtml(nomeParcela)}
+                            <span class="text-muted ml-1">${formatarValor(item.valorDescricao)}</span>
+                            ${periodoModalidade ? `<span class="badge badge-light ml-1">${escapeHtml(periodoModalidade)}</span>` : ''}
+                            ${periodo ? `<small class="d-block text-muted">${periodo}</small>` : ''}
+                        </label>
+                    </div>`;
+            }).join('');
+
+            const toggleParcelas = parcelas.length > 1
+                ? `<button type="button" class="btn btn-sm btn-link p-0 btn-toggle-parcelas"
+                           data-target="#atualizar-parcelas-${item.id}" aria-expanded="false">
+                       Ver parcelas <i class="fas fa-chevron-down ml-1"></i>
+                   </button>`
+                : '';
+
+            return `
+                <li class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input checkbox-pagamento"
+                                   id="atualizar-pagamento-${item.id}" checked>
+                            <label class="custom-control-label" for="atualizar-pagamento-${item.id}">
+                                <strong>${escapeHtml(item.Finalidade)}</strong><br>
+                                <small class="text-muted">
+                                    <span class="parcelas-selecionadas">${parcelas.length}</span>
+                                    de ${parcelas.length} parcelas selecionadas
+                                </small>
+                            </label>
+                        </div>
+                        <div class="text-right">
+                            <span class="badge badge-primary valor-pagamento-selecionado">
+                                ${formatarValor(parcelas.length * (Number(item.valorDescricao) || 0))}
+                            </span>
+                            ${toggleParcelas}
+                        </div>
+                    </div>
+                    <div id="atualizar-parcelas-${item.id}" class="pl-4 pt-2" hidden>
+                        ${parcelasHtml}
+                    </div>
+                </li>`;
+        }).join('');
+
+        $lista.html(html || (
+            '<li class="list-group-item text-center text-muted">' +
+            'Nenhum pagamento configurado para esta classe e ano lectivo.</li>'
+        ));
+        atualizarResumoListaPagamentos();
+    }
+
+    function obterNomeModalidade(numero) {
+        const nomes = { 2: 'Semestre', 3: 'Trimestre', 4: 'Bimestre', 12: 'Modular' };
+        return nomes[Number(numero)] || (Number(numero) > 0 ? `${numero} períodos` : '');
+    }
+
+    function obterPeriodoModalidade(parcela, modalidade) {
+        if (!modalidade) return '';
+
+        const dataParcela = String(parcela.limite || parcela.inicio || '').slice(0, 10);
+        const divisaoPorData = (modalidade.divisoes || []).find(divisao => {
+            const inicio = String(divisao.inicio || '').slice(0, 10);
+            const fim = String(divisao.fim || '').slice(0, 10);
+            return dataParcela && inicio && fim && dataParcela >= inicio && dataParcela <= fim;
         });
+        let numero = divisaoPorData?.numero;
 
-        let html = '';
+        if (!numero) {
+            const mes = Number(parcela.mes);
+            const quantidade = Number(modalidade.modalidade);
+            if (mes > 0 && mes <= 12 && quantidade > 0) {
+                numero = Math.ceil(mes / (12 / quantidade));
+            }
+        }
 
-        pagamentosFiltrados.forEach(item => {
-            if (item.id > 2) {
-                const detalhes = typeof item.detalhes === "string"
-                    ? JSON.parse(item.detalhes)
-                    : item.detalhes;
-                const numeroDetalhes = Array.isArray(detalhes) ? detalhes.length : 0;
+        return numero ? `${obterNomeModalidade(modalidade.modalidade)} ${numero}` : '';
+    }
 
-                html += `
-                    <li class="list-group-item d-flex justify-content-between align-items-center flex-column flex-md-row">
-                        <div class="d-flex align-items-center mb-2 mb-md-0">
-                            <input type="checkbox"
-                                   checked
-                                   class="checkbox-pagamento me-2 listapagamentos"
-                                   value="${item.id}"
-                                   name="listapagamentos[]"/>
-                            <div>
-                                <strong>${item.Finalidade}</strong><br/>
-                                <small class="text-muted">Número de pagamentos: ${numeroDetalhes}</small>
-                            </div>
-                        </div>
-                        <div>
-                            <small class="text-primary">Valor: ${item.valorDescricao},00 MT</small>
-                        </div>
-                    </li>`;
+    function formatarValor(valor) {
+        return `${Number(valor || 0).toLocaleString('pt-MZ', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        })} MT`;
+    }
+
+    function formatarData(value) {
+        if (!value) return '';
+        const parts = String(value).slice(0, 10).split('-');
+        return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : escapeHtml(value);
+    }
+
+    function escapeHtml(value) {
+        return $('<div>').text(value == null ? '' : value).html();
+    }
+
+    function obterParcelasSelecionadas() {
+        return $('.ConteudoDeAtualizacao #listaPagamentosTab .checkbox-parcela:checked')
+            .map(function() {
+                return {
+                    tipo: $(this).data('tipo'),
+                    mes: $(this).data('mes')
+                };
+            })
+            .get();
+    }
+
+    function atualizarResumoListaPagamentos() {
+        $('.ConteudoDeAtualizacao #listaPagamentosTab > li').each(function() {
+            const $grupo = $(this);
+            const $parcelas = $grupo.find('.checkbox-parcela');
+            if (!$parcelas.length) return;
+
+            const selecionadas = $parcelas.filter(':checked');
+            const total = selecionadas.toArray().reduce((soma, parcela) => {
+                return soma + (Number($(parcela).data('valor')) || 0);
+            }, 0);
+
+            $grupo.find('.parcelas-selecionadas').text(selecionadas.length);
+            $grupo.find('.valor-pagamento-selecionado').text(formatarValor(total));
+            $grupo.find('.checkbox-pagamento')
+                .prop('checked', selecionadas.length === $parcelas.length)
+                .prop('indeterminate', selecionadas.length > 0 && selecionadas.length < $parcelas.length);
+        });
+    }
+
+    // ============ EVENTOS DE PAGAMENTO ============
+    $(document).on('change', '.select-class-ano, #anolectivo', function() {
+        atualizarPagamentos();
+    });
+
+    $(document).on('change', '.checkbox-pagamento', function(e) {
+        $(this).closest('li').find('.checkbox-parcela')
+            .prop('checked', e.currentTarget.checked);
+        $(this).prop('indeterminate', false);
+        atualizarResumoListaPagamentos();
+    });
+
+    $(document).on('change', '.checkbox-parcela', function() {
+        atualizarResumoListaPagamentos();
+    });
+
+    $(document).on('click', '.btn-toggle-parcelas', function() {
+        const $botao = $(this);
+        const $parcelas = $($botao.data('target'));
+        const mostrar = $parcelas.prop('hidden');
+
+        $parcelas.prop('hidden', !mostrar);
+        $botao.attr('aria-expanded', mostrar);
+        $botao.html(mostrar
+            ? 'Ocultar parcelas <i class="fas fa-chevron-up ml-1"></i>'
+            : 'Ver parcelas <i class="fas fa-chevron-down ml-1"></i>');
+    });
+
+    // ============ PREPARAR ATUALIZAÇÃO ============
+    $(document).on('click', '.botaoAtualizacaoAlunoId', function() {
+        if (!alunoSelecionado) {
+            mostrarAlerta('Atenção', 'Selecione um aluno primeiro', 'warning');
+            return;
+        }
+
+        const parcelas = obterParcelasSelecionadas();
+        const ano = $('#anolectivo').val();
+        const classe = $('[name="ClassedeAtualizacao"]').val();
+
+        if (!ano || !classe) {
+            mostrarAlerta('Atenção', 'Selecione o ano lectivo e a classe de destino', 'warning');
+            return;
+        }
+
+        dadosPagamento = { ano, classe, parcelas };
+        parcelasSelecionadasAntesModal = parcelas;
+        carregarModalPagamento(ano, classe, parcelas);
+    });
+
+    function carregarModalPagamento(ano, classe, parcelas) {
+        if (processandoPagamento) return;
+
+        processandoPagamento = true;
+        $('.imgprocessar').addClass('ativo');
+
+        $.ajax({
+            url: `${URLS.selecionarValores}${classe}/${ano}/2`,
+            type: "GET",
+            data: { parcelas: parcelas },
+            success: function(data) {
+                $('.corpoConteudo').html(data);
+                $("#btnConfirmarPagamento").show();
+
+                if ($(".flagdeativaConformacao").val() == parseInt(0)) {
+                    $("#btnConfirmarPagamento").hide();
+                }
+
+                $('#modalPagamentos').modal('show');
+            },
+            error: function() {
+                $('#modalPagamentos').modal('hide');
+                mostrarAlerta('Erro', 'Falha ao carregar informações de pagamento', 'error');
+            },
+            complete: function() {
+                $('.imgprocessar').removeClass('ativo');
+                processandoPagamento = false;
             }
         });
-
-        $lista.html(html);
     }
 
-    prepararAtualizacao(event) {
-        if (!this.estado.alunoSelecionado) {
-            this.mostrarAlerta('Atenção', 'Selecione um aluno primeiro', 'warning');
-            return;
-        }
-
-        const pagamentos = $('.listapagamentos:checked').map(function() {
-            return $(this).val();
-        }).get();
-
-        if (pagamentos.length === 0 && pagamentosFiltrados.length>0) {
-            this.mostrarAlerta('Atenção', 'Selecione pelo menos um tipo de pagamento', 'warning');
-            return;
-        }
-
-        const ano = $('#anolectivo').val();
-        const classe = $('[name="ClassedeAtualizacao"]').val();
-
-        if (!classe) {
-            this.mostrarAlerta('Atenção', 'Selecione uma classe', 'warning');
-            return;
-        }
-
-        this.estado.dadosPagamento = { ano, classe, pagamentos };
-        this.carregarModalPagamento(ano, classe, pagamentos);
-    }
-
-    async carregarModalPagamento(ano, classe, pagamentos) {
-        try {
-
-             $("#btnConfirmarPagamento").show();
-                if($(".flagdeativaConformacao").val()==parseInt(0)){
-  $("#btnConfirmarPagamento").hide();
-                }
-            $('#modalPagamentos').modal('show');
-            const data = await $.get(
-                `${this.urls.selecionarValores}${classe}/${ano}/2`,
-                { pagamentos }
-            );
-            $('.corpoConteudo').html(data);
-        } catch (error) {
-            $('#modalPagamentos').modal('hide');
-            this.mostrarAlerta('Erro', 'Falha ao carregar informações de pagamento', 'error');
-        }
-    }
-
-    async confirmarPagamento(event) {
-        const btn = $(event.currentTarget);
-        const originalText = btn.html();
-
-        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processando...');
-
-        try {
-            // 1. Validar referência se existir
-            const referenciaValida = await this.validarReferenciaSeNecessario();
-            if (referenciaValida === false) {
-                btn.prop('disabled', false).html(originalText);
+    // ============ VALIDAÇÃO DE REFERÊNCIA ============
+    function validarReferencia(referencia) {
+        return new Promise((resolve, reject) => {
+            if (!referencia || referencia.trim() === "") {
+                resolve({ valido: false, mensagem: "Referência não pode estar vazia" });
                 return;
             }
 
+            const url = `${URLS.validarReferencia}${referencia}`;
+
+            $.ajax({
+                url: url,
+                type: "GET",
+                dataType: 'json',
+                success: function(response) {
+                    if (response.status === "invalido") {
+                        statusValidacaoReferencia = "invalido";
+                        resolve({ valido: false, mensagem: "Referência inválida", detalhes: response });
+                    } else {
+                        statusValidacaoReferencia = "valido";
+                        resolve({ valido: true, mensagem: "Referência válida", detalhes: response });
+                    }
+                },
+                error: function() {
+                    reject("Erro ao validar referência");
+                }
+            });
+        });
+    }
+
+    // ============ CONFIRMAR PAGAMENTO ============
+    $(document).on('click', '#btnConfirmarPagamento', async function() {
+        const btn = $(this);
+        const originalText = btn.html();
+
+        try {
+            btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processando...');
+
+            // 1. Validar referência se existir
+            const campoReferencia = $("[name='Referencia']");
+            if (campoReferencia.length > 0) {
+                const referencia = campoReferencia.val().trim();
+
+                if (!referencia) {
+                    mostrarAlerta('Erro', 'Digite a referência de pagamento', 'error');
+                    campoReferencia.addClass('is-invalid').focus();
+                    btn.prop('disabled', false).html(originalText);
+                    return;
+                }
+
+                const validacao = await validarReferencia(referencia);
+                if (!validacao.valido) {
+                    let $status = $('#statusReferencia');
+                    if ($status.length === 0) {
+                        $status = $('<small>').attr('id', 'statusReferencia').addClass('referencia-status');
+                        campoReferencia.after($status);
+                    }
+                    $status.removeClass('valida').addClass('invalida').text(validacao.mensagem).show();
+                    mostrarAlerta('Referência Inválida', validacao.mensagem, 'error');
+                    btn.prop('disabled', false).html(originalText);
+                    return;
+                }
+
+                let $status = $('#statusReferencia');
+                if ($status.length === 0) {
+                    $status = $('<small>').attr('id', 'statusReferencia').addClass('referencia-status');
+                    campoReferencia.after($status);
+                }
+                $status.removeClass('invalida').addClass('valida').text(validacao.mensagem).show();
+            }
+
             // 2. Preparar dados
-            const alunoId = $('#idAlunos').val() || this.estado.alunoSelecionado;
+            const alunoId = $('#idAlunos').val() || alunoSelecionado;
             if (!alunoId) {
                 throw new Error('ID do aluno não encontrado');
             }
 
-            // 3. Criar FormData manualmente (evita problemas de CSRF)
-            const formData = this.criarFormDataManual(alunoId);
+            // 3. Criar FormData manualmente
+            const formData = new FormData();
+            formData.append('idAlunos', alunoId);
+            formData.append('ClassedeAtualizacao', $('[name="ClassedeAtualizacao"]').val());
+            formData.append('anolectivo', $('#anolectivo').val());
 
-            // 4. Debug: mostrar dados no console
-            console.log('📦 Dados a enviar:');
-            for (let [key, value] of formData.entries()) {
-                if (key === '_token') {
-                    console.log(`${key}: ${value.substring(0, 20)}...`);
-                } else if (value instanceof File) {
-                    console.log(`${key}: 📄 ${value.name} (${value.size} bytes)`);
-                } else if (value instanceof Blob) {
-                    console.log(`${key}: 🖼️ Blob (${value.size} bytes)`);
-                } else {
-                    console.log(`${key}: ${value}`);
+            // Parcelas selecionadas
+            const parcelas = dadosPagamento?.parcelas || [];
+            parcelas.forEach((parcela, index) => {
+                formData.append(`parcelasPreModal[${index}][tipo]`, parcela.tipo);
+                formData.append(`parcelasPreModal[${index}][mes]`, parcela.mes);
+            });
+
+            // Foto da câmera (base64)
+            const fotoBase64 = $('.image-tag').val();
+            if (fotoBase64 && fotoBase64.startsWith('data:image')) {
+                const base64Data = fotoBase64.split(',')[1];
+                const binaryString = atob(base64Data);
+                const bytes = new Uint8Array(binaryString.length);
+                for (let i = 0; i < binaryString.length; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
                 }
+                const blob = new Blob([bytes], { type: 'image/jpeg' });
+                formData.append('image', blob, `foto_camera_${alunoId}_${Date.now()}.jpg`);
             }
 
-            // 5. Enviar requisição
+            // Upload de arquivo
+            const fileInput = document.getElementById('fileexplorer');
+            if (fileInput && fileInput.files.length > 0) {
+                formData.append('avatar-file', fileInput.files[0]);
+            }
+
+            // Dados do modal de pagamento
+            const modalForm = document.querySelector('#modalPagamentos form');
+            if (modalForm) {
+                $(modalForm).find('input, select, textarea').each(function() {
+                    const $this = $(this);
+                    const nome = $this.attr('name');
+                    const tipo = $this.attr('type');
+                    const valor = $this.val();
+
+                    if (!nome || nome === '_token' || nome === '_method') return;
+
+                    if (tipo === 'checkbox' || tipo === 'radio') {
+                        if ($this.is(':checked')) {
+                            formData.append(nome, valor || 'on');
+                        }
+                    } else if (tipo === 'file') {
+                        if ($this[0].files.length > 0) {
+                            for (let i = 0; i < $this[0].files.length; i++) {
+                                formData.append(nome, $this[0].files[i]);
+                            }
+                        }
+                    } else if (valor !== undefined && valor !== '') {
+                        formData.append(nome, valor);
+                    }
+                });
+            }
+
+            // CSRF Token
+            let csrfToken = $('meta[name="csrf-token"]').attr('content') || CSRF_TOKEN;
+            if (!csrfToken || csrfToken.length < 10) {
+                const cookies = document.cookie.split('; ');
+                for (const cookie of cookies) {
+                    if (cookie.startsWith('XSRF-TOKEN=')) {
+                        csrfToken = decodeURIComponent(cookie.split('=')[1]);
+                        break;
+                    }
+                }
+            }
+            if (!csrfToken || csrfToken.length < 10) {
+                throw new Error('Token CSRF não encontrado. Recarregue a página.');
+            }
+            formData.append('_token', csrfToken);
+            formData.append('_method', 'PUT');
+
+            // 4. Enviar requisição
             const resposta = await $.ajax({
-                url: `${this.urls.atualizarM}${alunoId}`,
+                url: `${URLS.atualizarM}${alunoId}`,
                 type: 'POST',
                 data: formData,
                 processData: false,
@@ -559,9 +793,9 @@ class SistemaAtualizacaoMatricula {
                 dataType: 'json'
             });
 
-            // 6. Processar resposta
+            // 5. Processar resposta
             if (resposta.success || resposta.estado === "INS-0") {
-                await this.processarSucesso(resposta);
+                await processarSucesso(resposta);
             } else {
                 throw new Error(resposta.messagem || 'Erro desconhecido do servidor');
             }
@@ -574,9 +808,8 @@ class SistemaAtualizacaoMatricula {
                 mensagemErro = error.responseJSON.message || JSON.stringify(error.responseJSON);
             }
 
-            this.mostrarAlerta('Erro', mensagemErro, 'error');
+            mostrarAlerta('Erro', mensagemErro, 'error');
 
-            // Se for erro de CSRF, sugerir recarregar a página
             if (error.status === 419 || mensagemErro.includes('CSRF')) {
                 Swal.fire({
                     title: 'Sessão Expirada',
@@ -586,211 +819,22 @@ class SistemaAtualizacaoMatricula {
                     confirmButtonText: 'Sim, recarregar',
                     cancelButtonText: 'Não'
                 }).then((result) => {
-                    if (result.isConfirmed) {
-                        location.reload();
-                    }
+                    if (result.isConfirmed) location.reload();
                 });
             }
         } finally {
             btn.prop('disabled', false).html(originalText);
         }
-    }
+    });
 
-    // FUNÇÃO CORRIGIDA: Criar FormData manualmente
-    criarFormDataManual(alunoId) {
-        console.group('🛠️  CRIANDO FORMDATA MANUAL');
-
-        const formData = new FormData();
-
-        try {
-            // ========== 1. CAMPOS OBRIGATÓRIOS ==========
-
-            // A. ID do Aluno
-            if (!alunoId) {
-                alunoId = $('#idAlunos').val();
-                if (!alunoId) {
-                    throw new Error('ID do aluno não encontrado');
-                }
-            }
-            formData.append('idAlunos', alunoId);
-            console.log('✅ idAlunos:', alunoId);
-
-            // B. Classe de Atualização
-            const classe = $('[name="ClassedeAtualizacao"]').val();
-            if (!classe) {
-                throw new Error('Selecione uma classe');
-            }
-            formData.append('ClassedeAtualizacao', classe);
-            console.log('✅ ClassedeAtualizacao:', classe);
-
-            // C. Ano Lectivo
-            const anoLectivo = $('#anolectivo').val();
-            if (!anoLectivo) {
-                throw new Error('Selecione um ano lectivo');
-            }
-            formData.append('anolectivo', anoLectivo);
-            console.log('✅ anolectivo:', anoLectivo);
-
-            // ========== 2. PAGAMENTOS SELECIONADOS ==========
-            const pagamentosSelecionados = [];
-            $('.listapagamentos:checked').each(function() {
-                const valor = $(this).val();
-                if (valor) {
-                    pagamentosSelecionados.push(valor);
-                    formData.append('listapagamentos[]', valor);
-                }
-            });
-
-            // if (pagamentosSelecionados.length === 0) {
-            //     throw new Error('Selecione pelo menos um tipo de pagamento');
-            // }
-            // console.log('✅ Pagamentos selecionados:', pagamentosSelecionados);
-
-            // ========== 3. FOTO DO ALUNO ==========
-
-            // A. Foto da câmera (base64)
-            const fotoBase64 = $('.image-tag').val();
-            if (fotoBase64 && fotoBase64.startsWith('data:image')) {
-                console.log('📸 Processando foto da câmera...');
-
-                // Converter base64 para blob
-                const base64Data = fotoBase64.split(',')[1];
-                const binaryString = atob(base64Data);
-                const bytes = new Uint8Array(binaryString.length);
-
-                for (let i = 0; i < binaryString.length; i++) {
-                    bytes[i] = binaryString.charCodeAt(i);
-                }
-
-                const blob = new Blob([bytes], { type: 'image/jpeg' });
-                formData.append('image', blob, `foto_camera_${alunoId}_${Date.now()}.jpg`);
-                console.log('✅ Foto da câmera adicionada');
-            }
-
-            // B. Upload de arquivo
-            const fileInput = document.getElementById('fileexplorer');
-            if (fileInput && fileInput.files.length > 0) {
-                const file = fileInput.files[0];
-                formData.append('avatar-file', file);
-                console.log('✅ Arquivo de foto adicionado:', file.name);
-            }
-
-            // ========== 4. DADOS DO MODAL DE PAGAMENTO ==========
-            const modalForm = document.querySelector('#modalPagamentos form');
-            if (modalForm) {
-                console.log('💰 Processando dados do modal...');
-
-                // Processar todos os campos do modal
-                $(modalForm).find('input, select, textarea').each(function() {
-                    const $this = $(this);
-                    const nome = $this.attr('name');
-                    const tipo = $this.attr('type');
-                    const valor = $this.val();
-
-                    if (!nome || nome === '_token' || nome === '_method') {
-                        return; // Ignorar
-                    }
-
-                    // Tratar diferentes tipos de input
-                    if (tipo === 'checkbox' || tipo === 'radio') {
-                        if ($this.is(':checked')) {
-                            formData.append(nome, valor || 'on');
-                        }
-                    } else if (tipo === 'file') {
-                        // Arquivos já são tratados pelo FormData automaticamente
-                        if ($this[0].files.length > 0) {
-                            for (let i = 0; i < $this[0].files.length; i++) {
-                                formData.append(nome, $this[0].files[i]);
-                            }
-                        }
-                    } else {
-                        if (valor !== undefined && valor !== '') {
-                            formData.append(nome, valor);
-                        }
-                    }
-                });
-
-                console.log('✅ Dados do modal processados');
-            }
-
-            // ========== 5. TOKEN CSRF (CRÍTICO) ==========
-            let csrfToken = $('meta[name="csrf-token"]').attr('content');
-
-            // Tentar outras fontes se a meta tag não tiver token
-            if (!csrfToken || csrfToken.length < 10) {
-                csrfToken = $('input[name="_token"]').val();
-            }
-
-            if (!csrfToken || csrfToken.length < 10) {
-                // Tentar obter do cookie
-                const cookies = document.cookie.split('; ');
-                for (const cookie of cookies) {
-                    if (cookie.startsWith('XSRF-TOKEN=')) {
-                        csrfToken = decodeURIComponent(cookie.split('=')[1]);
-                        break;
-                    }
-                }
-            }
-
-            if (!csrfToken || csrfToken.length < 10) {
-                throw new Error('Token CSRF não encontrado. Recarregue a página.');
-            }
-
-            formData.append('_token', csrfToken);
-            console.log('✅ CSRF Token adicionado (primeiros 20 chars):', csrfToken.substring(0, 20) + '...');
-
-            // ========== 6. MÉTODO HTTP ==========
-            formData.append('_method', 'PUT');
-            console.log('✅ Método HTTP: PUT');
-
-            // ========== 7. DEMAIS CAMPOS DO FORMULÁRIO PRINCIPAL ==========
-            const formPrincipal = document.getElementById('formAluno');
-            if (formPrincipal) {
-                const elementos = formPrincipal.elements;
-
-                for (let i = 0; i < elementos.length; i++) {
-                    const elemento = elementos[i];
-                    const nome = elemento.name;
-                    const tipo = elemento.type;
-
-                    // Ignorar campos já processados
-                    if (!nome ||
-                        ['idAlunos', 'ClassedeAtualizacao', 'image', 'avatar-file', '_token', '_method'].includes(nome)) {
-                        continue;
-                    }
-
-                    // Adicionar campos restantes
-                    if (tipo === 'checkbox' || tipo === 'radio') {
-                        if (elemento.checked) {
-                            formData.append(nome, elemento.value || 'on');
-                        }
-                    } else if (tipo !== 'file' && elemento.value) {
-                        formData.append(nome, elemento.value);
-                    }
-                }
-            }
-
-            console.log('✅ Formulário principal processado');
-
-            // ========== 8. RESULTADO FINAL ==========
-            console.groupEnd();
-            return formData;
-
-        } catch (error) {
-            console.groupEnd();
-            throw error;
-        }
-    }
-
-    async processarSucesso(resposta) {
+    async function processarSucesso(resposta) {
         const opcoes = {
             title: 'Sucesso!',
             text: resposta.message || 'Matrícula atualizada com sucesso!',
             icon: 'success'
         };
 
-        // Se tiver dados para imprimir recibo
-        if (resposta.estado === "INS-0" && resposta.meses && resposta.anolectivo && resposta.idaluno) {
+        if (resposta.estado === "INS-0" && resposta.anolectivo && resposta.idaluno && resposta.talao) {
             opcoes.showCancelButton = true;
             opcoes.confirmButtonText = 'Imprimir Recibo';
             opcoes.cancelButtonText = 'Fechar';
@@ -799,117 +843,16 @@ class SistemaAtualizacaoMatricula {
         const resultado = await Swal.fire(opcoes);
 
         if (resultado.isConfirmed && resposta.estado === "INS-0") {
-            // Preparar URL do recibo
-            // const dados = resposta.meses.map(e => ({
-            //     tipo: e.tipo,
-            //     mes: e.mes
-            // }));
-            // const dadosEncoded = encodeURIComponent(JSON.stringify(dados));
-            console.log(resposta.idaluno);
-            const urlRecibo = `${this.urls.imprimirRecibo}${resposta.anolectivo}/${resposta.idaluno}/${resposta.talao}/${resposta.metodo}`;
-
-            // Abrir recibo
-            //  this.abrirReciboPDF(urlRecibo, resposta.idaluno);
-            abrirReciboPDF(urlRecibo,resposta.idaluno)
+            const urlRecibo = `${URLS.imprimirRecibo}${resposta.anolectivo}/${resposta.idaluno}/${resposta.talao}/${resposta.metodo}`;
+            abrirReciboPDF(urlRecibo, resposta.idaluno);
         }
 
-        // Limpar e recarregar
-        // $('#modalPagamentos').modal('hide');
-        // setTimeout(() => location.reload(), 1000);
+        $('#modalPagamentos').modal('hide');
     }
 
-    abrirReciboPDFd(url, alunoId) {
-        fetch(url, {
-            method: 'GET',
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(res => {
-            if (!res.ok) throw new Error('Erro ao buscar o PDF');
-            return res.blob();
-        })
-        .then(blob => {
-            const pdfUrl = URL.createObjectURL(blob);
-            const frame = document.getElementById('pdfFrame');
-            const popup = document.getElementById('pdfPopup');
-
-            frame.src = pdfUrl;
-            popup.style.display = 'block';
-
-            // Imprimir automaticamente
-            frame.onload = () => {
-                const iframeWindow = frame.contentWindow;
-                iframeWindow.focus();
-                iframeWindow.print();
-
-                // Fechar popup após impressão
-                iframeWindow.onafterprint = () => {
-                    popup.style.display = 'none';
-                    frame.src = '';
-                    URL.revokeObjectURL(pdfUrl);
-                };
-            };
-        })
-        .catch(err => {
-            console.error('Falha ao carregar o PDF:', err);
-            this.mostrarAlerta('Erro', 'Não foi possível carregar o recibo', 'error');
-        });
-    }
-
-    async validarReferenciaSeNecessario() {
-        const campoReferencia = $("[name='Referencia']");
-        if (campoReferencia.length === 0) return true;
-
-        const referencia = campoReferencia.val().trim();
-
-        if (!referencia) {
-            this.mostrarAlerta('Erro', 'Digite a referência de pagamento', 'error');
-            campoReferencia.addClass('is-invalid').focus();
-            return false;
-        }
-
-        try {
-            const response = await $.ajax({
-                url: `${this.urls.validarReferencia}${referencia}`,
-                type: "GET",
-                dataType: 'json'
-            });
-
-            if (response.status === "invalido") {
-                this.atualizarStatusReferencia('Referência inválida', false);
-                this.mostrarAlerta('Referência Inválida', 'A referência informada é inválida', 'error');
-                return false;
-            }
-
-            this.atualizarStatusReferencia('Referência válida', true);
-            return true;
-
-        } catch (error) {
-            this.mostrarAlerta('Erro', 'Falha ao validar referência', 'error');
-            return false;
-        }
-    }
-
-    atualizarStatusReferencia(mensagem, valida) {
-        let elementoStatus = $('#statusReferencia');
-
-        if (elementoStatus.length === 0) {
-            elementoStatus = $('<small>').attr('id', 'statusReferencia').addClass('referencia-status');
-            $("[name='Referencia']").after(elementoStatus);
-        }
-
-        elementoStatus
-            .removeClass(valida ? 'invalida' : 'valida')
-            .addClass(valida ? 'valida' : 'invalida')
-            .text(mensagem)
-            .show();
-    }
-
-    // Funções da câmera
-    ativarCamera() {
-        if (this.estado.cameraAtiva) return;
+    // ============ CÂMERA ============
+    $(document).on('click', '#startCamera', function() {
+        if (cameraAtiva) return;
 
         Webcam.set({
             width: 200,
@@ -924,11 +867,11 @@ class SistemaAtualizacaoMatricula {
         $('#takeSnapshot, #stopCamera').show();
         $('#startCamera, #fileexplorer').hide();
 
-        this.estado.cameraAtiva = true;
-    }
+        cameraAtiva = true;
+    });
 
-    desativarCamera() {
-        if (!this.estado.cameraAtiva) return;
+    $(document).on('click', '#stopCamera', function() {
+        if (!cameraAtiva) return;
 
         Webcam.reset();
         $('#camera-preview').hide();
@@ -936,31 +879,36 @@ class SistemaAtualizacaoMatricula {
         $('#takeSnapshot, #stopCamera').hide();
         $('#startCamera, #fileexplorer').show();
 
-        this.estado.cameraAtiva = false;
-    }
+        cameraAtiva = false;
+    });
 
-    tirarFoto() {
-        if (!this.estado.cameraAtiva) return;
+    $(document).on('click', '#takeSnapshot', function() {
+        if (!cameraAtiva) return;
 
-        Webcam.snap((uri) => {
+        Webcam.snap(function(uri) {
             $('.image-tag').val(uri);
             $('#avatar-container').html(`<img src="${uri}">`).show();
-            this.desativarCamera();
+            Webcam.reset();
+            $('#camera-preview').hide();
+            $('#takeSnapshot, #stopCamera').hide();
+            $('#startCamera, #fileexplorer').show();
+            cameraAtiva = false;
         });
-    }
+    });
 
-    previewUpload(event) {
-        const file = event.target.files[0];
+    $(document).on('change', '#fileexplorer', function(e) {
+        const file = e.target.files[0];
         if (!file) return;
 
         const reader = new FileReader();
-        reader.onload = (e) => {
+        reader.onload = function(e) {
             $('#avatar-container').html(`<img src="${e.target.result}">`);
         };
         reader.readAsDataURL(file);
-    }
+    });
 
-    mostrarAlerta(titulo, texto, tipo) {
+    // ============ AUXILIARES ============
+    function mostrarAlerta(titulo, texto, tipo) {
         return Swal.fire({
             title: titulo,
             text: texto,
@@ -969,22 +917,7 @@ class SistemaAtualizacaoMatricula {
             confirmButtonColor: '#3085d6'
         });
     }
-}
-
-// Funções globais para o popup de PDF
-function fecharPopupPDF() {
-    const popup = document.getElementById('pdfPopup');
-    const frame = document.getElementById('pdfFrame');
-
-    popup.style.display = 'none';
-    frame.src = '';
-}
-
-// Inicializar quando o DOM estiver pronto
-$(document).ready(function() {
-    window.sistemaMatricula = new SistemaAtualizacaoMatricula();
 });
 </script>
 <?php $__env->stopPush(); ?>
-
 <?php echo $__env->make('layouts.admin-Lti', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\laragon\www\escolasaojoaopaulo\resources\views/registoAcademico/Atualizar-matricula-index.blade.php ENDPATH**/ ?>

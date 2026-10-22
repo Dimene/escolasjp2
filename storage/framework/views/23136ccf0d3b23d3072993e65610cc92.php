@@ -186,7 +186,7 @@ uksort($alunosPorEstado, function($a, $b) {
     Gate::check('Editar-Aluno') ||
     Gate::check('Ver-Aluno')
 ): ?>
-    <th>A&ccedil;&atilde;o</th>
+    <th class="no-export">A&ccedil;&atilde;o</th>
 <?php endif; ?>
 
                         </thead>
@@ -261,8 +261,7 @@ uksort($alunosPorEstado, function($a, $b) {
                                         Gate::check('Ver-Aluno')
                                     ): ?>
 
-                                    <td>
-
+                                    <td class="no-export">
                                         <div class="btn-group btn-group-sm">
 
                                             <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('Modificar-Estado')): ?>
@@ -410,6 +409,7 @@ uksort($alunosPorEstado, function($a, $b) {
     </div>
 </div>
  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+ <link rel="stylesheet" href="<?php echo e(asset('Datatable/css/buttons.dataTables.min.css')); ?>">
 
 
 <script>
@@ -439,6 +439,35 @@ function inicializarTabelas() {
         tables[estado] = tabela.DataTable({
 
             responsive: true,
+
+            dom: 'Bfrtip',
+
+            buttons: [
+                {
+                    extend: 'copy',
+                    text: '<i class="fa fa-copy"></i> Copiar',
+                    className: 'export-action export-copy',
+                    exportOptions: {
+                        columns: ':not(.no-export)'
+                    }
+                },
+                {
+                    extend: 'excel',
+                    text: '<i class="fa fa-file-excel"></i> Excel',
+                    className: 'export-action export-excel',
+                    exportOptions: {
+                        columns: ':not(.no-export)'
+                    }
+                },
+                {
+                    extend: 'print',
+                    text: '<i class="fa fa-print"></i> Imprimir',
+                    className: 'export-action export-print',
+                    exportOptions: {
+                        columns: ':not(.no-export)'
+                    }
+                }
+            ],
 
             pageLength: 5,
 
@@ -524,6 +553,53 @@ function pesquisaGlobal() {
 /* Esconder todos os inputs de search do DataTable */
 .dataTables_filter {
     display: none !important;
+}
+
+.conteudo_tabela .dt-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.conteudo_tabela .dt-buttons .dt-button.export-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin: 0;
+    padding: 8px 14px;
+    border: 0;
+    border-radius: 8px;
+    color: #fff !important;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.4;
+    box-shadow: 0 2px 5px rgba(31, 41, 55, 0.16);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.conteudo_tabela .dt-buttons .dt-button.export-action:hover {
+    color: #fff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(31, 41, 55, 0.2);
+    filter: brightness(1.05);
+}
+
+.conteudo_tabela .dt-buttons .dt-button.export-action:focus-visible {
+    outline: 3px solid rgba(0, 123, 255, 0.3);
+    outline-offset: 2px;
+}
+
+.conteudo_tabela .dt-buttons .dt-button.export-copy {
+    background: linear-gradient(135deg, #5271c4, #3c55a5);
+}
+
+.conteudo_tabela .dt-buttons .dt-button.export-excel {
+    background: linear-gradient(135deg, #28a66a, #18834f);
+}
+
+.conteudo_tabela .dt-buttons .dt-button.export-print {
+    background: linear-gradient(135deg, #3298b5, #21758e);
 }
 
 

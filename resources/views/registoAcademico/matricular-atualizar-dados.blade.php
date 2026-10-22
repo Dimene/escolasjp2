@@ -717,15 +717,15 @@ $request =Request();
                         <div class="tab-pane fade" id="pagamentos" role="tabpanel">
                             <div class="card">
                                 <div class="card-body">
-                                    <h5>Tipos de Pagamento</h5>
-                                    <p class="text-muted">Selecione os tipos de pagamento para este aluno</p>
+                                    <h5>Selecionar parcelas</h5>
+                                    <p class="text-muted">Escolha as parcelas que pretende registar. As parcelas já registadas aparecem selecionadas.</p>
 
                                     <ul class="list-group" id="listaPagamentosTab">
                                         <!-- Dinamicamente carregado -->
                                     </ul>
 
                                     <div class="alert alert-info mt-3">
-                                        <i class="fas fa-info-circle"></i> Os pagamentos serão configurados após a matrícula.
+                                        <i class="fas fa-info-circle"></i> Selecione um pagamento para marcar todas as suas parcelas ou abra a lista para escolher parcelas individualmente.
                                     </div>
                                 </div>
                             </div>
@@ -772,6 +772,10 @@ $(document).ready(function() {
         validarReferencia: "/aluno/matricula/validarReferencia/",    };
 
     const tabelaValoresAno = @json($tabelavaloresano);
+    const mesesNomes = @json($mesesNomes);
+    const parcelasJaRegistadas = new Set((tipoPagamento || []).map(function(item) {
+        return `${item.tipo}:${item.mes_id}`;
+    }));
 
     console.log(tabelaValoresAno);
 
@@ -943,22 +947,58 @@ $(document).ready(function() {
         pagamentosFiltrados.forEach(function(item) {
             if (item.id > 2) {
                 const detalhes = typeof item.detalhes === "string" ? JSON.parse(item.detalhes) : item.detalhes;
-                const numeroDetalhes = Array.isArray(detalhes) ? detalhes.length : 0;
+                const parcelas = Array.isArray(detalhes) ? detalhes : [];
+                const numeroDetalhes = parcelas.length;
+                const parcelasHtml = parcelas.map(function(parcela, index) {
+                    const nomeMes = mesesNomes[parcela.mes] || `Parcela ${index + 1}`;
+                    const dataInicio = formatarDataParcela(parcela.inicio);
+                    const dataLimite = formatarDataParcela(parcela.limite);
+                    const periodo = dataInicio && dataLimite
+                        ? `${dataInicio} a ${dataLimite}`
+                        : dataLimite ? `Vencimento: ${dataLimite}` : "";
+                    const jaRegistada = parcelasJaRegistadas.has(`${item.id}:${parcela.mes}`);
+
+                    return `
+                        <div class="custom-control custom-checkbox mb-1">
+                            <input type="checkbox" class="custom-control-input checkbox-parcela"
+                                   id="parcela-${item.id}-${index}"
+                                   data-tipo="${item.id}" data-mes="${escapeHtml(parcela.mes)}"
+                                   data-valor="${Number(item.valorDescricao) || 0}"
+                                   ${jaRegistada ? "checked" : ""}>
+                            <label class="custom-control-label" for="parcela-${item.id}-${index}">
+                                ${escapeHtml(nomeMes)}
+                                ${periodo ? `<small class="d-block text-muted">${escapeHtml(periodo)}</small>` : ""}
+                            </label>
+                        </div>`;
+                }).join("");
+                const toggleParcelas = numeroDetalhes > 1
+                    ? `<button type="button" class="btn btn-sm btn-link p-0 btn-toggle-parcelas"
+                               data-target="#parcelas-${item.id}" aria-expanded="false">
+                           Ver parcelas <i class="fas fa-chevron-down ml-1"></i>
+                       </button>`
+                    : "";
 
                 htmlDados += `
                     <li class="list-group-item">
-                        <div class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input checkbox-pagamento"
-                                   id="pagamento-${item.id}" value="${item.id}" name="tipospagamento[]" >
-                            <label class="custom-control-label d-flex justify-content-between w-100" for="pagamento-${item.id}">
-                                <div>
-                                    <strong>${item.Finalidade}</strong><br>
-                                    <small class="text-muted">${numeroDetalhes} parcela(s)</small>
-                                </div>
-                                <div>
-                                    <span class="badge badge-primary">${item.valorDescricao},00 MT</span>
-                                </div>
-                            </label>
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input checkbox-pagamento"
+                                       id="pagamento-${item.id}">
+                                <label class="custom-control-label" for="pagamento-${item.id}">
+                                    <strong>${escapeHtml(item.Finalidade)}</strong><br>
+                                    <small class="text-muted">
+                                        <span class="parcelas-selecionadas">0</span>
+                                        de ${numeroDetalhes} parcelas selecionadas
+                                    </small>
+                                </label>
+                            </div>
+                            <div class="text-right">
+                                <span class="badge badge-primary valor-pagamento-selecionado">0,00 MT</span><br>
+                                ${toggleParcelas}
+                            </div>
+                        </div>
+                        <div id="parcelas-${item.id}" class="pl-4 pt-2" ${numeroDetalhes > 1 ? "hidden" : ""}>
+                            ${parcelasHtml}
                         </div>
                     </li>`;
             }
@@ -973,6 +1013,42 @@ $(document).ready(function() {
         }
 
         $('#listaPagamentosTab').html(htmlDados);
+        atualizarResumoListaPagamentos();
+    }
+
+    function escapeHtml(value) {
+        return $('<div>').text(value == null ? '' : value).html();
+    }
+
+    function formatarDataParcela(value) {
+        if (!value) return '';
+
+        const partes = String(value).slice(0, 10).split('-');
+        return partes.length === 3
+            ? `${partes[2]}/${partes[1]}/${partes[0]}`
+            : escapeHtml(value);
+    }
+
+    function atualizarResumoListaPagamentos() {
+        $('#listaPagamentosTab > li').each(function() {
+            const $grupo = $(this);
+            const $parcelas = $grupo.find('.checkbox-parcela');
+            if (!$parcelas.length) return;
+
+            const selecionadas = $parcelas.filter(':checked');
+            const total = selecionadas.toArray().reduce(function(soma, parcela) {
+                return soma + (Number($(parcela).data('valor')) || 0);
+            }, 0);
+
+            $grupo.find('.parcelas-selecionadas').text(selecionadas.length);
+            $grupo.find('.valor-pagamento-selecionado').text(
+                `${total.toLocaleString('pt-MZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MT`
+            );
+
+            $grupo.find('.checkbox-pagamento')
+                .prop('checked', selecionadas.length === $parcelas.length)
+                .prop('indeterminate', selecionadas.length > 0 && selecionadas.length < $parcelas.length);
+        });
     }
 
     function obterPagamentosSelecionados() {
@@ -1077,9 +1153,29 @@ $(document).ready(function() {
         const anoId = $("[name='ano_lectivo']").val();
         const classeId = $("[name='classe']").val();
         atualizarPagamentosPorAno(anoId, classeId);
+    });
 
-        //marcar os tipos que ele ja possui
-        marcarpagamentoSelecionados();
+    $(document).on('change', '.checkbox-pagamento', function() {
+        $(this).closest('li').find('.checkbox-parcela')
+            .prop('checked', this.checked);
+        $(this).prop('indeterminate', false);
+        atualizarResumoListaPagamentos();
+    });
+
+    $(document).on('change', '.checkbox-parcela', function() {
+        atualizarResumoListaPagamentos();
+    });
+
+    $(document).on('click', '.btn-toggle-parcelas', function() {
+        const $botao = $(this);
+        const $parcelas = $($botao.data('target'));
+        const mostrar = $parcelas.prop('hidden');
+
+        $parcelas.prop('hidden', !mostrar);
+        $botao.attr('aria-expanded', mostrar);
+        $botao.html(mostrar
+            ? 'Ocultar parcelas <i class="fas fa-chevron-up ml-1"></i>'
+            : 'Ver parcelas <i class="fas fa-chevron-down ml-1"></i>');
     });
 
     $('#btnLimpar').click(function() {
@@ -1108,26 +1204,26 @@ $(document).ready(function() {
     $('#formAluno').on('submit', function(e) {
         e.preventDefault();
 
-  // Validação inicial
         if (!validarCampos()) {
             return false;
         }
-        //  $('#formAluno').submit();
-        // enviarFormulario();
-           // Envia o formulário manualmente
 
+        $(this).find('input[name^="parcelasPreModal["]').remove();
+        $('.checkbox-parcela:checked').each((index, parcela) => {
+            const $parcela = $(parcela);
+            $('<input>', {
+                type: 'hidden',
+                name: `parcelasPreModal[${index}][tipo]`,
+                value: $parcela.data('tipo')
+            }).appendTo(this);
+            $('<input>', {
+                type: 'hidden',
+                name: `parcelasPreModal[${index}][mes]`,
+                value: $parcela.data('mes')
+            }).appendTo(this);
+        });
 
-// Percorre todos os checkboxes com a classe .checkbox-pagamento
-let valoresSelecionados = [];
-
-$('.checkbox-pagamento:checked').each(function() {
-    valoresSelecionados.push($(this).val());
-});
-
-console.log(valoresSelecionados,tabelaValoresAno);
-
-
-    this.submit();
+        this.submit();
     });
 
 
@@ -1453,21 +1549,5 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
-
-
-                        // Abre o PDF no pop
-
-
-$(document).ready(function(){
-marcarpagamentoSelecionados();
-});
-                        function marcarpagamentoSelecionados(){
-                            tipoPagamento.forEach(function(item) {
-    // Busca todos os checkboxes com a classe 'checkbox-pagamento'
-    // que tenham o valor igual ao tipoPagamento_id
-    $('.checkbox-pagamento[value="' + item.tipo_pagamento_id + '"]').prop('checked', true);
-    // console.log("checkboxs---",item.tipoPagamento_id);
-});
-                        }
 </script>
 @endsection

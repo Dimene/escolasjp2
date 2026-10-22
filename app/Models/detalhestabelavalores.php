@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 class detalhestabelavalores extends Model
 {
     use HasFactory;
+    
 
     protected $table="detalhes2";
 protected $fillable = [

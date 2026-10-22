@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Helpers\ReferenciaBIMHelper;
 use App\Http\Controllers\registoAcademico\alunosController;
 use App\Http\Controllers\registoAcademico\MensalidadesController;
+use App\Models\Admin\tranferencias_disistencias;
 use App\Models\banco;
 use App\Models\entidade;
 use App\Models\referenciasbancaria;
@@ -56,6 +57,8 @@ class bancosControler extends Controller
         ->where("tipo",$tipo)
         ->where("anolectivo_id",$anolectvo)
         ->first();
+
+        // dd($tipo,$anolectvo,$classe);
 
 $dadosmese = DB::table('outros_pagamentosview')
     ->select('mes_id', 'mes')
@@ -218,115 +221,31 @@ $valorDescricao=$tablevalores->valorDescricao."00";
 
 public function visuzlizarreferencias(Request $request)
 {
-    // Inicializar coleção de meses
+
+$dados=DB::table("detalhes2")->where("anolectivo_id",$request->anolectivo)
+->where("classe_id",$request->classe)
+->where("tipo",$request->tipopagamento)->get();
+$elemetopagamento=$dados->first();
+
+$mes=collect($request->mes??$dados->pluck('mes')->toArray());
+
+$alunos = outros_pagamentos::whereHas('alunoclasse', function ($query) use ($elemetopagamento) {
+    $query->where('classe_id', $elemetopagamento->classe_id)
+          ->where('anolectivo_id', $elemetopagamento->anolectivo_id)
+          ;
+})->where('tipo_Pagamento_id', $elemetopagamento->id)
+->with(['alunoclasse', 'alunoclasse.Aluno'])
+->whereIn('mes_id', $mes)
+->get();
+//    dd($dados,$mes,$elemetopagamento,$alunos);
     $meses = collect();
-$tipo=DB::table("detalhestabelavaores")
-            ->where("tipo", $request->tipopagamento)
-            ->where("classe_id", $request->classe)
-            ->where("anolectivo_id", $request->anolectivo)->first();
-    // Se não vier mês, buscar todos os meses do tipo/ano
 
-    // dd($tipo,$request->all());
-    if (is_null($request->mes)) {
-        $meses = DB::table("detalhestabelavaores")
-            ->where("tipo", $request->tipopagamento)
-             ->where("classe_id", $request->classe)
-            ->where("anolectivo_id", $request->anolectivo)
-            ->pluck("mes"); // já retorna Collection
-    } else {
-        $meses->push($request->mes);
-    }
-
-
-    $aluno=collect();
- if($request->tipopagamento>2){
-
-   $dadods= alunoClasse::where('classe_id',$request->classe)->where("anolectivo_id", $request->anolectivo)->with(['mensalidades'=>function($e) use($tipo)
-    {$e->tipo_Pagamento_id=$tipo->idtabelavalores;
-
-
-
-
-    },"Aluno"])->get();
-
-
-    foreach($dadods as $item){
-
-    foreach($item->mensalidades as $meses):
-
-    $entidade=entidade::where("id",$request->Entidade)->first();
-
-$dados=0;
-
-$multa=0;
-
-    if(!empty($meses->data_Fim)){
- if(Carbon::parse($meses->data_Fim)->isPast()){
-$dados=1;
-
-
-$multa=($tipo->multa/100)*$tipo->valorDescricao;
- }
-
-    }
-    else{
-       $dados=0;
-    }
-
-
-
-    $referencia=referenciasbancaria::where("aluno_classe_id",$item->id)
-     ->where('tipo_pagamento_id',$tipo->idtabelavalores)
-    ->where('banco_id',$entidade->id)
-    ->where("mes_id",$meses->mes_id)
-     ->where("Multa",$dados)
-    ->first();
-
-// dd($referencia,$item->id,$tipo->idtabelavalores,$meses->mes_id);
-
-
-$aluno->push((object)[
-    "id"=>$item->id,
-    "idoutro"=>$meses->id,
-    'idmensalidademes'=>$meses->id,
-    "aluno_classe_id"=>$item->id,
-    "nome"=>$item->Aluno->nome,
-    "Entidade"=>$entidade->Entidade,
-    "Banco"=>$entidade->descricao,
-    "mes_id"=>$meses->mes_id,
-    "mes"=>$meses->mes->Descricao,
-    "limite"=>$meses->data_Fim,
-    "referenciaBanco"=> $referencia?->referencia,
-     "valorDescricao"=>$tipo->valorDescricao,
-     "multaP"=>$tipo->multa,
-     "tipo"=>$tipo->tipo,
-    //  "tipo_pagamento_id"=>$tipo->idtabelavalores,
-     "tipo_pagamento_id"=>$tipo->idtabelavalores,
-
-]);
-
-
-
-
-    endforeach;
-    }
-
- }
- else{
-
- }
-
-
-//  dd($aluno);
-
-$alunos=$aluno;
-
-
-
+// dd();
+$entidade=banco::where("id",$request->Entidade)->first();
 
     // Retornar view
     return view(
-        'Financas.Banco.visualizar-referncias-datatable',
+    'Financas.Banco.visualizar-referncias-datatable',
         compact('alunos', 'entidade')
     );
 }
@@ -340,9 +259,13 @@ public function uplodefileCadastrofile(Request $request)
 
     $file = $request->file('file');
     $linhas = file($file->getRealPath());
+    // dd($linhas);
 
     $dados = collect($this->fileCollect($linhas));
 
+
+
+// dd($dados);
 
 //   $relatorioRefer=collect();
 
@@ -355,13 +278,17 @@ public function uplodefileCadastrofile(Request $request)
 
 
         $referencias = $grupo->pluck("referencia")->toArray();
-        $entidades   = $grupo->pluck("Entidade")->unique();
+        $entidades   = $grupo->pluck("Entidade")->toArray();
+
+
 
         $registos = DB::table("referenciasbancariasview")
             ->where("codigo_AC", $id)
             ->whereIn("Entidade", $entidades)
             ->whereIn("referencia", $referencias)
             ->get();
+            
+            
 
         if ($registos->isEmpty()) continue;
 
@@ -390,7 +317,6 @@ $select =DB::table("metodo_pagamento")->where('tipo',$registos[0]->Banco_id)->fi
 
             // 🔥 gera talão único por registo
 
-
 //   $relatorioRefer->push($ref);
             // multa
             $multaflag = (int)$ref->multaflag;
@@ -417,6 +343,14 @@ $select =DB::table("metodo_pagamento")->where('tipo',$registos[0]->Banco_id)->fi
 
 
 
+if($ref->tipo>2){
+
+
+ outros_pagamentos::onlyTrashed()
+    ->where("aluno_classe_id", $ref->id)
+    ->where("mes_id", $ref->mes_id)
+    ->where("tipo_pagamento_id", $ref->tipo_pagamento_id)
+    ->restore();
             outros_pagamentos::where("aluno_classe_id", $ref->id)
                 ->where("mes_id", $ref->mes_id)
                 ->where("tipo_pagamento_id", $ref->tipo_pagamento_id)
@@ -431,6 +365,29 @@ $select =DB::table("metodo_pagamento")->where('tipo',$registos[0]->Banco_id)->fi
                     "Multa" => $multa,
                     "Ntalao" => $talaoNumero
                 ]);
+}else{
+
+
+   
+   tranferencias_disistencias::where('aluno_classe_id', $ref->id)->forceDelete();
+     
+//   dd($ref);
+
+//    $referencias->where("referencias")
+     alunoClasse::where("id",$ref->id)->update(["estado"=>"activo",
+    "referencia"=>$ref->referencia,
+    "codigo_AC"=>$ref->codigo_AC,
+    "Multa"=>$multa,
+    "data_matricula" =>$dataref,
+     "Ntalao" => $talaoNumero,
+     "usuario_registou" => auth()->id(),
+     "metodo_pagamento" => $metodo->id,
+    ]);
+    
+
+    
+}
+
         }
     }
 
@@ -871,13 +828,16 @@ public function talao($metodo, $ano)
 
 
     function gerarReferenciainnline($id,$banco){
+
+    // dd($id,$banco);
        $dados= DB::table('referenciasviewbanco')->where("idoutro",$id)->first();
+      
 
        $codigoAC=$this->gerar_codigoAC($dados);
+     
        $dados= DB::table('referenciasviewbanco')->where("idoutro",$id)->first();
        $referencia=$this->GerarReferencias($dados,$banco);
        $dados= DB::table('referenciasviewbanco')->where("idoutro",$id)->first();
-
 
 
        return  response()->json($dados);
@@ -949,24 +909,34 @@ public function GerarReferencias($dados, $bancoId)
         $flagMulta=1;
     }
 
-    // dd($dados);
+    
 
      foreach ($bancos as $banco) {
             $entidade = $banco->Entidade;
+            $descricaoBanco = strtoupper(trim($banco->Descricao ?? $banco->descricao ?? ''));
 
             $mes1 = str_pad($mes1, 2, '0', STR_PAD_LEFT);
           // Gera a referência conforme o banco
 
-            if ($banco->descricao === 'BIM') {
+            if ($descricaoBanco === 'BIM') {
                 $referencia = ReferenciaBIMHelper::gerarReferencia($entidade,$dados->tipo_pagamento_id.$dados->codigo_AC,$mes1,$valor);
-                 referenciasbancaria::updateOrCreate(
+               
+              
+          $referencia =referenciasbancaria::updateOrCreate(
                 [
-        "tipo_pagamento_id"=>$dados->idtabelavalores,
-        "referencia"=>$referencia,
-        "aluno_classe_id"=>$dados->aluno_classe_id,
-        "mes_id"=>$dados->mes_id],["banco_id"=>$banco->id,
-        "Multa" =>$flagMulta
+      
+        "referencia"=>$referencia
+       ],
+        
+        ["banco_id"=>$banco->id,
+        "Multa" =>$flagMulta,
+          "tipo_pagamento_id"=>$dados->idtabelavalores,
+           "aluno_classe_id"=>$dados->aluno_classe_id,
+            "mes_id"=>$dados->mes_id
 ] );
+
+
+return ($referencia);
                 }
                 // se tiver outros bancos para adicionar aque
 

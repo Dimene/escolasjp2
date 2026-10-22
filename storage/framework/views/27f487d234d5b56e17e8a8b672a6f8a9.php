@@ -611,6 +611,9 @@
                                 <div class="card-body">
                                     <h5>Tipos de Pagamento</h5>
                                     <p class="text-muted">Selecione os tipos de pagamento para este aluno</p>
+                                    <div class="mb-2">
+                                        <span class="badge badge-info" id="modalidadeAnoLectivo"></span>
+                                    </div>
 
                                     <ul class="list-group" id="listaPagamentosTab">
                                         <!-- Dinamicamente carregado -->
@@ -721,9 +724,12 @@ $(document).ready(function() {
         validarReferencia: "/aluno/matricula/validarReferencia/",    };
 
     const tabelaValoresAno = <?php echo json_encode($tabelavaloresano, 15, 512) ?>;
+    const mesesNomes = <?php echo json_encode($mesesNomes, 15, 512) ?>;
+    const modalidadesAnoLectivo = <?php echo json_encode($modalidadesAnoLectivo, 15, 512) ?>;
     const CSRF_TOKEN = '<?php echo e(csrf_token()); ?>';
     let statusValidacaoReferencia = "";
     let processandoPagamento = false;
+    let parcelasSelecionadasAntesModal = [];
 
     // ============ INICIALIZAÇÃO ============
     function inicializar() {
@@ -877,8 +883,13 @@ $(document).ready(function() {
     // ============ FUNÇÕES DE PAGAMENTO ============
     function atualizarPagamentosPorAno(anoId, classeId) {
         $('#listaPagamentosTab').empty();
+        const modalidade = modalidadesAnoLectivo[anoId];
+        const nomeModalidade = obterNomeModalidade(modalidade?.modalidade);
+        $('#modalidadeAnoLectivo').text(nomeModalidade
+            ? `Modalidade do ano lectivo: ${nomeModalidade}`
+            : 'Modalidade do ano lectivo não definida');
 
-        const pagamentosFiltrados = tabelaValoresAno.filter(function(item) {
+        pagamentosFiltrados = tabelaValoresAno.filter(function(item) {
             return item.idanolectivo == anoId && item.classId == classeId;
         });
 
@@ -887,22 +898,62 @@ $(document).ready(function() {
         pagamentosFiltrados.forEach(function(item) {
             if (item.id > 2) {
                 const detalhes = typeof item.detalhes === "string" ? JSON.parse(item.detalhes) : item.detalhes;
-                const numeroDetalhes = Array.isArray(detalhes) ? detalhes.length : 0;
+                const parcelas = Array.isArray(detalhes) ? detalhes : [];
+                const numeroDetalhes = parcelas.length;
+                const parcelasHtml = parcelas.map(function(parcela, index) {
+                    const dataInicio = formatarDataParcela(parcela.inicio);
+                    const dataLimite = formatarDataParcela(parcela.limite);
+                    const nomeMes = mesesNomes[parcela.mes] || `Parcela ${index + 1}`;
+                    const periodoModalidade = obterPeriodoModalidade(parcela, modalidade);
+                    const periodo = dataInicio && dataLimite
+                        ? `${dataInicio} a ${dataLimite}`
+                        : dataLimite ? `Vencimento: ${dataLimite}` : "";
+                    const detalhesPeriodo = periodo
+                        ? `<small class="d-block text-muted">${periodo}</small>`
+                        : "";
+                    return `
+                        <div class="custom-control custom-checkbox mb-1">
+                            <input type="checkbox" class="custom-control-input checkbox-parcela"
+                                   id="parcela-${item.id}-${index}"
+                                   data-tipo="${item.id}" data-mes="${escapeHtml(parcela.mes)}"
+                                   data-valor="${Number(item.valorDescricao) || 0}" checked>
+                            <label class="custom-control-label" for="parcela-${item.id}-${index}">
+                                ${escapeHtml(nomeMes)}
+                                ${periodoModalidade ? `<span class="badge badge-light ml-1">${escapeHtml(periodoModalidade)}</span>` : ""}
+                                ${detalhesPeriodo}
+                            </label>
+                        </div>`;
+                }).join("");
+                const toggleParcelas = numeroDetalhes > 1
+                    ? `<button type="button" class="btn btn-sm btn-link p-0 btn-toggle-parcelas"
+                               data-target="#parcelas-${item.id}" aria-expanded="false">
+                           Ver parcelas <i class="fas fa-chevron-down ml-1"></i>
+                       </button>`
+                    : "";
 
                 htmlDados += `
                     <li class="list-group-item">
-                        <div class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input checkbox-pagamento"
-                                   id="pagamento-${item.id}" value="${item.id}" checked>
-                            <label class="custom-control-label d-flex justify-content-between w-100" for="pagamento-${item.id}">
-                                <div>
-                                    <strong>${item.Finalidade}</strong><br>
-                                    <small class="text-muted">${numeroDetalhes} parcela(s)</small>
-                                </div>
-                                <div>
-                                    <span class="badge badge-primary">${item.valorDescricao},00 MT</span>
-                                </div>
-                            </label>
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input checkbox-pagamento"
+                                       id="pagamento-${item.id}" value="${item.id}" checked>
+                                <label class="custom-control-label" for="pagamento-${item.id}">
+                                    <strong>${escapeHtml(item.Finalidade)}</strong><br>
+                                    <small class="text-muted">
+                                        <span class="parcelas-selecionadas">${numeroDetalhes}</span>
+                                        de ${numeroDetalhes} parcelas selecionadas
+                                    </small>
+                                </label>
+                            </div>
+                            <div class="text-right">
+                                <span class="badge badge-primary valor-pagamento-selecionado">
+                                    ${formatarValor(numeroDetalhes * (Number(item.valorDescricao) || 0))}
+                                </span>
+                                ${toggleParcelas}
+                            </div>
+                        </div>
+                        <div id="parcelas-${item.id}" class="pl-4 pt-2" hidden>
+                            ${parcelasHtml}
                         </div>
                     </li>`;
             }
@@ -917,17 +968,96 @@ $(document).ready(function() {
         }
 
         $('#listaPagamentosTab').html(htmlDados);
+        atualizarResumoListaPagamentos();
+    }
+
+    function obterNomeModalidade(modalidade) {
+        const nomes = {
+            2: 'Semestre',
+            3: 'Trimestre',
+            4: 'Bimestre',
+            12: 'Modular'
+        };
+
+        return nomes[Number(modalidade)]
+            || (Number(modalidade) > 0 ? `${modalidade} períodos` : '');
+    }
+
+    function obterPeriodoModalidade(parcela, modalidade) {
+        if (!modalidade) return '';
+
+        const dataParcela = String(parcela.limite || parcela.inicio || '').slice(0, 10);
+        const divisaoPorData = (modalidade.divisoes || []).find(function(divisao) {
+            const inicio = String(divisao.inicio || '').slice(0, 10);
+            const fim = String(divisao.fim || '').slice(0, 10);
+            return dataParcela && inicio && fim && dataParcela >= inicio && dataParcela <= fim;
+        });
+
+        let numero = divisaoPorData ? divisaoPorData.numero : null;
+        if (!numero) {
+            const mes = Number(parcela.mes);
+            const quantidade = Number(modalidade.modalidade);
+            if (mes > 0 && mes <= 12 && quantidade > 0) {
+                numero = Math.ceil(mes / (12 / quantidade));
+            }
+        }
+
+        return numero
+            ? `${obterNomeModalidade(modalidade.modalidade)} ${numero}`
+            : '';
+    }
+
+    function escapeHtml(value) {
+        return $('<div>').text(value == null ? '' : value).html();
+    }
+
+    function formatarDataParcela(value) {
+        if (!value) return '';
+
+        const partes = String(value).slice(0, 10).split('-');
+        return partes.length === 3 ? `${partes[2]}/${partes[1]}/${partes[0]}` : escapeHtml(value);
+    }
+
+    function formatarValor(valor) {
+        return `${Number(valor || 0).toLocaleString('pt-MZ', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        })} MT`;
+    }
+
+    function atualizarResumoListaPagamentos() {
+        $('#listaPagamentosTab > li').each(function() {
+            const $grupo = $(this);
+            const $parcelas = $grupo.find('.checkbox-parcela');
+            if (!$parcelas.length) return;
+
+            const selecionadas = $parcelas.filter(':checked');
+            const total = selecionadas.toArray().reduce(function(soma, parcela) {
+                return soma + (Number($(parcela).data('valor')) || 0);
+            }, 0);
+
+            $grupo.find('.parcelas-selecionadas').text(selecionadas.length);
+            $grupo.find('.valor-pagamento-selecionado').text(formatarValor(total));
+
+            const $pagamento = $grupo.find('.checkbox-pagamento');
+            $pagamento
+                .prop('checked', selecionadas.length === $parcelas.length)
+                .prop('indeterminate', selecionadas.length > 0 && selecionadas.length < $parcelas.length);
+        });
     }
 
     function obterPagamentosSelecionados() {
-        const pagamentos = [];
-        $('.checkbox-pagamento:checked').each(function() {
-            pagamentos.push($(this).val());
+        const parcelas = [];
+        $('.checkbox-parcela:checked').each(function() {
+            parcelas.push({
+                tipo: $(this).data('tipo'),
+                mes: $(this).data('mes')
+            });
         });
-        return pagamentos;
+        return parcelas;
     }
 
-    function carregarModalPagamentos(pagamentos, classeId, anoId,tipoId) {
+    function carregarModalPagamentos(parcelas, classeId, anoId,tipoId) {
 
 
         if (processandoPagamento) return;
@@ -939,7 +1069,7 @@ $(document).ready(function() {
         $.ajax({
             url: `${URLS.selecionarValores}${classeId}/${anoId}/${tipoId}`,
             type: "GET",
-            data: { pagamentos: pagamentos },
+            data: { parcelas: parcelas },
             success: function(data) {
                 $('.corpoConteudo').html(data);
                  $("#btnConfirmarPagamento").show();
@@ -1013,10 +1143,12 @@ $(document).ready(function() {
         const classeId = $("[name='classe']").val();
         const pagamentos = obterPagamentosSelecionados();
 
-        if (pagamentos.length === 0&&pagamentosFiltrados.length>0) {
+        if (pagamentos.length === 0 && pagamentosFiltrados.length > 0) {
             mostrarAlerta('Atenção', 'Selecione pelo menos um tipo de pagamento', 'warning');
             return false;
         }
+
+        parcelasSelecionadasAntesModal = pagamentos;
 
         // Carregar modal de pagamentos
         carregarModalPagamentos(pagamentos, classeId, anoId,1);
@@ -1028,6 +1160,29 @@ $(document).ready(function() {
         const anoId = $("[name='ano_lectivo']").val();
         const classeId = $("[name='classe']").val();
         atualizarPagamentosPorAno(anoId, classeId);
+    });
+
+    $(document).on('change', '.checkbox-pagamento', function() {
+        $(this).closest('li').find('.checkbox-parcela')
+            .prop('checked', this.checked);
+        $(this).prop('indeterminate', false);
+        atualizarResumoListaPagamentos();
+    });
+
+    $(document).on('change', '.checkbox-parcela', function() {
+        atualizarResumoListaPagamentos();
+    });
+
+    $(document).on('click', '.btn-toggle-parcelas', function() {
+        const $botao = $(this);
+        const $parcelas = $($botao.data('target'));
+        const mostrar = $parcelas.prop('hidden');
+
+        $parcelas.prop('hidden', !mostrar);
+        $botao.attr('aria-expanded', mostrar);
+        $botao.html(mostrar
+            ? 'Ocultar parcelas <i class="fas fa-chevron-up ml-1"></i>'
+            : 'Ver parcelas <i class="fas fa-chevron-down ml-1"></i>');
     });
 
     $('#btnLimpar').click(function() {
@@ -1110,6 +1265,18 @@ $(document).ready(function() {
                     formData.append(field.name, field.value);
                 }
             });
+
+            $('#modalPagamentos .checkbox-mes:checked').each(function(index) {
+                formData.append(`tipospagamento[${index}][tipo]`, $(this).data('tipo'));
+                formData.append(`tipospagamento[${index}][mes]`, $(this).data('nomemes'));
+            });
+
+           
+            parcelasSelecionadasAntesModal.forEach(function(parcela, index) {
+                formData.append(`parcelasPreModal[${index}][tipo]`, parcela.tipo);
+                formData.append(`parcelasPreModal[${index}][mes]`, parcela.mes);
+            });
+            //  formData.append("parecelas",pagamentos);
 
             // Enviar para o servidor
             $.ajax({

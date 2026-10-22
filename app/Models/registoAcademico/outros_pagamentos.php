@@ -38,9 +38,15 @@ class outros_pagamentos extends Model
 
 
 
- public function TBdetalhes(){
-    return $this->hasMany(detalhestabelavalores::class,"idtabelavalores","tipo_pagamento_id");
- }
+public function TBdetalhes($tipo_pagamento_id = null, $mes_id = null)
+{
+    $tipo = $tipo_pagamento_id ?? $this->tipo_pagamento_id;
+    $mes  = $mes_id ?? $this->mes_id;
+
+    return detalhestabelavalores::where('id', $tipo)
+        ->where('mes', $mes)
+        ->first();
+}
 
  public function alunoclasse(){
     return $this->hasOne(alunoClasse::class,"id","aluno_classe_id");
@@ -55,9 +61,11 @@ class outros_pagamentos extends Model
  }
 
 
- public function referencidas(){
-return $this->hasMany(referenciasbancaria::class,['aluno_classe_id','tipo_pagamento_id'],['aluno_classe_id','tipo_pagamento_id']);
-
+ public function referencidas($mes,$tipo,$aluno){
+return referenciasbancaria::where("tipo_pagamento_id",$tipo)
+       ->where("aluno_classe_id",$aluno)
+       ->where("mes_id",$mes)->get();
+        
  }
 
  public function anolectivo(){
@@ -111,6 +119,7 @@ protected static function boot()
 
         foreach ($bancos as $banco) {
             $entidade = $banco->Entidade;
+            $descricaoBanco = strtoupper(trim($banco->Descricao ?? $banco->descricao ?? ''));
             $mes1=0;
             $multa1=null;
             $multa2=null;
@@ -125,13 +134,13 @@ protected static function boot()
 
             $referencias = collect();
 
-            if ($banco->descricao === 'BIM') {
+            if ($descricaoBanco === 'BIM') {
                 //$ref1 = ReferenciaBIMHelper::gerarReferenciaComCheckDigit($entidade, $codigoBase . $mes1, $valorBase);
                 //$ref2 = ReferenciaBIMHelper::gerarReferenciaComCheckDigit($entidade, $codigoBase .$mes2, $valorComMulta);
 
               $ref1= ReferenciaBIMHelper::gerarReferencia($entidade,$tipoPagamento->tipo.$codigoAC,$mes1,(int)$valorBase);
               $ref2= ReferenciaBIMHelper::gerarReferencia($entidade,$tipoPagamento->tipo.$codigoAC,$mes2,(int)$valorComMulta);
-            } elseif ($banco->descricao === 'BCI') {
+            } elseif ($descricaoBanco === 'BCI') {
                 $ref1 = ReferenciaBCIHelper::gerarReferencia($entidade, $codigoBase, $mes1,(int) $valorBase);
                 $ref2 = ReferenciaBCIHelper::gerarReferencia($entidade, $codigoBase, $mes2, (int)$valorComMulta);
             } else {
@@ -161,7 +170,6 @@ protected static function boot()
 
 }
 }
-
 
 
 

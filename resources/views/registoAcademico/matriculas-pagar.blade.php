@@ -12,98 +12,294 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 
     <style>
-.input-error {
-    border: 2px solid #dc3545 !important;
-}
+        :root {
+            --pagamento-azul: #174a7e;
+            --pagamento-azul-escuro: #10365f;
+            --pagamento-fundo: #f4f7fb;
+            --pagamento-borda: #dce5ef;
+            --pagamento-texto: #26384a;
+        }
 
-.input-success {
-    border: 2px solid #28a745 !important;
-}
+        body {
+            margin: 0;
+            background: var(--pagamento-fundo);
+            color: var(--pagamento-texto);
+            font-family: Arial, "Helvetica Neue", sans-serif;
+        }
 
+        .container {
+            max-width: 960px;
+            padding: 18px;
+        }
 
-.spinner-avatar {
-    position: relative;
-    width: 140px;
-    height: 140px;
-    margin: auto;
-}
-.img-round {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    object-fit: cover;
-}
-.spinner-avatar img {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    object-fit: cover;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 2;
-    background: #fff;
-}
+        .container > .card {
+            overflow: hidden;
+            border: 1px solid var(--pagamento-borda);
+            border-radius: 14px;
+            box-shadow: 0 12px 34px rgba(24, 55, 86, .12);
+        }
 
-/* CÍRCULO GIRATÓRIO */
-.spinner-avatar::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 140px;
-    height: 140px;
-    border-radius: 50%;
-    border: 4px solid #e9ecef;
-    border-top: 4px solid #28a745; /* cor do spinner */
-    animation: spin 1.2s linear infinite;
-}
+        .card-header {
+            padding: 18px 22px;
+            border: 0;
+            background: linear-gradient(120deg, var(--pagamento-azul-escuro), #2872ad);
+            color: #fff;
+            font-size: 17px;
+            font-weight: 700;
+        }
 
-/* ANIMAÇÃO */
-@keyframes spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
-}
+        .card-body {
+            padding: 22px;
+        }
 
+        .input-error {
+            border: 2px solid #dc3545 !important;
+        }
+
+        .input-success {
+            border: 2px solid #28a745 !important;
+        }
+
+        .spinner-avatar {
+            position: relative;
+            width: 140px;
+            height: 140px;
+            margin: auto;
+        }
+
+        .img-round,
+        .spinner-avatar img {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .spinner-avatar img {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            z-index: 2;
+            transform: translate(-50%, -50%);
+            background: #fff;
+        }
+
+        .spinner-avatar::before {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 140px;
+            height: 140px;
+            border: 4px solid #e9ecef;
+            border-top-color: #28a745;
+            border-radius: 50%;
+            content: "";
+            animation: spin 1.2s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
 
         #pagamentoMpesa {
-    border: 2px dashed #28a745;
-    background: #f8fff8;
-}
+            border: 1px solid #b8e2c5;
+            border-radius: 12px;
+            background: #f4fff7;
+        }
 
-        .btn-check { display: none; }
+        .btn-check {
+            display: none;
+        }
+
         .btn-check + .btn {
-            border: 1px solid #ced4da;
-            background: #fff;
-            color: #495057;
             width: 100%;
+            border: 1px solid var(--pagamento-borda);
+            border-radius: 9px;
+            background: #fff;
+            color: #43566a;
             text-align: center;
-            font-weight: 500;
-            transition: all .2s ease;
-            border-radius: 5px;
+            font-weight: 600;
+            transition: border-color .18s ease, background .18s ease, color .18s ease, transform .18s ease;
         }
+
+        .btn-check + .btn:hover {
+            transform: translateY(-1px);
+            border-color: #8eb4d8;
+            background: #f3f8fd;
+        }
+
         .btn-check:checked + .btn {
-            background-color: #0d6efd;
+            border-color: var(--pagamento-azul);
+            background: var(--pagamento-azul);
             color: #fff;
-            border-color: #0d6efd;
-            box-shadow: 0 4px 10px rgba(13,110,253,.3);
+            box-shadow: 0 4px 12px rgba(23, 74, 126, .2);
         }
-        .btn-check + .btn:hover { background: #f1f3f5; }
+
+        .btn-check:focus + .btn {
+            outline: 3px solid rgba(23, 74, 126, .2);
+        }
 
         .resumo-box {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 10px;
-            font-size: 14px;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+            padding: 16px;
+            border: 1px solid var(--pagamento-borda);
+            border-radius: 12px;
+            background: #f8fbfe;
+            font-size: 13px;
         }
-        .badge-total { font-size: 15px; }
-        .card-header { font-weight: 600; }
-        .divitem { margin-top: 5px; }
+
+        .resumo-item {
+            min-height: 72px;
+            padding: 12px 14px;
+            border: 1px solid #e2eaf2;
+            border-radius: 9px;
+            background: #fff;
+        }
+
+        .resumo-legenda {
+            display: block;
+            margin-bottom: 5px;
+            color: #708196;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+        }
+
+        .badge-total {
+            padding: 0;
+            background: transparent;
+            color: var(--pagamento-texto);
+            font-size: 17px;
+            font-weight: 700;
+        }
+
+        .resumo-item-total {
+            border-color: #c6e5d1;
+            background: #f2fbf5;
+        }
+
+        .resumo-item-total .badge-total {
+            color: #18824b;
+            font-size: 20px;
+        }
+
+        .fine-info {
+            grid-column: 1 / -1;
+            margin: 0 !important;
+            border-color: #f0d58a !important;
+            border-radius: 9px !important;
+        }
+
+        .form-group > label {
+            margin-bottom: 7px;
+            color: #354b61;
+        }
+
+        .form-control {
+            min-height: 42px;
+            border-color: #d3deea;
+            border-radius: 8px;
+            box-shadow: none;
+        }
+
+        .form-control:focus {
+            border-color: #5d93c4;
+            box-shadow: 0 0 0 3px rgba(23, 74, 126, .12);
+        }
+
+        .divOutrospagamento > .card {
+            margin-bottom: 10px !important;
+            overflow: hidden;
+            border: 1px solid var(--pagamento-borda);
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(28, 55, 82, .04);
+        }
+
+        .divOutrospagamento .card-body {
+            padding: 14px 16px;
+        }
+
+        .btn-abrirdiv {
+            position: relative;
+            margin: 0;
+            padding: 11px 38px 11px 13px;
+            border: 0;
+            border-radius: 8px;
+            background: #f2f6fa;
+            color: #244b70;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 700;
+            transition: background .18s ease;
+        }
+
+        .btn-abrirdiv:hover {
+            background: #e8f0f8;
+        }
+
+        .btn-abrirdiv::after {
+            position: absolute;
+            top: 50%;
+            right: 14px;
+            content: "+";
+            transform: translateY(-50%);
+            color: var(--pagamento-azul);
+            font-size: 21px;
+            font-weight: 400;
+        }
+
+        .divitem {
+            margin: 7px 0 0;
+            padding: 7px 2px 2px;
+        }
+
+        .divitem > .col {
+            margin-bottom: 10px;
+        }
+
+        .form-check-input-multa {
+            margin-right: 4px;
+        }
+
+        .form-check-label {
+            color: #825d12;
+            font-size: 12px;
+        }
+
+        #btnSelecionarTodos,
+        #btnLimpar {
+            min-height: 40px;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        @media (max-width: 575.98px) {
+            .container {
+                padding: 8px;
+            }
+
+            .card-body {
+                padding: 15px;
+            }
+
+            .resumo-box {
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+                padding: 10px;
+            }
+
+            .resumo-item-total {
+                grid-column: 1 / -1;
+            }
+
+            .d-flex.gap-2 {
+                flex-direction: column;
+            }
+        }
     </style>
 </head>
 <body>
@@ -111,9 +307,8 @@
 
     <div class="card">
         <div class="card-header bg-primary text-white">
-
-
             <input value="{{$dados->Descricao??0 }}"  type="hidden" class="flagdeativaConformacao">
+            <i class="fas fa-receipt mr-2" aria-hidden="true"></i>
             <strong>{{ $dados->Descricao ?? $mensagem }}</strong>
         </div>
 
@@ -123,9 +318,11 @@
 
                 <input type="hidden" name="idtipopagamento" value="{{ $tabela_valores->id ?? 0 }}" class="idtipopagamento">
                 <input type="hidden" name="multaApagarC" value="{{ $multa ?? 0 }}" class="multaApagarC">
-{{-- Resumo --}}
                 <div class="resumo-box mb-3">
-                    <div>Valor da matrícula: <span class="badge bg-info badge-total" id="valorMatricula">{{ $dados->valorDescricao ?? 0 }},00 MT</span></div>
+                    <div class="resumo-item">
+                        <span class="resumo-legenda">Valor da matrícula</span>
+                        <span class="badge bg-info badge-total" id="valorMatricula">{{ $dados->valorDescricao ?? 0 }},00 MT</span>
+                    </div>
 
                     @if(isset($multa) && $multa > 0)
                     <div class="fine-info mb-3 p-3 border rounded bg-warning">
@@ -143,8 +340,13 @@
                     </div>
                     @endif
 
-                    <div>Meses selecionados: <span class="badge bg-info badge-total" id="totalMeses">0</span></div>
-                    <div>Total a pagar: <span class="badge bg-success badge-total" id="totalValor">0,00 MT</span>
+                    <div class="resumo-item">
+                        <span class="resumo-legenda">Parcelas selecionadas</span>
+                        <span class="badge bg-info badge-total" id="totalMeses">0</span>
+                    </div>
+                    <div class="resumo-item resumo-item-total">
+                        <span class="resumo-legenda">Total a pagar</span>
+                        <span class="badge bg-success badge-total" id="totalValor">0,00 MT</span>
                         <input name="totalApagar" value=""  type="hidden">
                     </div>
                 </div>
@@ -214,7 +416,6 @@
                                 <h5 class="card-title list-group-item btn-abrirdiv btn{{$tipoAgrupado->id}}abrir" id="{{$tipoAgrupado->id}}">
                                     {{ $tipoAgrupado->Descricao }}
                                 </h5>
-                                <input type="hidden" name="tipospagamento[]" value="{{ $tipoAgrupado->id }}">
 
                                 <div class="row row-cols-2 row-cols-md-4 g-2 divitem" style="display:none" id="item{{$tipoAgrupado->id}}div">
                                     @foreach($dadosano->where('tipo', $tipoAgrupado->tipo)->sortBy('mes') as $itemcadatipo)
@@ -223,15 +424,14 @@
                                                    class="btn-check checkbox-mes"
                                                    name="meses[]"
                                                    id="mes_{{ $tipoAgrupado->id }}_{{ $itemcadatipo->mes }}"
-                                                   {{-- value="@json([$itemcadatipo->mes])" --}}
                                                    value='@json([
-    "tipo" => $tipoAgrupado->id,
+    "tipo" => $itemcadatipo->id,
     "mes" => $itemcadatipo->mes,
     "valor" => $itemcadatipo->valorDescricao
 ])'
 
                                                    data-valor="{{ $itemcadatipo->valorDescricao ?? 0 }}"
-                                                   data-tipo="{{ $tipoAgrupado->id }}"
+                                                   data-tipo="{{ $itemcadatipo->id }}"
                                                    data-nomeMes="{{$itemcadatipo->mes }}"
                                                    data-multaValor="{{number_format($itemcadatipo->valorDescricao * ($itemcadatipo->multa / 100), 2) }}"
                                                    multaestado="@if (\Carbon\Carbon::now()->gt(\Carbon\Carbon::create($itemcadatipo->limite))) 1 @else 0 @endif">
@@ -244,7 +444,7 @@
                class="form-check-input-multa"
                name="mesesMulta[]"
                value='@json([
-    "tipo" => $tipoAgrupado->id,
+    "tipo" => $itemcadatipo->id,
     "mes" => $itemcadatipo->mes,
     "valor" =>  $itemcadatipo->valorDescricao * ($itemcadatipo->multa / 100)
 ])'

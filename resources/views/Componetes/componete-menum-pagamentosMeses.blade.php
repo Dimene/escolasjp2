@@ -7,6 +7,55 @@
     border-radius: 16px;
     position: relative;
 }
+
+.tabela-carregamento {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, .82);
+    backdrop-filter: blur(2px);
+}
+
+.tabela-carregamento[hidden] {
+    display: none;
+}
+
+.tabela-carregamento-conteudo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    border: 1px solid #dbe5f0;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 8px 24px rgba(30, 64, 100, .12);
+    color: #334155;
+    font-weight: 600;
+}
+
+.tabela-carregamento-spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid #dbeafe;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: tabela-girar .75s linear infinite;
+}
+
+@keyframes tabela-girar {
+    to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tabela-carregamento-spinner {
+        animation-duration: 1.8s;
+    }
+}
+
  .dataTables_wrapper .dataTables_filter {
         display: none;
     }
@@ -183,6 +232,12 @@ $x=$x+1;
     </h4>
 
     <div class="mt-0 card-custom table-responsive ">
+        <div id="tabelaCarregamento" class="tabela-carregamento" role="status" aria-live="polite" hidden>
+            <div class="tabela-carregamento-conteudo">
+                <span class="tabela-carregamento-spinner" aria-hidden="true"></span>
+                <span>A processar pagamentos...</span>
+            </div>
+        </div>
         <div class="input-group mb-3">
         <span class="input-group-text"><i class="fa fa-search"></i></span>
         <input type="text" id="searchFarmacos" class="form-control" placeholder="Pesquisar fármacos...">

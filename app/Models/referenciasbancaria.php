@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\registoAcademico\Aluno;
 use App\Models\registoAcademico\alunoClasse;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -16,12 +17,13 @@ class referenciasbancaria extends Model
         "aluno_classe_id",
         "mes_id",
         "banco_id",
-         "Multa"
+         "Multa",
+         "flag"
     ];
 
 
     public function alunos(){
-        return $this->belongsToMany(alunos::class, 'aluno_classes','aluno_classe_id','aluno_id');
+        return $this->belongsToMany(Aluno::class, 'aluno_classes','aluno_classe_id','aluno_id');
     }
 
 }
