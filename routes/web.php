@@ -212,6 +212,9 @@ Route::group(['middleware' => 'auth', 'prefix' => 'RegistoAcademico'], function 
     Route::get('turma/atriburi/professores/professoresselect/{id}/turma',
      [turmasController::class, 'turmaclasse'])->name('turma.turmaclasse');
 
+     Route::get('turma/modelo/importacao/{classe}/{anolectivo}',[turmasController::class, 'modeloimportacao'])->name('turma.modeloimportacao');
+     Route::post('turma/modelo/importar-turmas-excel',[turmasController::class, 'importarTurmas'])->name('turma.importarTurmas');
+
 
      Route::get('turma/atriburi/{id}/{ano}/turma',
      [turmasController::class, 'anoclasse'])->name('turma.tAD');

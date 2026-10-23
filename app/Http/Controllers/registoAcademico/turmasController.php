@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\registoAcademico;
 
+use App\Exports\ModeloImportacaoAlunosExport;
 use App\Exports\turmaExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\anolectivoRequest;
+use App\Models\registoAcademico\Aluno;
 use App\Models\registoAcademico\alunoClasse;
 use App\Models\registoAcademico\anolectivo;
 use App\Models\registoAcademico\anolectivo_meta;
@@ -19,6 +21,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Maatwebsite\Excel\Facades\Excel;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use Svg\Tag\Rect;
 
 use function Laravel\Prompts\select;
@@ -66,7 +69,6 @@ $flag=2;
      */
     public function store(Request $request)
     {
-
 
 
 $turmac=turma::create(["Descricao"=>$request->nomeTurma,
@@ -812,15 +814,22 @@ $flag=$request->flag;
 
 public function guardarTodasTurmas(Request $request)
 {
+        $validated = $request->validate([
+            'classe' => ['required', 'integer'],
+            'anolectivo' => ['required', 'integer'],
+            'flag' => ['required', 'integer', 'in:1,2'],
+            'turmas' => ['required', 'array', 'min:1'],
+            'turmas.*.nome' => ['required', 'string', 'max:255'],
+            'turmas.*.alunos' => ['required', 'array', 'min:1'],
+            'turmas.*.alunos.*.id' => ['required', 'integer'],
+            'turmas.*.alunos.*.nome' => ['nullable', 'string', 'max:255'],
+            'turmas.*.alunos.*.sexo' => ['nullable', 'string', 'max:20'],
+        ]);
 
-
-
-
-
-    DB::transaction(function () use ($request) {
-        foreach ($request->turmas as $turmaData) {
-            // Cria ou encontra a turma
-            $turma = Turma::updateOrCreate(
+    DB::transaction(function () use ($request, $validated) {
+        foreach ($validated['turmas'] as $turmaData) {
+                // Cria ou encontra a turma
+                $turma = Turma::updateOrCreate(
                 [
                     'Descricao' => $turmaData['nome'],
                     'ano_lecttivo_id' => $request->anolectivo,
@@ -828,8 +837,38 @@ public function guardarTodasTurmas(Request $request)
                 ]
             );
 
+            foreach ($turmaData['alunos'] as $alunoData) {
+                $alunoClasse = alunoClasse::with('Aluno')
+                    ->where('id', $alunoData['id'])
+                    ->where('classe_id', $validated['classe'])
+                    ->where('anolectivo_id', $validated['anolectivo'])
+                    ->first();
+
+                if (!$alunoClasse || !$alunoClasse->Aluno) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'turmas' => ['Um dos alunos não pertence à classe e ao ano lectivo selecionados.'],
+                    ]);
+                }
+
+                $dadosAluno = array_filter([
+                    'nome' => isset($alunoData['nome']) ? trim($alunoData['nome']) : null,
+                    'sexo' => isset($alunoData['sexo']) ? trim($alunoData['sexo']) : null,
+                ], function ($valor) {
+                    return $valor !== null && $valor !== '';
+                });
+
+                if ($dadosAluno) {
+                    $alunoClasse->Aluno->update($dadosAluno);
+                }
+            }
+
             // Obtém IDs de alunos atuais e recebidos
-            $alunosRecebidos = collect($turmaData['alunos']);
+            $alunosRecebidos = collect($turmaData['alunos'])
+                ->map(function ($aluno) {
+                    return is_array($aluno) ? ($aluno['id'] ?? null) : $aluno;
+                })
+                ->filter()
+                ->values();
             $alunosAtuais="";
             if($request->flag==1):
             $alunosAtuais = turma_aluno::where('turma_id', $turma->id)->pluck('aluno_classe_id');
@@ -862,6 +901,8 @@ public function guardarTodasTurmas(Request $request)
 
 
                if($request->flag==1){
+
+
                     return [
                         'turma_id' => $turma->id,
                         'aluno_classe_id' => $alunoId,
@@ -1072,5 +1113,125 @@ public function turmasprofessorGuardar(Request $request)
             'error' => $e->getMessage()
         ], 500);
     }
+}
+
+
+
+public function modeloimportacao($classe,$anolectivo){
+
+
+
+$alunos= alunoClasse::where("classe_id",$classe)-> with(["Aluno","turma.turma"])->where("anolectivo_id",$anolectivo)->get();
+$classeDe=classe::where("id",$classe)->first();
+
+$dados=collect();
+$anolectivoDe=anolectivo::where("id",$anolectivo)->first();
+foreach($alunos as $item){
+
+$idade = Carbon::parse($item->aluno->dataNascimento)
+            ->diffInYears(Carbon::now());
+    $dados->push([$item->id,
+    $item->Aluno->nome,
+    $item->Aluno->sexo,
+
+    $item->turma?->turma->Descricao]);
+
+}
+
+
+return  Excel::download(new ModeloImportacaoAlunosExport($classeDe,$anolectivoDe,$dados),"Alunos da ".$classeDe->Descricao.".xlsx");
+
+}
+
+
+public function importarTurmas(Request $request){
+
+    $validated = $request->validate([
+        'ficheiro' => ['required', 'file', 'mimes:xlsx,xls,csv', 'max:10240'],
+        'flag' => ['nullable', 'integer', 'in:1,2'],
+    ]);
+    $flag = (int) ($validated['flag'] ?? 1);
+
+    $spreadsheet = IOFactory::load($validated['ficheiro']->getRealPath());
+    $rows = $spreadsheet->getActiveSheet()->toArray(null, true, true, false);
+    $headerIndex = null;
+    $columns = [];
+
+    foreach (array_slice($rows, 0, 20, true) as $index => $row) {
+        $candidateColumns = [];
+
+        foreach ($row as $columnIndex => $heading) {
+            $heading = mb_strtolower(trim((string) $heading));
+
+            if (in_array($heading, ['codigo', 'código', 'id'], true)) {
+                $candidateColumns['codigo'] = $columnIndex;
+            } elseif ($heading === 'nome') {
+                $candidateColumns['nome'] = $columnIndex;
+            } elseif (in_array($heading, ['sexo', 'genero', 'gênero'], true)) {
+                $candidateColumns['sexo'] = $columnIndex;
+            } elseif ($heading === 'turma') {
+                $candidateColumns['turma'] = $columnIndex;
+            }
+        }
+
+        if (isset($candidateColumns['codigo'], $candidateColumns['nome'], $candidateColumns['turma'])) {
+            $headerIndex = $index;
+            $columns = $candidateColumns;
+            break;
+        }
+    }
+
+    if ($headerIndex === null) {
+        return response()->json([
+            'message' => 'Não foi encontrado um cabeçalho válido. O ficheiro deve conter as colunas Código, Nome e Turma.',
+        ], 422);
+    }
+
+    if (count($rows) - $headerIndex - 1 > 5000) {
+        return response()->json([
+            'message' => 'O ficheiro não pode conter mais de 5.000 alunos por envio.',
+        ], 422);
+    }
+
+    $alunos = [];
+
+    foreach (array_slice($rows, $headerIndex + 1, null, true) as $index => $row) {
+        $codigo = trim((string) ($row[$columns['codigo']] ?? ''));
+        $nome = trim((string) ($row[$columns['nome']] ?? ''));
+        $sexo = isset($columns['sexo']) ? trim((string) ($row[$columns['sexo']] ?? '')) : '';
+        $turma = trim((string) ($row[$columns['turma']] ?? ''));
+
+        if ($codigo === '' && $nome === '' && $sexo === '' && $turma === '') {
+            continue;
+        }
+
+        if ($codigo === '' || $nome === '') {
+            return response()->json([
+                'message' => 'A linha ' . ($index + 1) . ' precisa ter Código e Nome preenchidos.',
+            ], 422);
+        }
+
+        $alunos[] = [
+            'codigo' => $codigo,
+            'nome' => $nome,
+            'sexo' => $sexo,
+            'turma' => $turma,
+        ];
+    }
+
+    if (empty($alunos)) {
+        return response()->json([
+            'message' => 'O ficheiro não contém alunos para apresentar.',
+        ], 422);
+    }
+
+
+
+    // dd($alunos);
+    return response()->json([
+        'count' => count($alunos),
+        'html' => view('registoAcademico.partials.preview-importacao-turmas', compact('alunos', 'flag'))->render(),
+    ]);
+
 }
 }

@@ -152,6 +152,40 @@
               </button>
             </div>
           </div>
+
+<a href="#" id="baixarModelo"  class="btn btn-primary">
+    Baixar modelo de importação
+</a>
+
+
+
+
+<button type="button" id="caregarExcel" class="btn btn-primary">
+    <i class="fas fa-file-excel"></i> Carregar Excel
+</button>
+
+
+<input type="file" class="ficheiroTurmas" name="ficheiro"
+       accept=".xlsx,.xls,.csv" style="display:none;">
+
+
+<div id="overlayProcessamento"
+     style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.55);
+            z-index:9999; align-items:center; justify-content:center;">
+    <div style="background:#fff; padding:30px 40px; border-radius:12px;
+                min-width:320px; text-align:center; box-shadow:0 8px 25px rgba(0,0,0,.3);">
+        <div class="spinner-border text-primary mb-3" role="status"></div>
+        <h5 id="progressoTexto">A processar...</h5>
+        <div class="progress mt-3" style="height:10px;">
+            <div id="progressoBarra" class="progress-bar" role="progressbar"
+                 style="width:0%; transition:width .2s;"></div>
+        </div>
+    </div>
+</div>
+
+
+<div id="resultadoProcessamento" class="mt-4"></div>
+
         </div>
       </div>
 
@@ -168,6 +202,112 @@
 
 <?php $__env->startPush('scripts'); ?>
 
+
+
+
+
+<script>
+    $('#baixarModelo').on('click', function (e) {
+        e.preventDefault();
+
+        let classe = $('.classeSelecionada').val();
+        let anolectivo = $('.anoselecionado').val();
+
+        if (!classe || !anolectivo) {
+            alert('Seleccione a classe e o ano lectivo.');
+            return;
+        }
+
+        let url = "<?php echo e(url('RegistoAcademico/turma/modelo/importacao')); ?>/"
+            + encodeURIComponent(classe) + "/"
+            + encodeURIComponent(anolectivo);
+
+        window.location.href = url;
+    });
+
+ $(function () {
+
+    // Abre o seletor de arquivo ao clicar no botão
+    $("#caregarExcel").on("click", function (e) {
+        e.preventDefault();
+        $(".ficheiroTurmas").trigger("click");
+    });
+
+    // Ao selecionar o ficheiro → envia via AJAX
+    $(".ficheiroTurmas").on("change", function () {
+
+        if (!this.files || this.files.length === 0) return;
+
+        let formData = new FormData();
+        formData.append("ficheiro", this.files[0]);
+        formData.append("flag", <?php echo json_encode($flag, 15, 512) ?>);
+
+        // Mostra o overlay de processamento
+        $("#overlayProcessamento").fadeIn(150);
+        $("#progressoTexto").text("A enviar ficheiro...");
+        $("#progressoBarra").css("width", "10%");
+
+        $.ajax({
+            url: "<?php echo e(route('turma.importarTurmas')); ?>",
+            type: "POST",
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+                "Accept": "application/json"
+            },
+            xhr: function () {
+                let xhr = new window.XMLHttpRequest();
+                // Progresso do upload
+                xhr.upload.addEventListener("progress", function (evt) {
+                    if (evt.lengthComputable) {
+                        let pct = Math.round((evt.loaded / evt.total) * 50); // 0–50%
+                        $("#progressoBarra").css("width", pct + "%");
+                        $("#progressoTexto").text("A enviar: " + pct * 2 + "%");
+                    }
+                }, false);
+                return xhr;
+            },
+            success: function (res) {
+                $("#progressoBarra").css("width", "100%");
+                $("#progressoTexto").text("Concluído ✔");
+
+                if (res.html) {
+                    $(".Tabelaalunosselecionadoasporanoclasses").html(res.html);
+                    $("#resultadoProcessamento").empty();
+                }
+
+                // Esconde o overlay após 800ms
+                setTimeout(function () {
+                    $("#overlayProcessamento").fadeOut(150);
+                }, 800);
+            },
+            error: function (xhr) {
+                $("#progressoBarra").css("width", "100%").css("background", "#dc3545");
+                let msg = "Erro ao processar o ficheiro.";
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    msg = xhr.responseJSON.message;
+                } else if (xhr.responseJSON && xhr.responseJSON.errors && xhr.responseJSON.errors.ficheiro) {
+                    msg = xhr.responseJSON.errors.ficheiro[0];
+                }
+                $("#progressoTexto").text(msg);
+                $(".Tabelaalunosselecionadoasporanoclasses").html(
+                    '<div class="alert alert-danger mt-3" role="alert"></div>'
+                ).find(".alert").text(msg);
+
+                setTimeout(function () {
+                    $("#overlayProcessamento").fadeOut(150);
+                    $("#progressoBarra").css("background", "#0d6efd");
+                }, 2000);
+            }
+        });
+
+        // Limpa o input para permitir o mesmo ficheiro novamente
+        $(this).val("");
+    });
+});
+</script>
 <script>
 
 let flag=<?php echo json_encode($flag, 15, 512) ?>;
@@ -176,6 +316,9 @@ let classes=<?php echo json_encode($classes, 15, 512) ?>;
 
 
 $(document).ready(function(){
+
+
+
  console.log("flag",flag);
 
  if(Number(flag)===2){
