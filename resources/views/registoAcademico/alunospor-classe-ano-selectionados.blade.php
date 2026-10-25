@@ -16,6 +16,11 @@
                     <strong>Alunos Disponíveis</strong>
                 </div>
                 <div class="card-body p-0">
+                    <div class="p-2 text-right">
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnMoverTodos">
+                            <i class="fa fa-angle-double-right"></i> Adicionar todos
+                        </button>
+                    </div>
                     <table class="table table-hover table-striped mb-0" id="tabelaAlunosDisponiveis" style="width:100%">
                         <thead class="table-light">
                             <tr>
@@ -66,6 +71,12 @@
                                class="form-control"
                                placeholder="Ex: Turma A, 10ª Classe..."
                                required>
+                    </div>
+
+                    <div class="text-right mb-2">
+                        <button type="button" class="btn btn-sm btn-outline-danger" id="btnDevolverTodos">
+                            <i class="fa fa-angle-double-left"></i> Devolver todos
+                        </button>
                     </div>
 
                     <div class="table-responsive" style="max-height: 400px;">
@@ -182,84 +193,147 @@ $(document).ready(function() {
         if ($('#tabelaAlunosTurma').length) {
             tabelaTurma = $('#tabelaAlunosTurma').DataTable({
                 paging: false,
-                searching: false,
+                searching: true,
                 info: false,
                 ordering: false,
-                dom: 'rt'
+                language: {
+                    search: "",
+                    searchPlaceholder: "Pesquisar nesta turma...",
+                    zeroRecords: "Nenhum aluno encontrado"
+                },
+                dom: '<"row px-2"<"col-12"f>>rt'
             });
         }
+    }
+
+    function escaparHtml(valor) {
+        return $('<div>').text(valor == null ? '' : String(valor)).html();
+    }
+
+    function moverParaTurma(linhas) {
+        const alunos = linhas.map(function(linha) {
+            const $linha = $(linha);
+            return {
+        linha: linha,
+        id: $linha.find('.aluno-id').val(),
+        nome: $linha.find('td:first').clone().children().remove().end().text().trim(),
+        idade: $linha.find('td:nth-child(2)').text().trim()
+            };
+        }).filter(function(aluno) {
+            return aluno.id;
+        });
+
+        alunos.forEach(function(aluno) {
+            if (tabelaDisponiveis) {
+                tabelaDisponiveis.row(aluno.linha).remove();
+            } else {
+                $(aluno.linha).remove();
+            }
+
+            const novaLinha = [
+                contadorLinhas++,
+                `<input type="hidden" name="classes[]" class="aluno-id-selecionado" value="${escaparHtml(aluno.id)}">${escaparHtml(aluno.nome)}`,
+                escaparHtml(aluno.idade),
+                '<i class="fa fa-caret-left fa-2x text-danger remover-aluno" role="button" style="cursor:pointer"></i>'
+            ];
+
+            if (tabelaTurma) {
+                tabelaTurma.row.add(novaLinha);
+            } else {
+                $('#tabelaAlunosTurma tbody').append(`<tr><td>${novaLinha[0]}</td><td>${novaLinha[1]}</td><td>${novaLinha[2]}</td><td>${novaLinha[3]}</td></tr>`);
+            }
+        });
+
+        if (tabelaDisponiveis) tabelaDisponiveis.draw();
+        if (tabelaTurma) tabelaTurma.draw();
+    }
+
+    function devolverDaTurma(linhas) {
+
+
+   
+        linhas.forEach(function(linha) {
+            console.log(linha);
+            const $linha = $(linha);
+            const nome = $linha.find('td:nth-child(2)').clone().children().remove().end().text().trim();
+            const idade = $linha.find('td:nth-child(3)').text().trim();
+            const alunoId = $linha.find('.aluno-id-selecionado').val();
+
+            if (tabelaTurma) {
+                tabelaTurma.row(linha).remove();
+            } else {
+                $linha.remove();
+            }
+
+            const novaLinha = [
+                `<input type="hidden" class="aluno-id" value="${escaparHtml(alunoId)}">${escaparHtml(nome)}`,
+                escaparHtml(idade),
+                '',
+                '<i class="fa fa-caret-right fa-2x text-primary mover-aluno" role="button" style="cursor:pointer"></i>'
+            ];
+
+            if (tabelaDisponiveis) {
+                tabelaDisponiveis.row.add(novaLinha);
+            } else {
+                $('#tabelaAlunosDisponiveis tbody').append(`<tr><td>${novaLinha[0]}</td><td>${novaLinha[1]}</td><td>${novaLinha[2]}</td><td>${novaLinha[3]}</td></tr>`);
+            }
+        });
+
+        if (tabelaTurma) tabelaTurma.draw();
+        if (tabelaDisponiveis) tabelaDisponiveis.draw();
+        reordenarIndices();
     }
 
     // Mover aluno para turma
     $(document).on('click', '.mover-aluno', function(e) {
         e.preventDefault();
-        const linha = $(this).closest('tr');
-        const nome = linha.find('td:first').clone().children().remove().end().text().trim();
-        const idade = linha.find('td:nth-child(2)').text();
-        const alunoId = linha.find('.aluno-id').val();
+        moverParaTurma([$(this).closest('tr')[0]]);
+    });
 
-        if (tabelaDisponiveis) {
-            tabelaDisponiveis.row(linha).remove().draw();
-        } else {
-            linha.remove();
-        }
+    $('#btnMoverTodos').on('click', function() {
+        const linhas = tabelaDisponiveis
+            ? tabelaDisponiveis.rows().nodes().toArray()
+            : $('#tabelaAlunosDisponiveis tbody tr').toArray();
+        moverParaTurma(linhas);
+    });
 
-        const novaLinha = [
-            contadorLinhas++,
-            `<input type="hidden" name="classes[]" class="aluno-id-selecionado" value="${alunoId}">${nome}`,
-            idade,
-            '<i class="fa fa-caret-left fa-2x text-danger remover-aluno" role="button" style="cursor:pointer"></i>'
-        ];
-
-        if (tabelaTurma) {
-            tabelaTurma.row.add(novaLinha).draw();
-        } else {
-            $('#tabelaAlunosTurma tbody').append(`<tr><td>${novaLinha[0]}</td><td>${novaLinha[1]}</td><td>${novaLinha[2]}</td><td>${novaLinha[3]}</td></tr>`);
-        }
+    $('#btnDevolverTodos').on('click', function() {
+        const linhas = tabelaTurma
+            ? tabelaTurma.rows().nodes().toArray()
+            : $('#tabelaAlunosTurma tbody tr').toArray();
+        devolverDaTurma(linhas);
     });
 
     // Remover aluno da turma
     $(document).on('click', '.remover-aluno', function() {
-        const linha = $(this).closest('tr');
-        const nome = linha.find('td:nth-child(2)').clone().children().remove().end().text().trim();
-        const idade = linha.find('td:nth-child(3)').text();
-        const alunoId = linha.find('.aluno-id-selecionado').val();
-
-        if (tabelaTurma) {
-            tabelaTurma.row(linha).remove().draw();
-        } else {
-            linha.remove();
-        }
-
-        const novaLinha = [
-            `<input type="hidden" class="aluno-id" value="${alunoId}">${nome}`,
-            idade,
-            '',
-            '<i class="fa fa-caret-right fa-2x text-primary mover-aluno" role="button" style="cursor:pointer"></i>'
-        ];
-
-        if (tabelaDisponiveis) {
-            tabelaDisponiveis.row.add(novaLinha).draw();
-        } else {
-            $('#tabelaAlunosDisponiveis tbody').append(`<tr><td>${novaLinha[0]}</td><td>${novaLinha[1]}</td><td>${novaLinha[2]}</td><td>${novaLinha[3]}</td></tr>`);
-        }
-
-        reordenarIndices();
+        devolverDaTurma([$(this).closest('tr')[0]]);
     });
+
+    function idsDaTurma() {
+        const linhas = tabelaTurma
+            ? tabelaTurma.rows().nodes().toArray()
+            : $('#tabelaAlunosTurma tbody tr').toArray();
+
+        return linhas.map(function(linha) {
+            return $(linha).find('.aluno-id-selecionado').val();
+        }).filter(Boolean);
+    }
 
     function reordenarIndices() {
         contadorLinhas = 1;
-        $('#tabelaAlunosTurma tbody tr').each(function() {
-            $(this).find('td:first').text(contadorLinhas++);
+        const linhas = tabelaTurma
+            ? tabelaTurma.rows().nodes().toArray()
+            : $('#tabelaAlunosTurma tbody tr').toArray();
+
+        linhas.forEach(function(linha) {
+            $(linha).find('td:first').text(contadorLinhas++);
         });
     }
 
     // Guardar turma
     $('#btnGuardarTurma').off('click').on('click', function() {
         const nomeTurma = $('#nomeTurma').val().trim();
-        const classesItem = $('.aluno-id-selecionado').map(function() {
-            return $(this).val();
-        }).get();
+        const classesItem = idsDaTurma();
 
         if (!nomeTurma) {
             Swal.fire('Atenção', 'Informe o nome da turma', 'warning');
@@ -330,37 +404,46 @@ $(document).ready(function() {
 
                 if (tabelaTurma) {
                     tabelaTurma.clear().draw();
+                    tabelaTurma.search('').draw();
                 } else {
                     $('#tabelaAlunosTurma tbody').empty();
                 }
                 contadorLinhas = 1;
 
                 data[1].forEach(aluno => {
+                    const alunoId = aluno.aluno_classe_id || aluno.idAlunoclasse;
                     const linha = [
                         contadorLinhas++,
-                        `<input type="hidden" name="classes[]" class="aluno-id-selecionado" value="${aluno.aluno_classe_id}">${aluno.nome}`,
-                        aluno.idade,
+                        `<input type="hidden" name="classes[]" class="aluno-id-selecionado" value="${escaparHtml(alunoId)}">${escaparHtml(aluno.nome)}`,
+                        escaparHtml(aluno.idade),
                         '<i class="fa fa-caret-left fa-2x text-danger remover-aluno" role="button" style="cursor:pointer"></i>'
                     ];
 
                     if (tabelaTurma) {
-                        tabelaTurma.row.add(linha).draw();
+                        tabelaTurma.row.add(linha);
                     } else {
                         $('#tabelaAlunosTurma tbody').append(`<tr><td>${linha[0]}</td><td>${linha[1]}</td><td>${linha[2]}</td><td>${linha[3]}</td></tr>`);
                     }
                 });
+                if (tabelaTurma) tabelaTurma.draw();
 
-                const idsSelecionados = data[1].map(a => a.idAlunoclasse);
-                $('#tabelaAlunosDisponiveis tbody tr').each(function() {
-                    const alunoId = $(this).find('.aluno-id').val();
-                    if (idsSelecionados.includes(parseInt(alunoId))) {
+                const idsSelecionados = new Set(data[1].map(function(aluno) {
+                    return String(aluno.aluno_classe_id || aluno.idAlunoclasse);
+                }));
+                const linhasDisponiveis = tabelaDisponiveis
+                    ? tabelaDisponiveis.rows().nodes().toArray()
+                    : $('#tabelaAlunosDisponiveis tbody tr').toArray();
+                linhasDisponiveis.forEach(function(linha) {
+                    const alunoId = $(linha).find('.aluno-id').val();
+                    if (idsSelecionados.has(String(alunoId))) {
                         if (tabelaDisponiveis) {
-                            tabelaDisponiveis.row($(this)).remove().draw();
+                            tabelaDisponiveis.row(linha).remove();
                         } else {
-                            $(this).remove();
+                            $(linha).remove();
                         }
                     }
                 });
+                if (tabelaDisponiveis) tabelaDisponiveis.draw();
 
                 $('#btnGuardarTurma').replaceWith(`
                     <button type="button" class="btn btn-warning" id="btnAtualizarTurma" data-id="${data[0].id}">
@@ -380,9 +463,7 @@ $(document).ready(function() {
     $(document).off('click', '#btnAtualizarTurma').on('click', '#btnAtualizarTurma', function() {
         const id = $(this).data('id');
         const nomeTurma = $('#nomeTurma').val().trim();
-        const classesItem = $('.aluno-id-selecionado').map(function() {
-            return $(this).val();
-        }).get();
+        const classesItem = idsDaTurma();
 
         if (!nomeTurma) {
             Swal.fire('Atenção', 'Informe o nome da turma', 'warning');
