@@ -1030,7 +1030,7 @@ if (
             $idaluno = $aluno;
             //          return ["estado"=>"INS-0","messagem"=>"Matricula Realisada Com sucesso",'idaluno' => $idaluno,
             //          'anolectivo' => $anolectivo,"meses"=>$dadosMes,"metodo"=>$request->tipopagamento];
-            // //    dd($dadosmatricula,$dadosmatricula);
+            //    dd($dadosmatricula,$dadosmatricula,$aluno);
 
             return view('registoAcademico.Visualizar-dados-Recibo', compact('aluno', 'flag', 'dadosMes', 'idaluno',
                 'dadosdedata', 'contactos', 'ano', 'subdomain', 'dadosmatricula','contactos'));
@@ -2500,6 +2500,10 @@ array_push($tipoPagamento,$tabela->id);
             $codigoBase1 = $tipopagamento->tipo . $codigoBase;
 
             $referencias = collect();
+          
+
+       
+        $valor=$this->converterValor($valor);
 
             if ($descricaoBanco === 'BIM') {
                 $referencia  = ReferenciaBIMHelper::gerarReferencia(
@@ -2535,6 +2539,29 @@ array_push($tipoPagamento,$tabela->id);
      * Boot do Model - associa o evento saved.
      */
    
+function converterValor($valor) {
+    // Remove espaços
+    $valor = trim($valor);
+    
+    // Se tiver vírgula, assume formato brasileiro (1.234,56)
+    if (strpos($valor, ',') !== false) {
+        // Remove pontos de milhar e troca vírgula por ponto
+        $valor = str_replace('.', '', $valor);
+        $valor = str_replace(',', '.', $valor);
+    }
+    
+    // Converte para float
+    $valor = (float) $valor;
+    
+    // Se não tiver casas decimais, retorna como int
+    if ($valor == (int) $valor) {
+        return (int) $valor;
+    }
+    
+    return $valor;
+}
+
+
      protected static function salvarReferencias($alunoclasse, $banco, $tipopagamento, $referencias)
     {
 

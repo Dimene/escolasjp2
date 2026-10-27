@@ -1284,13 +1284,18 @@ const config = {
     },
     response: {idaluno:aluno.idAlunoclasse,
         metodo:aluno.metodo_pagamento,
+        Ntalao:aluno.Ntalao,
         dadosEncoded:@json($dadosMes),
         anolectivo:aluno.anolectivo_id },   // corrigido
     animationSpeed: 300
 };
 
+
+
+console.log(config.response);
 $(document).on("click", ".Recibo-print", function () {
-    const urlRecibo = `${config.endpoints.imprimirRecibo}${config.response.anolectivo}/${config.response.idaluno}/${dadosEncoded}/${config.response.metodo}`;
+
+    const urlRecibo = `${config.endpoints.imprimirRecibo}${config.response.anolectivo}/${config.response.idaluno}/${config.response.Ntalao}/${config.response.metodo}`;
     window.open(urlRecibo, '_blank');
     abrirReciboPDF(urlRecibo,config.response.idaluno)
 });

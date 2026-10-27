@@ -443,6 +443,9 @@
 
                             @if($flag==1 && $metodo->banco?->id>0)
    <td  style="padding-left:50px">{{$linha["referencias"]}}</td>
+
+  
+
                 @endif
                         @if($flag != 0)
                             <td>{{ $dados->limite }}</td>
@@ -452,7 +455,7 @@
             @endforeach
         </tbody>
     </table>
-    @if($flag==0 || $metodo->banco?->id==0)
+    @if($flag==0 || $metodo->banco?->id>0)
   {{-- @IF($flag==0) --}}
     <!-- DADOS DA TRANSAÇÃO -->
     <div class="pagamento-info">
@@ -471,6 +474,7 @@
             
 @endif
 
+{{-- {{ dd($metodo->banco) }} --}}
  @if ($metodo->Descricao!="Dinheiro Fisco")
             <tr  >
                 <td>Referência</td>
@@ -487,7 +491,11 @@
             </tr>
 
             @endif
+
+
+            
         </table>
+
     </div>
 
 @ENDIF;
