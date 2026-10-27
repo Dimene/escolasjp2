@@ -455,7 +455,7 @@
             @endforeach
         </tbody>
     </table>
-    @if($flag==0 || $metodo->banco?->id>0)
+    @if($flag==0 || $metodo->banco?->id==0)
   {{-- @IF($flag==0) --}}
     <!-- DADOS DA TRANSAÇÃO -->
     <div class="pagamento-info">
