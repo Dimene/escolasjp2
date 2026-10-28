@@ -978,7 +978,7 @@ if (
             $aluno = DB::table('alunosescritos')->where('id', $id)->where('anolectivo_id', $ano)->first();
             $contactos=contacto::whereIn("encaregado_id",[ $aluno->Encaregado_id,$aluno->id_pai,$aluno->id_mae])->get();
 
-            // dd($aluno);
+            //  dd($aluno);
 
             $contactos = DB::table('contactos')->where('encaregado_id', $aluno->Encaregado_id)->get();
 
@@ -1198,6 +1198,11 @@ if (
         $nomeDoc="Recibo";
         $aluno = alunoClasse::where('id', $id)->first();
 
+
+        if($flag==null){
+            $talao=$aluno->Ntalao;
+
+        }
        
 // 2º - Carrega as relações com o filtro correto
 $aluno->load([
@@ -1212,27 +1217,128 @@ $aluno->load([
     "referencias",
     
 ]);
-// dd($flag,$talao,$aluno);
+
+  $metodo=metodo_pagamento::where('id',$metodoId)->with('banco')->first();
 
 
-        $metodo=metodo_pagamento::where('id',$metodoId)->with('banco')->first();
+$dados=$aluno;
 
-        if($aluno->estado=="Pendente"){
+// dd($dados->metodopagamento);
+$dadoscolect=collect();
+$referencia1=$aluno->referencia;
+if($aluno->estado=="Pendente"){
+
+$referencia1=$aluno->referencias->where("tipo_pagamento_id",$aluno->tipo_Pagamento_id)
+       ->where("aluno_classe_id",$aluno->id)
+       ->where("mes_id",$aluno->TBdetalhes->mes)
+       ->where("flag",1)
+       ->where("banco_id",$dados->metodopagamento->banco->id)
+    ->where("Multa",$aluno->multaActiva==0?null:1)->first()?->referencia;
+    // $referencia1=$referencia1??$aluno->referencia;
+
+}
+
+
+
+if($flag!=1){
+    $dadoscolect->push([
+        "metodo"=>$aluno->TBdetalhes->Descricao,
+        "mes"=>$aluno->TBdetalhes->mesNome,
+        "estado"=>$aluno->estado,
+        "referencia"=>$referencia1??null,
+        "via"=>$dados->metodopagamento,
+        "valor"=>$aluno->TBdetalhes->valorDescricao,
+        "limite"=>$aluno->TBdetalhes->limite
+         ]);
+
+}
+
+foreach($aluno->mensalidades as $item){
+
+$multaactiva=0;
+$multa=0;
+
+
+
+$dadositem=$item->TBdetalhes($item->tipo_pagamento_id , $item->mes_id);
+    if($metodo->banco&&carbon::parse($dadositem->limite)->isPast()){
+$multa=(($dadositem->multa)/100)*$dadositem->valorDescricao;
+$multaactiva=1;
+    }
+    
+    else{
+        $multa=0;
+$multaactiva=0;
+    }
+
+
+   
+
+
+$referencia="";
+
+if($item->Estado=="Não pago"){
+$referencia=$item->referencidas($item->mes_id,$item->tipo_pagamento_id ,$aluno->id)
+->where("Multa",$multaactiva)
+->where("banco_id",$item->metodopagamento->banco->id)
+->first()?->referencia;
+
+
+
+}
+else{
+    $referencia=$item->referencia;
+
+}
+
+
+
+    $dadoscolect->push([
+         "metodo"=>$dadositem->Descricao,
+        "mes"=>$dadositem->mesNome,
+        "referencia"=>$referencia,
+        "via"=>$item->metodopagamento,
+        "valor"=>$dadositem->valorDescricao+$multa,
+         "estado"=>$item->Estado,
+        "limite"=>$dadositem->limite
+
+    ]);
+
+
+}
+
+
+
+
+
+//  dd($flag,$talao,$aluno);
+
+
+      
+
+        if($dadoscolect[0]["estado"]=="Pendente"){
 $nomeDoc="Comprovativo de Pre inscrição";
         }
+         elseif($dadoscolect[0]["estado"]=="Não pago"){
+            $nomeDoc="Referencias para Pagamento";
+
+         }
+         else{
+              $nomeDoc="Recibo"; 
+         }
 
         
      
 
 
 
+$dadoscolect=$dadoscolect;
 
-
-        
-
+   
+// dd($dadoscolect);
         // $pdf = Pdf::load
       return  View('registoAcademico.recibo-matricula-Remprimir',
-      compact('aluno','nomeDoc','aluno','metodo','flag'));
+    compact('aluno','nomeDoc','aluno','metodo','flag','dadoscolect'));
 
         $pdf->setPaper('A5', 'portrait');
 
@@ -1792,6 +1898,7 @@ return view("registoAcademico.pagamento-lista",compact('tabelavalores'));
            $referenciaget = DB::table('referenciasbancarias')
                ->where('aluno_classe_id', $aluno->id)
                ->where('tipo_Pagamento_id', $aluno->tipo_Pagamento_id)
+               ->where('flag', 1)
                ->first();
 
            if ($referenciaget) {
@@ -1885,7 +1992,7 @@ $dadosMulta = collect();
                                            ],
                                            [
                                                'referencia' => $dadosmatricula->referencia,
-                                               'flag' => $dadosmatricula->flag,
+                                               'flag' =>1,
                                                
                                                
                                            ]
