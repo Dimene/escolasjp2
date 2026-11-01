@@ -199,6 +199,8 @@ public function BuscaralunosparaConfig(Request $request)
         ->with(["aluno", "classe", "mensalidades", "turma.turma"])
         ->get();
 
+        
+
     $data = [];
 
     foreach ($alunos as $item) {

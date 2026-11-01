@@ -1802,8 +1802,8 @@ $notasTodoano=DB::table("anolectivometadata")->where("anolectivo_id",$turmas->an
         $anolectivo = anolectivo::orderby('id', 'desc')->get();
 
         // selecionar as turnas
-        $turmas = turma::where('classe_id', $class[0]->id)
-            ->where('ano_lecttivo_id', $anolectivo[0]->id)
+        $turmas = turma::where('classe_id', $class->first()?->id)
+            ->where('ano_lecttivo_id', $anolectivo->first()?->id)
             ->get();
 
         $disciplinas = DB::table('disciplinas')->get();
@@ -1812,13 +1812,13 @@ $notasTodoano=DB::table("anolectivometadata")->where("anolectivo_id",$turmas->an
         $turmasAtribuidas = DB::select(
             'SELECT DISTINCT(turma_id),turma_id,turma FROM  professor_turmaview
                 where  classe_id=? and ano_lectivo_id=?',
-            [$class[0]->id, $anolectivo[0]->id]
+            [$class->first()?->id, $anolectivo->first()?->id]
         );
 
         $classesprofessor = DB::select(
             'SELECT DISTINCT(classe_id), classe FROM  professor_turmaview
                 where   ano_lectivo_id=?',
-            [$anolectivo[0]->id]
+            [$anolectivo->first()?->id]
         );
         $anoslectivoprofessore = DB::select("SELECT DISTINCT(ano_lectivo_id)
 FROM  professor_turmaview");
@@ -1862,23 +1862,23 @@ FROM
         $anolectivo = anolectivo::orderby('id', 'desc')->get();
 
         // selecionar as turnas
-        $turmas = turma::where('classe_id', $class[0]->id)
-            ->where('ano_lecttivo_id', $anolectivo[0]->id)
+        $turmas = turma::where('classe_id', $class->first()?->id)
+            ->where('ano_lecttivo_id', $anolectivo->first()?->id)
             ->get();
 
         $disciplinas = DB::table('disciplinas')->get();
-        $autor = auth()->user()->id;
+        $autor = auth()->user()?->id;
 
         $turmasAtribuidas = DB::select(
             'SELECT DISTINCT(turma_id),turma_id,turma FROM  professor_turmaview
                 where  classe_id=? and ano_lectivo_id=?',
-            [$class[0]->id, $anolectivo[0]->id]
+            [$class[0]->id, $anolectivo->first()?->id]
         );
 
         $classesprofessor = DB::select(
             'SELECT DISTINCT(classe_id), classe FROM  professor_turmaview
                 where   ano_lectivo_id=?',
-            [$anolectivo[0]->id]
+            [$anolectivo->first()?->id]
         );
         $anoslectivoprofessore = DB::select("SELECT DISTINCT(ano_lectivo_id)
 FROM  professor_turmaview ");

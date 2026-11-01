@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\registoAcademico;
 
 use App\Http\Controllers\Controller;
+use App\Exports\ModeloEstadosPagamentos;
 use App\Models\detalhestabelavalores;
 use App\Models\registoAcademico\Aluno;
 use App\Models\registoAcademico\alunoClasse;
@@ -27,7 +28,9 @@ use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Contracts\Support\Responsable;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Validation\Rules\Can;
 use PhpParser\Node\Stmt\Foreach_;
 use Spatie\FlareClient\Http\Response;
@@ -67,9 +70,287 @@ class outrospagamentoController extends Controller
     ->where('classe_id', $classe)
     ->orderBy('tipo', 'asc')
     ->get();
+    // dd($tipospagamento);
     return  view("Componetes.componete-menum-pagamentosMeses", ["tipo"=>$tipospagamento]);
 
     }
+
+    public function baixarModeloEstados(int $ano, int $classe, int $tipo)
+    {
+        // $this->obterConfiguracaoTipoPagamento($ano, $classe, $tipo);
+$parcelas = DB::table("detalhes2")
+    ->where("classe_id", $classe)
+    ->where("anolectivo_id", $ano)
+    ->where("idtabelavalores", $tipo)
+    ->get()
+    ->map(function ($item) {
+        return [
+            "id" => $item->mes,
+            "mes" => $item->mesNome,
+            "limite" => $item->limite,
+        ];
+    })
+    ->sortBy("id")
+    ->values()
+    ->toArray();
+
+// dd($parcelas);
+        
+        return Excel::download(
+            new ModeloEstadosPagamentos(
+                $ano,
+                $classe,
+                $parcelas,
+            $this->parcelasTipoPagamento($ano, $classe, $tipo)
+            ),
+            "Estado_Pagamentos_{$ano}_{$classe}_{$tipo}.xlsx"
+        );
+    }
+
+
+
+       
+
+public function importarEstados(Request $request, int $ano, int $classe, int $tipo)
+{
+    $request->validate([
+        'file' => ['required', 'file', 'mimes:xlsx,xls,csv', 'max:10240'],
+    ]);
+
+    // 1. Buscar as parcelas configuradas
+    $parcelas = DB::table('detalhes2')
+        ->where('classe_id', $classe)
+        ->where('anolectivo_id', $ano)
+        ->where('idtabelavalores', $tipo)
+        ->get()
+        ->map(function ($item) {
+            return [
+                'id' => $item->mes,
+                'mes' => $item->mesNome,
+                'limite' => $item->limite,
+                'valor' => $item->valorDescricao,
+                'multa' => (($item->multa / 100) * $item->valorDescricao),
+            ];
+        })
+        ->sortBy('id')
+        ->values()
+        ->toArray();
+
+    // 2. Ler o Excel
+    $dados = Excel::toArray([], $request->file('file'));
+
+    $folha = $dados[0] ?? [];
+
+    if (empty($folha)) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'O ficheiro Excel está vazio.',
+        ], 422);
+    }
+
+    // 3. Ler cabeçalho
+    $cabecalho = array_map(
+        fn ($valor) => trim((string) $valor),
+        $folha[0]
+    );
+
+    if (!in_array('Codigo', $cabecalho)) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'A coluna Codigo não foi encontrada no Excel.',
+        ], 422);
+    }
+
+    $totalAtualizados = 0;
+    $alunosNaoEncontrados = 0;
+    $pagamentosNaoEncontrados = 0;
+
+    // 4. Percorrer os alunos
+    DB::transaction(function () use (
+        $folha,
+        $cabecalho,
+        $parcelas,
+        $classe,
+        $ano,
+        $tipo,
+        &$totalAtualizados,
+        &$alunosNaoEncontrados,
+        &$pagamentosNaoEncontrados
+    ) {
+
+        foreach (array_slice($folha, 1) as $linha) {
+
+            $valores = array_slice(
+                array_values($linha),
+                0,
+                count($cabecalho)
+            );
+
+            $valores = array_pad(
+                $valores,
+                count($cabecalho),
+                null
+            );
+
+            // Ignorar linhas vazias
+            if (count(array_filter(
+                $valores,
+                fn ($valor) => trim((string) $valor) !== ''
+            )) === 0) {
+                continue;
+            }
+
+            $iterado = array_combine($cabecalho, $valores);
+
+            // 5. Identificar aluno
+            $codigo = trim((string) ($iterado['Codigo'] ?? ''));
+
+            if ($codigo === '') {
+                continue;
+            }
+
+            $aluno = alunoClasse::where('codigo_AC', $codigo)
+                ->where('classe_id', $classe)
+                ->where('anolectivo_id', $ano)
+                ->first();
+
+            if (!$aluno) {
+                $alunosNaoEncontrados++;
+                continue;
+            }
+
+            // 6. Percorrer os meses
+            foreach ($parcelas as $item) {
+
+                $mes = $item['mes'];
+                // dd($parcelas);
+
+                $estadoExcel = trim((string) ($iterado[trim($mes)] ?? ''));
+
+                // dd($estadoExcel,$item['mes'],$iterado);
+
+                if ($estadoExcel === '') {
+                    continue;
+                }
+
+                $multa = 0;
+                $estado = null;
+
+                // Pago com multa
+                if (($estadoExcel) === 'Pago1') {
+
+                    $estado = 'Pago';
+                    $multa = $item['multa'];
+
+                }
+                // Pago sem multa
+                elseif (($estadoExcel) === 'Pago') {
+
+                    $estado = 'Pago';
+                    $multa = 0;
+
+                } else {
+                    continue;
+                }
+
+                // 7. Actualizar o pagamento existente
+                $atualizados = outros_pagamentos::where("aluno_classe_id",$aluno->id)
+                    ->where('tipo_pagamento_id', $tipo)
+                    ->where('mes_id', $item['id'])
+                    ->update([
+                        'estado' => $estado,
+                        'Multa' => $multa,
+                    ]);
+
+                if ($atualizados > 0) {
+                    $totalAtualizados += $atualizados;
+                } else {
+                    $pagamentosNaoEncontrados++;
+                }
+            }
+        }
+    });
+
+    return response()->json([
+        'status' => 'success',
+        'message' => 'Importação concluída com sucesso.',
+        'pagamentos_atualizados' => $totalAtualizados,
+        'alunos_nao_encontrados' => $alunosNaoEncontrados,
+        'pagamentos_nao_encontrados' => $pagamentosNaoEncontrados,
+    ]);
+}
+
+    private function obterConfiguracaoTipoPagamento(int $ano, int $classe, int $tipo): object
+    {
+        $configuracao = DB::table('detalhestabelavaores')
+            ->where('anolectivo_id', $ano)
+            ->where('classe_id', $classe)
+            ->where('tipo', $tipo)
+            ->where('tipo', '>', 2)
+            ->first();
+
+        if (! $configuracao) {
+            abort(404, 'Tipo de pagamento não configurado para o ano e classe selecionados.');
+        }
+
+        if (! auth()->user()->can('Efetuar-' . trim($configuracao->Descricao))) {
+            abort(403, 'Não tem permissão para importar estados de pagamento.');
+        }
+
+        return $configuracao;
+    }
+
+    
+private function parcelasTipoPagamento(int $ano, int $classe, int $tipo): array
+{
+    // Buscar meses
+    $meses = DB::table('meses')
+        ->orderBy('id')
+        ->pluck('Descricao', 'id');
+
+    // Buscar alunos
+    $alunos = alunoClasse::with('Aluno','classe')
+        ->where("classe_id", $classe)
+        ->where("anolectivo_id", $ano)
+        ->get();
+
+    $dados = [];
+
+    foreach ($alunos as $aluno) {
+
+        $linha = [
+            $aluno->codigo_AC,
+            $aluno->Aluno->nome ?? '',
+            $aluno->Aluno->sexo ?? '',
+            $aluno->classe->Descricao ?? '',
+            $aluno->turma->turma->Descricao ?? '',
+        ];
+
+        // Buscar pagamentos do aluno
+        $pagamentos = outros_pagamentos::where(
+                "aluno_classe_id",
+                $aluno->id
+            )
+            ->where("tipo_pagamento_id", $tipo)
+            ->orderBy("mes_id", "asc")
+            ->get()
+            ->keyBy('mes_id');
+
+        // Percorrer todos os meses
+        foreach ($pagamentos as $item) {
+
+            
+            $linha[] =$item->Estado;
+                
+        }
+
+        $dados[] = $linha;
+    }
+
+
+    // dd($dados);
+    return $dados;
+}
 
     public function create(Request $request)
     {

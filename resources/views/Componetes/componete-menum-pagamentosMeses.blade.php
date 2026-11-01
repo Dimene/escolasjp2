@@ -153,6 +153,43 @@ $i=$i+1;
                         <i class="fa {{ $tipoItem->icon }} mr-2"></i>
                         {{ $tipoItem->Descricao }}
                     </a>
+
+
+                    @if ($canEfetuar)
+                    <div class="dropdown d-inline-block">
+                        <button type="button"
+                                class="btn btn-link nav-link p-1"
+                                data-toggle="dropdown"
+                                aria-haspopup="true"
+                                aria-expanded="false"
+                                aria-label="Opções de importação para {{ $descricao }}">
+                            <i class="fa fa-cog"></i>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu">
+                            <a class="dropdown-item"
+                               href="{{ route('pagamentos.modeloEstados', [$tipoItem->anolectivo_id, $tipoItem->classe_id, $tipoItem->tipo]) }}">
+                                <i class="fa fa-download mr-2"></i>Baixar modelo de importação
+                            </a>
+                                <form class="form-importar-estados" action="{{ route('pagamentos.importarEstados', [$tipoItem->anolectivo_id, $tipoItem->classe_id, $tipoItem->tipo]) }}"
+                                  method="POST"
+                                    enctype="multipart/form-data">
+                                @csrf
+                                <input type="file"
+                                       id="importar-folha-{{ $tabId }}"
+                                       name="file"
+                                       accept=".xls,.xlsx,.csv"
+                                       required
+                                       hidden
+                                       onchange="this.form.requestSubmit()">
+                                <label class="dropdown-item mb-0"
+                                       for="importar-folha-{{ $tabId }}"
+                                       style="cursor: pointer;">
+                                    <i class="fa fa-upload mr-2"></i>Carregar ficheiro
+                                </label>
+                            </form>
+                        </div>
+                    </div>
+                    @endif
                 </li>
             @endif
             @endforeach
@@ -281,6 +318,65 @@ $x=$x+1;
 <script>
 (function() {
     let historicoAbas = {};
+
+    $(document).on('submit', '.form-importar-estados', async function(event) {
+        event.preventDefault();
+
+        const formulario = this;
+        const arquivo = formulario.querySelector('input[type="file"]');
+        if (!arquivo.files.length) return;
+
+        if (window.Swal) {
+            Swal.fire({
+                title: 'A processar...',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+        }
+
+        try {
+            const resposta = await fetch(formulario.action, {
+                method: 'POST',
+                body: new FormData(formulario),
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
+            });
+            const resultado = await resposta.json();
+
+            if (!resposta.ok) {
+                const erros = resultado.errors
+                    ? Object.values(resultado.errors).flat().join('\n')
+                    : resultado.message;
+                throw new Error(erros || 'Não foi possível importar o ficheiro.');
+            }
+
+            if (window.Swal) {
+                await Swal.fire({
+                    icon: 'success',
+                    title: 'Importação concluída',
+                    text: resultado.message
+                });
+            } else {
+                window.alert(resultado.message);
+            }
+            document.querySelector('.sub-aba.active')?.click();
+        } catch (erro) {
+            if (window.Swal) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Falha na importação',
+                    text: erro.message || 'Não foi possível processar o ficheiro.'
+                });
+            } else {
+                window.alert(erro.message || 'Não foi possível processar o ficheiro.');
+            }
+        } finally {
+            arquivo.value = '';
+        }
+    });
 
     function carregarDados(idtipo, idmes, idano, idclasse, mesNome, tipoDesc) {
         if (typeof window.atualizarDadosTabela === 'function') {

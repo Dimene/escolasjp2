@@ -33,7 +33,7 @@ $McanAccess = false;
 $canLista = false;
 
 foreach ($tipospagamentos as $item) {
-    $desc = trim($item->Descricao);
+    $desc = trim($item?->Descricao);
     $canAccess = $canAccess || Gate::check("Efetuar-$desc") || Gate::check("Visualizar-$desc");
     $McanAccess = $McanAccess || Gate::check("Lista-$desc");
     $canLista = $canLista || Gate::check("Visualizar-$desc");
@@ -56,12 +56,12 @@ $validarTURMAS = !$preshow->isEmpty() || !empty($direcao);
 $permitir = $canAccess || $McanAccess || $validarTURMAS;
 
 // PERMISSÕES MATRÍCULA
-$canMatriculaExterna = Gate::check("Efetuar-".trim($tipospagamentos->where("id",1)->first()->Descricao));
-$canMatriculaInterna = Gate::check("Efetuar-".trim($tipospagamentos->where("id",2)->first()->Descricao));
-$canVisualizarMatricula = Gate::check("Visualizar-".trim($tipospagamentos->where("id",1)->first()->Descricao)) || 
-                          Gate::check("Visualizar-".trim($tipospagamentos->where("id",2)->first()->Descricao));
-$canRelatorioMatricula = Gate::check("RelatorioPagameto-".trim($tipospagamentos->where("id",1)->first()->Descricao)) || 
-                         Gate::check("RelatorioPagameto-".trim($tipospagamentos->where("id",2)->first()->Descricao));
+$canMatriculaExterna = Gate::check("Efetuar-".trim($tipospagamentos->where("id",1)->first()?->Descricao));
+$canMatriculaInterna = Gate::check("Efetuar-".trim($tipospagamentos->where("id",2)->first()?->Descricao));
+$canVisualizarMatricula = Gate::check("Visualizar-".trim($tipospagamentos->where("id",1)->first()?->Descricao)) || 
+                          Gate::check("Visualizar-".trim($tipospagamentos->where("id",2)->first()?->Descricao));
+$canRelatorioMatricula = Gate::check("RelatorioPagameto-".trim($tipospagamentos->where("id",1)->first()?->Descricao)) || 
+                         Gate::check("RelatorioPagameto-".trim($tipospagamentos->where("id",2)->first()?->Descricao));
 
 $isMatricula = Request::is('aluno/matricula*') ||
                Request::is('aluno/aluno*') ||

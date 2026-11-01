@@ -56,6 +56,21 @@ class tabelavaloresController extends Controller
      */
     public function store(Request $request)
     {
+        $montante = trim((string) $request->input('Montante'));
+        $montante = preg_replace('/[\s\x{00A0}\x{202F}]+/u', '', $montante);
+
+        if (str_contains($montante, ',')) {
+            $montante = str_replace('.', '', $montante);
+            $montante = str_replace(',', '.', $montante);
+        } elseif (preg_match('/^\d{1,3}(?:\.\d{3})+$/', $montante)) {
+            $montante = str_replace('.', '', $montante);
+        }
+
+        $request->merge(['Montante' => $montante]);
+        $request->validate([
+            'Montante' => ['required', 'numeric', 'gt:0'],
+        ]);
+
 //  dd($request->all());
 //   dd($request->classes);
         // Chama a função retornarDetalhes para processar os dados de início e fim dos pagamentos

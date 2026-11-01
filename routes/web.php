@@ -46,7 +46,10 @@ Route::group(['middleware' => 'auth', 'prefix' => 'aluno'], function () {
 
      Route::post('/uplodefilemensalidades/excel/{anolectivo}', [MensalidadesController::class, 'uplodefileMensalidades'])->name('mensalidade.uplodefileCadastrofile');
 
-
+    Route::get('/pagamentos/modelo/{ano}/{classe}/{tipo}', [outrospagamentoController::class, 'baixarModeloEstados'])
+        ->name('pagamentos.modeloEstados');
+    Route::post('/pagamentos/importar/{ano}/{classe}/{tipo}', [outrospagamentoController::class, 'importarEstados'])
+        ->name('pagamentos.importarEstados');
 
  Route::post('/uplodefileCadastrofile/excel/{ano}', [alunosController::class, 'uplodefileCadastrofile'])->name('aluno.uplodefileCadastrofile');
 

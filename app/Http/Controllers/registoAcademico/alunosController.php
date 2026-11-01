@@ -127,8 +127,8 @@ class alunosController extends Controller
 
     public function index()
     {
-       $extrno ="Visualizar-".trim(DB::table("tipos_pagamentos")->where("id",1)->first()->Descricao);
-         $interno ="Visualizar-".trim(DB::table("tipos_pagamentos")->where("id",2)->first()->Descricao);
+       $extrno ="Visualizar-".trim(DB::table("tipos_pagamentos")->where("id",1)->first()?->Descricao);
+         $interno ="Visualizar-".trim(DB::table("tipos_pagamentos")->where("id",2)->first()?->Descricao);
 
         //  dd($extrno, $interno);
          if (auth()->user()->can($extrno)||
@@ -1850,18 +1850,32 @@ return view("registoAcademico.pagamento-lista",compact('tabelavalores'));
         DB::transaction(function () use ($alunoId, $pagamentos, $mesesPorTipo) {
             $aluno = alunoClasse::findOrFail($alunoId);
 
-            
-                //  dd($tabelaValores, $pagamentos,$alunoId,);
+            // dd( $aluno);
+                //   dd( $pagamentos,$alunoId,);
             foreach ($pagamentos as $item) {
 
-            
-            $tabelaValores = DB::table('detalhestabelavaores')
-                ->where('tipo', '>', 2)
-                ->where('classe_id', $aluno->classe_id)
-                ->where('anolectivo_id', $aluno->anolectivo_id)
-                ->where('tipo', $item['tipo'])
-                ->where('mes', $item['mes'])
-                ->first();
+                $consultaValores = DB::table('detalhestabelavaores')
+                    ->where('tipo', '>', 2)
+                    ->where('classe_id', $aluno->classe_id)
+                    ->where('anolectivo_id', $aluno->anolectivo_id);
+
+                if (is_array($item)) {
+                    if (! isset($item['tipo'], $item['mes'])
+                        || ! is_numeric($item['tipo'])
+                        || ! is_numeric($item['mes'])) {
+                        abort(422, 'Cada parcela selecionada deve incluir o tipo e o mês.');
+                    }
+
+                    $consultaValores
+                        ->where('tipo', $item['tipo'])
+                        ->where('mes', $item['mes']);
+                } elseif (is_numeric($item)) {
+                    $consultaValores->where('id', $item);
+                } else {
+                    abort(422, 'A parcela selecionada é inválida.');
+                }
+
+                $tabelaValores = $consultaValores->first();
 
                 if (! $tabelaValores) {
                     abort(422, 'Uma das parcelas selecionadas não está configurada para a matrícula atual.');
@@ -1956,6 +1970,7 @@ $dadosMulta = collect();
       ]);
                 } else {
 
+               
                     $saidadedado = outros_pagamentos::where('tipo_pagamento_id',
                         $dado->tipo)
                         ->where('aluno_classe_id', $aluno->id)
@@ -2306,19 +2321,19 @@ $dadosMulta = collect();
 public function MatriculaFila(Request $DADOSeXCEL)
 
 {
-    //  dd($DADOSeXCEL->all(),$DADOSeXCEL->ano);
+    //   dd($DADOSeXCEL->all(),$DADOSeXCEL->ano);
 
 
 
     $talaoNumero = $this->talao(1, $DADOSeXCEL->ano);
 
     $tipos = DB::table("detalhestabelavaores")
-        ->where("anolectivo_id", $DADOSeXCEL->ano)
+        ->where("anolectivo_id", (int)$DADOSeXCEL->ano)
         ->where("tipo", ">", 2)
         ->pluck('Descricao')
         ->unique()
         ->toArray();
-        // dd( $tipos);
+        //  dd( $tipos);
 
 
 
@@ -2528,18 +2543,26 @@ $relig=$linha[7+ $TIPOS_SIZE] ?? "Por definir";
 // echo  $descricaoTipo."". $valor."\n";
             if ($valor=="Sim") {
 
+$parcelasTipo = DB::table("detalhestabelavaores")
+    ->where("Descricao", $descricaoTipo)
+    ->where("anolectivo_id", $DADOSeXCEL->ano)
+    ->where("classe_id", $classe->id)
+    ->where("tipo", ">", 2)
+    ->get();
 
-            $tabela=DB::table("detalhestabelavaores")
-            ->where("Descricao",$descricaoTipo)
-            ->where("anolectivo_id",$DADOSeXCEL->ano)
-            ->where("classe_id",$classe->id)->first();
+            // dd($parcelasTipo);
 
-array_push($tipoPagamento,$tabela->id);
+            foreach ($parcelasTipo as $parcelaId) {
+               array_push($tipoPagamento,[
+    "tipo" =>$parcelaId->id ,
+    "mes" => $parcelaId->mes,
+  ]);
+            }
 
 
             }
         }
-        // dd($tipoPagamento);
+      
 
          $this->registar_pagamentos($matricula->id,$tipoPagamento);
 

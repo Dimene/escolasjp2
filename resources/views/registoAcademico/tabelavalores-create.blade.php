@@ -472,8 +472,8 @@ $(document).ready(function(){
             valido = false;
         }
 
-        let montante = $("#my-Montante").val().trim().replace(/[^\d,-]/g, '');
-        if (montante === "" || isNaN(parseFloat(montante)) || parseFloat(montante) <= 0) {
+        let montante = converterMontanteParaNumero($("#my-Montante").val());
+        if (montante === "" || !Number.isFinite(Number(montante)) || Number(montante) <= 0) {
             erroCampo("#my-Montante", "O Montante deve ser um número válido e maior que 0.");
             valido = false;
         }
@@ -509,7 +509,12 @@ $(document).ready(function(){
         $.ajax({
             url: "{{ route('TabelaValores.store') }}",
             type: "POST",
-            data: $(".formularioValores").serialize(),
+            data: $.param($(".formularioValores").serializeArray().map(function(campo) {
+                if (campo.name === "Montante") {
+                    campo.value = converterMontanteParaNumero(campo.value);
+                }
+                return campo;
+            })),
             success: function(response) {
                 // Mostrar toast de sucesso
                 if(response.success) {
@@ -544,13 +549,31 @@ $(document).ready(function(){
         }, 5000);
     }
 
-    // Formatação do campo Montante
-    $("#my-Montante").on('keyup', function() {
-        let value = $(this).val().replace(/[^\d]/g, '');
-        if(value) {
-            value = parseInt(value).toLocaleString('pt-BR');
-            $(this).val(value);
-        }
+    function converterMontanteParaNumero(valor) {
+        const limpo = String(valor).replace(/[^\d,]/g, '');
+        const indiceDecimal = limpo.indexOf(',');
+        if (indiceDecimal === -1) return limpo;
+
+        return limpo.slice(0, indiceDecimal) + '.' + limpo.slice(indiceDecimal + 1).replace(/,/g, '');
+    }
+
+    function formatarMontante(valor) {
+        const limpo = String(valor).replace(/[^\d,]/g, '');
+        const indiceDecimal = limpo.indexOf(',');
+        const inteiro = (indiceDecimal === -1 ? limpo : limpo.slice(0, indiceDecimal))
+            .replace(/^0+(?=\d)/, '');
+
+        if (inteiro === '' && indiceDecimal === -1) return '';
+
+        const inteiroFormatado = (inteiro || '0').replace(/\B(?=(\d{3})+(?!\d))/g, '\u00A0');
+        if (indiceDecimal === -1) return inteiroFormatado;
+
+        const decimal = limpo.slice(indiceDecimal + 1).replace(/,/g, '').slice(0, 2);
+        return inteiroFormatado + ',' + decimal;
+    }
+
+    $("#my-Montante").on('input', function() {
+        $(this).val(formatarMontante($(this).val()));
     });
 });
 </script>
