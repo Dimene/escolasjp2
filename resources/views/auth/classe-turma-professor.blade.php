@@ -34,16 +34,6 @@
 </div>
 
 {{-- Scripts --}}
-<script src="{{ asset('Datatable/js/jquery-3.5.1.js') }}"></script>
-<script src="{{ asset('Datatable/js/jquery.dataTables.min.js') }}"></script>
-<script src="{{ asset('Datatable/js/dataTables.buttons.min.js') }}"></script>
-<script src="{{ asset('Datatable/js/buttons.flash.min.js') }}"></script>
-<script src="{{ asset('Datatable/js/jszip.min.js') }}"></script>
-<script src="{{ asset('Datatable/js/pdfmake.min.js') }}"></script>
-<script src="{{ asset('Datatable/js/vfs_fonts.js') }}"></script>
-<script src="{{ asset('Datatable/js/buttons.html5.min.js') }}"></script>
-<script src="{{ asset('Datatable/js/buttons.print.min.js') }}"></script>
-<script src="{{ asset('Datatable/js/buttons.colVis.min.js') }}"></script>
 <script src="https://unpkg.com/mathjs/lib/browser/math.js"></script>
 
 <script>

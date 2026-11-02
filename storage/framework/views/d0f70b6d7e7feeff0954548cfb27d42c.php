@@ -23,11 +23,7 @@
 
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
-
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <!-- AdminLTE CSS -->
     <link rel="stylesheet" href="<?php echo e(asset('Admin-LTE/plugins/font-awesome/css/font-awesome.min.css')); ?>">
     <link rel="stylesheet" href="<?php echo e(asset('Admin-LTE/dist/css/adminlte.min.css')); ?>">
@@ -513,6 +509,7 @@
 
     <!-- Scripts -->
     <script src="<?php echo e(asset('Admin-LTE/plugins/jquery/jquery.min.js')); ?>"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="<?php echo e(asset('Admin-LTE/plugins/bootstrap/js/bootstrap.bundle.min.js')); ?>"></script>
     <script src="<?php echo e(asset('Admin-LTE/plugins/slimScroll/jquery.slimscroll.min.js')); ?>"></script>
     <script src="<?php echo e(asset('Admin-LTE/plugins/fastclick/fastclick.js')); ?>"></script>
@@ -649,6 +646,7 @@
 
     <?php echo $__env->yieldPushContent('script'); ?>
     <?php echo $__env->yieldPushContent('scripts'); ?>
+    <script src="<?php echo e(asset('js/dataTablesAccentSearch.js')); ?>"></script>
 </body>
 </html>
 <?php /**PATH C:\laragon\www\escolasaojoaopaulo\resources\views/layouts/admin-Lti.blade.php ENDPATH**/ ?>

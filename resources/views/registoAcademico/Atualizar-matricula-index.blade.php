@@ -318,7 +318,7 @@ $(document).ready(function() {
     });
 
     // ============ DATATABLE ============
-    $('#listadosalunos').DataTable({
+    const tabelaAlunos = $('#listadosalunos').DataTable({
         pageLength: 10,
         searching: true,
         ordering: true,
@@ -330,8 +330,8 @@ $(document).ready(function() {
         }
     });
 
-    $('#searchAlunos').on('keyup', function() {
-        $('#listadosalunos').DataTable().search(this.value).draw();
+    $('#searchAlunos').on('input', function() {
+        tabelaAlunos.search(this.value).draw();
     });
 
     // ============ CARREGAR ALUNO ============

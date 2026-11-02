@@ -193,6 +193,7 @@ font-family: 'Inria Serif', serif;
 
 
 @stack('scripts')
+<script src="{{ asset('js/dataTablesAccentSearch.js') }}"></script>
 
 
 </body>

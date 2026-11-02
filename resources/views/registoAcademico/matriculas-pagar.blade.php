@@ -483,10 +483,6 @@
 
 
 
-<script src="{{ asset('Admin-LTE/plugins/jquery/jquery.min.js') }}"></script>
-<script src="{{ asset('Admin-LTE/plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
 <script>
 $(document).ready(function() {
 
