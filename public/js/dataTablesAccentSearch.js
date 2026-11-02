@@ -105,7 +105,8 @@
         const $input = $(settings.nTableWrapper).find('div.dataTables_filter input');
 
         $input
-            .off()
+            .off('.DT')
+            .off('.accentInsensitive')
             .on('input.accentInsensitive keyup.accentInsensitive search.accentInsensitive paste.accentInsensitive cut.accentInsensitive', function () {
                 const normalizedSearch = normalizeText(this.value);
                 if (api.search() !== normalizedSearch) {

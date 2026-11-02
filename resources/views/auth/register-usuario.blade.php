@@ -464,9 +464,7 @@
                                         @foreach ($roles->all() as $rolesvalue)
                                             <option value="{{ $rolesvalue->id }}" {{ old('role') == $rolesvalue->id ? 'selected' : '' }}>
                                                 {{ $rolesvalue->label }}
-                                                @if($roles->find($rolesvalue->id)->permission->count())
-                                                    ({{ $roles->find($rolesvalue->id)->permission->pluck('label')->implode(', ') }})
-                                                @endif
+                                               
                                             </option>
                                         @endforeach
                                     </select>

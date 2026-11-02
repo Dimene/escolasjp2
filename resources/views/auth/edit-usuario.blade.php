@@ -500,9 +500,7 @@
                                             <option value="{{ $role->id }}"
                                                 {{ (isset($usuario->roles) && $usuario->roles->contains('id', $role->id)) ? 'selected' : '' }}>
                                                 {{ $role->label }}
-                                                @if($role->permission->count())
-                                                    ({{ $role->permission->pluck('label')->implode(', ') }})
-                                                @endif
+                                              
                                             </option>
                                         @endforeach
                                     </select>

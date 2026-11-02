@@ -324,9 +324,6 @@ $subdomain = explode('.', $host)[0];
 </style>
 @endpush
 @push('scripts')
-<script src="{{ asset('Admin-LTE/plugins/jquery/jquery.min.js') }}"></script>
-<script src="{{ asset('Datatable/js/jquery.dataTables.min.js') }}"></script>
-<script src="{{ asset('Admin-LTE/plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
 <script src="{{ asset('Datatable/js/dataTables.buttons.min.js') }}"></script>
 <script src="{{ asset('Datatable/js/buttons.flash.min.js') }}"></script>
 <script src="{{ asset('Datatable/js/jszip.min.js') }}"></script>
