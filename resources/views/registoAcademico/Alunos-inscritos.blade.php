@@ -29,6 +29,25 @@ uksort($alunosPorEstado, function($a, $b) {
 });
 @endphp
 
+@if (session('contaAluno'))
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        Conta criada. Código do aluno: <strong>{{ session('contaAluno.codigo') }}</strong>.
+        Senha inicial: <strong>{{ session('contaAluno.password') }}</strong>.
+        <button type="button" class="close" data-dismiss="alert" aria-label="Fechar">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+@endif
+
+@if (session('erroContaAluno'))
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        {{ session('erroContaAluno') }}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Fechar">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+@endif
+
 <div class="conteudo_tabela  card "  style="border-bottom: 3px solid #007bff;"
 
 >
@@ -283,6 +302,18 @@ uksort($alunosPorEstado, function($a, $b) {
                                                 <i class="fa fa-edit"></i>
                                             </a>
 
+                                            @endcan
+
+                                            @can('Editar-Aluno')
+                                            @if (empty($aluno->CodigoAluno) && empty($aluno->password))
+                                            <form action="{{ route('aluno.criarConta', $aluno->id) }}" method="POST" class="form-criar-conta" data-aluno-id="{{ $aluno->id }}">
+                                                @csrf
+                                                <input type="hidden" name="anolectivo_id" value="{{ $aluno->anolectivo_id ?? 1 }}">
+                                                <button type="submit" class="btn btn-success" title="Criar conta do aluno">
+                                                    <i class="fa fa-user-plus"></i>
+                                                </button>
+                                            </form>
+                                            @endif
                                             @endcan
 
                                             @can('Ver-Aluno')

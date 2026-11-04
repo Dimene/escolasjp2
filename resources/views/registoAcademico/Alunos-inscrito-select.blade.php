@@ -477,33 +477,72 @@ $(document).ready(function() {
 
     // Eventos desistência e transferência
     $(document).on("click", ".tranferir_Desistencia", function() {
-        jQuery.noConflict();
         $(".conteudobodi").hide();
         $(".conteudobodiTRanfere").show();
 
+        let formularioSaida = $(".conteudobodiTRanfere");
         let foto = $(this).attr("avatar");
         let avatar = "{{ asset('storage/' . $subdomain . '/fotoAluno') }}/" + foto;
         $(".avatar-aluno").attr("src", avatar);
 
         $(".nomealuno").text($(this).attr('nome'));
         $(".classealunoSpan").text($(this).attr('classeAluno'));
-        $("[name='idAluno']").val($(this).attr('idaluno_classe_id'));
-        $("[name='idMes']").val($("[name='mes_id']").val());
-        $("[name='Tiposaida']").val($("[name='TiposaidaSelect']").val());
+        formularioSaida.find("[name='idAluno']").val($(this).attr('idaluno_classe_id'));
+        formularioSaida.find("[name='idMes']").val(formularioSaida.find("[name='mes_id']").val());
+        formularioSaida.find("[name='Tiposaida']").val(formularioSaida.find("[name='TiposaidaSelect']").val());
         $("#exampleModalCenter").modal('show');
     });
 
-    $("[name='TiposaidaSelect'],[name='mes_id']").change(function() {
-        $("[name='idMes']").val($("[name='mes_id']").val());
-        $("[name='Tiposaida']").val($("[name='TiposaidaSelect']").val());
+    $(document).on("change", ".conteudobodiTRanfere [name='TiposaidaSelect'], .conteudobodiTRanfere [name='mes_id']", function() {
+        let formularioSaida = $(this).closest(".conteudobodiTRanfere");
+        formularioSaida.find("[name='idMes']").val(formularioSaida.find("[name='mes_id']").val());
+        formularioSaida.find("[name='Tiposaida']").val(formularioSaida.find("[name='TiposaidaSelect']").val());
+    });
+
+    $(document).on("submit", ".form-criar-conta", function(e) {
+        e.preventDefault();
+
+        let formulario = $(this);
+        let botao = formulario.find("button[type='submit']");
+        let conteudoOriginal = botao.html();
+        let anolectivo = formulario.find("[name='anolectivo_id']").val();
+
+        formulario.find(".account-create-error").remove();
+        botao.prop("disabled", true).html('<i class="fa fa-spinner fa-spin"></i>');
+
+        $.ajax({
+            url: formulario.attr("action"),
+            type: formulario.attr("method") || "POST",
+            data: formulario.serialize(),
+            dataType: "json",
+            headers: {
+                "Accept": "application/json"
+            },
+            success: function(resposta) {
+                formulario.remove();
+                abrirVisualizacaoAluno(formulario.data("aluno-id"), anolectivo, resposta);
+            },
+            error: function(xhr) {
+                let mensagem = xhr.responseJSON && xhr.responseJSON.message
+                    ? xhr.responseJSON.message
+                    : "Não foi possível criar a conta do aluno. Tente novamente.";
+
+                botao.prop("disabled", false).html(conteudoOriginal);
+                formulario.append(
+                    $("<div>", { class: "alert alert-danger account-create-error mt-2", role: "alert" })
+                        .text(mensagem)
+                );
+            }
+        });
     });
 
     $(document).on("click", ".visualizar", function() {
-        var idCod = $(this).attr("idcodigo");
-        var anolectivo = $(this).attr("anolectivo");
+        abrirVisualizacaoAluno($(this).attr("idcodigo"), $(this).attr("anolectivo"));
+    });
 
+    function abrirVisualizacaoAluno(id, anolectivo, contaCriada) {
         $.ajax({
-            url: "/aluno/visualizar/" + idCod + "/" + anolectivo,
+            url: "/aluno/visualizar/" + id + "/" + anolectivo,
             type: "GET",
             beforeSend: function() {
                 const loadingGif = '{{ asset("imageproceaament/loading.gif") }}';
@@ -512,6 +551,7 @@ $(document).ready(function() {
                         <img src="${loadingGif}" style="width:100px;height:100px;">
                     </div>
                 `).show();
+                $(".DadosAlunoConteudo").fadeIn();
             },
             success: function(data) {
                 $(".conteudo_tabela").hide();
@@ -519,15 +559,27 @@ $(document).ready(function() {
 
                 $(".diviConteudoselectordadosAnoClasse").hide();
                 $(".DadosAlunoBody").html(data);
+                if (contaCriada) {
+                    $(".DadosAlunoBody").prepend(
+                        $("<div>", { class: "alert alert-success", role: "alert" }).text(
+                            contaCriada.message + " Código do aluno: " + contaCriada.codigo +
+                            ". Senha inicial: " + contaCriada.password + "."
+                        )
+                    );
+                }
                 $(".DadosAlunoConteudo").fadeIn();
             },
-            error: function() {
-                $(".DadosAlunoConteudo").html(
-                    "<div class='alert alert-danger'>Erro ao carregar dados do aluno</div>"
+            error: function(xhr) {
+                let mensagem = xhr.responseJSON && xhr.responseJSON.message
+                    ? xhr.responseJSON.message
+                    : "Erro ao carregar dados do aluno.";
+                $(".DadosAlunoBody").html(
+                    $("<div>", { class: "alert alert-danger", role: "alert" }).text(mensagem)
                 );
+                $(".DadosAlunoConteudo").fadeIn();
             }
         });
-    });
+    }
 
     $(document).on("click", ".btn-voltar", function() {
         $(".DadosAlunoConteudo").hide();

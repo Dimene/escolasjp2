@@ -38,6 +38,7 @@ use Carbon\CarbonPeriod;
 use Illuminate\Auth\Access\Gate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
@@ -152,6 +153,9 @@ class alunosController extends Controller
             return redirect('/home');
         }
     }
+
+
+   
 
     /**
      * Show the form for creating a new resource.
@@ -977,6 +981,7 @@ if (
         if (auth()->user()->can('Ver-Aluno')) {
             $aluno = DB::table('alunosescritos')->where('id', $id)->where('anolectivo_id', $ano)->first();
             $contactos=contacto::whereIn("encaregado_id",[ $aluno->Encaregado_id,$aluno->id_pai,$aluno->id_mae])->get();
+            $codigoAluno = DB::table('alunos')->where('id', $id)->value('CodigoAluno');
 
             //  dd($aluno);
 
@@ -1032,7 +1037,7 @@ if (
             //          'anolectivo' => $anolectivo,"meses"=>$dadosMes,"metodo"=>$request->tipopagamento];
             //    dd($dadosmatricula,$dadosmatricula,$aluno);
 
-            return view('registoAcademico.Visualizar-dados-Recibo', compact('aluno', 'flag', 'dadosMes', 'idaluno',
+            return view('registoAcademico.Visualizar-dados-Recibo', compact('aluno', 'codigoAluno', 'flag', 'dadosMes', 'idaluno',
                 'dadosdedata', 'contactos', 'ano', 'subdomain', 'dadosmatricula','contactos'));
         } else {
             $mensagem = 'nao possue a permissao de  Ver dados do aluno';
@@ -1423,6 +1428,63 @@ if (
             return view('Componetes.alerta-Falha', compact('mensagem'));
         }
 
+    }
+
+    public function criarConta(Request $request, Aluno $aluno)
+    {
+        abort_unless($request->user()->can('Editar-Aluno'), 403);
+
+        $conta = DB::transaction(function () use ($aluno) {
+            $aluno = Aluno::query()
+                ->whereKey($aluno->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($aluno->CodigoAluno || $aluno->password) {
+                return null;
+            }
+
+            abort_if(!$aluno->created_at, 422, 'Não foi possível determinar o ano de criação do aluno.');
+
+            $ano = Carbon::parse($aluno->created_at)->year;
+            $ultimoCodigo = DB::table('alunos')
+    ->whereNotNull('CodigoAluno')
+    ->whereYear('created_at', $ano)
+    ->max('CodigoAluno');
+
+$sequencia = $ultimoCodigo
+    ? $ultimoCodigo + 1
+    : $ano . '0001';
+
+            $aluno->CodigoAluno = $sequencia;
+            $aluno->password = Hash::make($sequencia);
+            $aluno->save();
+
+            return ['codigo' => $sequencia, 'password' => $sequencia];
+        });
+
+        if (!$conta) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Este aluno já possui uma conta.',
+                ], 409);
+            }
+
+            return back()->with('erroContaAluno', 'Este aluno já possui uma conta.');
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Conta criada com sucesso.',
+                'codigo' => $conta['codigo'],
+                'password' => $conta['password'],
+            ], 201);
+        }
+
+        return redirect()->route('aluno.visualizarAluno', [
+            $aluno->id,
+            $request->input('anolectivo_id', 1),
+        ]);
     }
 
     public function ApagarDados($id, $ano)

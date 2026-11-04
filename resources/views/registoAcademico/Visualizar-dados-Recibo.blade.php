@@ -781,6 +781,12 @@
                             </div>
                         </div>
 
+                        @if ($codigoAluno)
+                            <div class="mt-2">
+                                <strong>Código do aluno:</strong> {{ $codigoAluno }}
+                            </div>
+                        @endif
+
                         <!-- BOTÕES RÁPIDOS -->
 
                         <div class="d-grid gap-2 mt-4">

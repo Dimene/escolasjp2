@@ -36,7 +36,7 @@ class TenantService
 
 
         $this->tenant = Tenant::where('name', $subdomain)->first();
- // dd($host,  $subdomain,  $this->tenant);
+//   dd($host,  $subdomain,  $this->tenant);
 
 
 

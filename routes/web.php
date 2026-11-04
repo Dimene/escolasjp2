@@ -41,6 +41,8 @@ Route::middleware(['tenant'])->group(function () {
 Route::group(['middleware' => 'auth', 'prefix' => 'aluno'], function () {
     Route::resource('aluno', alunosController::class);
     Route::get('/mostrar', [alunosController::class, 'index'])->name('aluno.mostrar');
+    Route::get('/aluno/conta', [alunosController::class, 'index2'])->name('aluno.index2');
+    Route::post('/{aluno}/criar-conta', [alunosController::class, 'criarConta'])->name('aluno.criarConta');
 
     Route::get('/planilhaCadastro/excel/{ano}', [alunosController::class, 'planilhaCadastro'])->name('aluno.planilhaCadastro');
 
@@ -590,7 +592,7 @@ Route::get('Financas/Banco/referencas/alunoReferenciasPrint/{id}/{idtipo}/{mesid
 });
   Route::get('/enviar-pagamento', [mpesaController::class, 'makePayment'])->name('enviar-pagamento');
 Route::prefix('mpesa/test')->group(function () {
-    Route::get('/config', [mpesaControllerr::class, 'testConfig']);
+    Route::get('/config', [mpesaController::class, 'testConfig']);
     Route::get('/token', [MpesaController::class, 'testToken']);
 });
 
