@@ -28,8 +28,13 @@
         }
 
         /* ---------- Dados derivados da coleção ---------- */
+
+
+      
         $primeira    = $dadoscolect->first();
         $estado      = $primeira['estado'] ?? null;
+
+        //   dd($estado);
         $isPendente  = $estado === 'Pendente';
         $isPago      = $estado === 'Pago';
 

@@ -676,6 +676,8 @@ if (
                 $talaoNumero
             );
 
+            
+
             if ($metodo->banco) {
                 $this->gerarReferenciasBancarias($matricula, $totalApagar);
             }
@@ -885,7 +887,7 @@ if (
 
         //   dd($metodo);
         if ($metodo->tipo > 0) {
-            $estado = 'pendente';
+            $estado = 'Pendente';
         }
         // dd($estado);
         $multaActiva = 1;
