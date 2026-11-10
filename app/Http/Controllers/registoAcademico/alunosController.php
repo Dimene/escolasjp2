@@ -1268,10 +1268,17 @@ $multa=0;
 
 
 $dadositem=$item->TBdetalhes($item->tipo_pagamento_id , $item->mes_id);
-    if($metodo->banco&&carbon::parse($dadositem->limite)->isPast()){
-$multa=(($dadositem->multa)/100)*$dadositem->valorDescricao;
-$multaactiva=1;
-    }
+
+if (
+    $metodo->banco &&
+    Carbon::parse($dadositem->limite)->startOfDay()->lt(Carbon::today())
+) {
+
+    $multa = ($dadositem->multa / 100) * $dadositem->valorDescricao;
+
+    $multaactiva = 1;
+    //  dd(  $multaactiva,$dadositem->limite,$dadositem);
+}
     
     else{
         $multa=0;

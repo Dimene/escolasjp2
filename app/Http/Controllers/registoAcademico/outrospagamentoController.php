@@ -720,7 +720,7 @@ if (auth()->user()->can("reverter-pagamento") || auth()->user()->can("Reverter-"
     public function atualizarMensalidade(Request $request, $id)
     {
 
-    DD($request->$id);
+    
         $dadoTabelavalores = 0;
         $data_incio = "";
         $data_fim = "";

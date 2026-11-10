@@ -32,6 +32,7 @@
 
       
         $primeira    = $dadoscolect->first();
+      
         $estado      = $primeira['estado'] ?? null;
 
         //   dd($estado);
@@ -611,7 +612,7 @@
                                         @if($isPago)
                                             {{ $linha['estado'] ?? '—' }}
                                         @else
-                                            @if(!empty($linha['limite']) && Carbon::parse($linha['limite'])->isPast())
+                                            @if(!empty($linha['limite']) && Carbon::parse($linha['limite'])->startOfDay()->lt(Carbon::today()))
                                                 Com Multa
                                             @else
                                                 {{ $linha['limite'] ?? '—' }}

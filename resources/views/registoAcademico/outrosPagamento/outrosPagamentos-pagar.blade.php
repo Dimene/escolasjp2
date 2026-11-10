@@ -366,7 +366,7 @@ $i=$i+1;
                             $multa = 0;
                             $multaActive = false;
 
-                            if ($dataAtual->gt($dataLimite) && $mes->Estado != 'Pago' && $mes->multaP > 0) {
+                            if ( Carbon\Carbon::parse($dataLimite)->startOfDay()->lt(Carbon\Carbon::today()) && $mes->Estado != 'Pago' && $mes->multaP > 0) {
                                 $multa = $mes->valorDescricao * ($mes->multaP / 100);
                                 $multaActive = true;
                             }
